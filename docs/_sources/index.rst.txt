@@ -1,0 +1,40 @@
+.. Diffenix documentation master file, created by
+   sphinx-quickstart on Mon Feb 17 17:21:26 2025.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to Diffenix's documentation!
+======================================
+
+
+
+This library provide tools to simulate the long term evolution of the gas in an axi-symetrical debris disc
+
+.. image:: logo_diffenix.png
+
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Table of Contents
+   
+   getting_started
+   The_model
+   diffenix
+
+.. image:: Simulation_ppd_planet_mass_flux.png
+.. image:: Simulation_ppd_planet_mass.png
+.. image:: Simulation_ppd_total_mass.png
+.. image:: Simulation_ppd_mass_flux2.png
+.. image:: Simulation_ab1_surface_density.png
+.. image:: Simulation_ab1_Image_total_surface_density.png
+.. image:: Simulation_ab1_Image_H2O_surface_density.png
+.. image:: Simulation_ab1_Image_O_surface_density.png
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

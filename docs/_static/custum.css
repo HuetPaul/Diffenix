@@ -1,0 +1,31 @@
+/* Couleur de fond de la barre de navigation */
+.wy-side-nav-search, .wy-side-nav-search input[type="text"], .wy-side-nav-search form {
+    background: #fcc40d;
+}
+
+/* Couleur de fond du corps principal */
+body {
+    background-color: #6307ba;
+}
+
+/* Couleur de fond de la barre latérale */
+.wy-nav-side {
+    background: #6307ba;
+}
+
+/* Couleur des liens */
+a {
+    color: #6307ba;
+}
+
+/* Couleur des liens dans la barre latérale */
+.wy-menu-vertical a {
+    color: #007bff;
+}
+
+/* Couleur de fond des titres */
+h1, h2, h3, h4, h5, h6 {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+}

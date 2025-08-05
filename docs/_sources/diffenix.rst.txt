@@ -1,0 +1,58 @@
+Documentation
+=============
+
+Submodules
+----------
+
+Time integration
+^^^^^^^^^^^^^^^^
+This submodule can be used to integrate in time new or already existing simulation. 
+
+
+.. automodule:: diffenix.time_integration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Systems
+^^^^^^^
+
+All of the operations related to the gas evolution are mades in this submodule. The object Sol contain all the informations nedded to run the simulation and the results. It also have dedicated plot method that generate several Phenigraph Graphique that can be modified after by the user.
+
+.. automodule:: diffenix.systems
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Solve asteroid belt
+^^^^^^^^^^^^^^^^^^^
+All of the operations related to the gas prodcution rate are made in this submodule. The Sol_ast_belt object is used by the Sol object of the system module to estimate the gas production rate
+
+.. automodule:: diffenix.solve_asteroid_belt
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Numerical methods
+^^^^^^^^^^^^^^^^^
+Some numericals operation that need to be redifined for the numerical integration such as the seconde derivative of an array of the special first derivative of the advection-diffusion equation of a given speed v.
+
+
+.. automodule:: diffenix.numericals_methods
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Global constants and functions
+------------------------------
+
+.. automodule:: diffenix
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: diffenix.Constantes
+   :members:
+   :undoc-members:
+   :show-inheritance:

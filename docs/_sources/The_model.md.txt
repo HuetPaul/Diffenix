@@ -1,0 +1,566 @@
+# The model
+
+## The main hypotheses
+The objective of this numerical model is to track the evolution of gas within a debris disc throughout its entire lifetime.
+Typically, this is several tens of millions of years.
+To achieve this, we need to make reasonable assumptions in order to simplify the problem and save integration time and memory.
+We therefore assume that the disc is axisymmetric and vertically isothermal in hydrostatic equilibrium.
+This reduces the dimension to one: the radial dimension.
+The shape of the disc coupled with the assumptions made means that the cylindrical coordinate system is centred on the central star.
+is an excellent choice for describing the problem.
+The disc is assumed to be thin, with its vertical extension $H_z$ assumed to be small compared to its radial extension.
+This assumption is typically made for protoplanetary discs and is even more justified for debris discs, which are colder and thinner, as confirmed by observations.
+Therefore, the self-gravity of the disc can be neglected compared to any other forces in our model.
+
+At a distance $\vec{r}$  of the central star of mass M$_*$, in a frame rotating at angular speed $\Omega$, the force budget on
+a gas particle with density $\rho$  and pressure $P$ gives:
+
+
+$
+-\mathcal{G} \frac{\rho M_*}{r^3} \vec{r} - \vec{\nabla}(P) + \rho \Omega^2 \vec{r} = 0
+$
+
+_Equation 1 : Force budget_
+
+
+Using our hypotheses and the cylindrical coordinate system, we can derive the usual hydrostatic equation from this equation's vertical projection :
+
+
+$\frac{\partial P}{\partial z} = - \rho g_z$
+
+_Equation 2 : Hydrostatic equilibrium_
+
+
+But with $g_z = \mathcal{G} \frac{M_*}{r^3} \vec{r}. \vec{e_z} = \Omega_K $  the vertical projection of the central star's gravity field
+is typical from discs (see [Armitage, 2020](https://ui.adsabs.harvard.edu/abs/2020apfs.book.....A), [Lesur 2021](https://www.cambridge.org/core/journals/journal-of-plasma-physics/article/magnetohydrodynamics-of-protoplanetary-discs/0557575DE812AAA9DD8324A5E6F6165A)). $\Omega_K = \mathcal{G} \frac{M_*}{r^3}$ is the local Keplerian angular rotation speed.
+
+![The vertical gravitational acceleration g_z](schema_gz.png)
+_Figure 1 : Schematic representation of the gravitational acceleration $\vec{g}$ and its vertical component g$_z$ at the
+distance r from the central star (adapted from [Armitage, 2020](https://ui.adsabs.harvard.edu/abs/2020apfs.book.....A))_
+
+
+The vertical structure of the disc in this model can be obtained analytically if an equation of state is provided.
+We assume the gas to be an ideal gas, such that:
+$\rho = \frac{\mu p}{k_B T} = \frac{p}{c_s^2}$ 
+where μ is the molecular mass.
+For a protoplanetary disc, $\mu \sim 2.3 \ m_p, where $m_p$ is the mass of a proton. The molecular mass is expected to be higher
+in a debris disc that is mostly composed of water or carbon dioxide. $c_s$ is the isothermal speed of sound.
+The vertical pressure profile is then given by $p = p_0\exp\left(-{1}/{2} \left( \frac{z}{H_z} \right)^2$.
+Here, $H_z$ is the vertical scale height, equal to :
+
+----------------------------------------------------------------------------------------------------------------------
+
+$H_z = \frac{c_s}{\Omega}$
+
+_Equation 3 : Vertical scale heigh_
+
+----------------------------------------------------------------------------------------------------------------------
+
+For this model, we assume that the radial temperature profile is a power law :
+
+----------------------------------------------------------------------------------------------------------------------
+
+$T(r) = 278 \left(\frac{L_*}{L_\odot}\right)^{1 / 4} \left(\frac{r}{au} \right) ^{p_{temp}} $  K
+
+
+_Equation 4 : The radial temperature profile_
+
+----------------------------------------------------------------------------------------------------------------------
+with `au` is one astronomical unit and $p_{temp}$ the power slope referred to the configuration dictionary as `pls_temp`. 
+The default value in the code is -0.5. This value represents the black body temperature and is typically used for simulating gas in debris discs (e.g.
+[Moór et al. (2019)](https://ui.adsabs.harvard.edu/abs/2019ApJ...884..108M)
+[Marino et al 2020](https://ui.adsabs.harvard.edu/abs/2020MNRAS.492.4409M)
+[Kral et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024A&A...692A..70K)
+[Huet at al. (2025)](https://ui.adsabs.harvard.edu/abs/2025A%26A...699A.278H/abstract) ).
+
+## The dynamical model
+
+### The total surface density evolution 
+
+Before introducing the sources and sinks of gas, let's start with the simple local conservation equations for mass and momentum (see e.g. [Landau 71](http://archive.org/details/landau-lifchitz-physique-theorique-vol-06-mecanique-des-fluides-mir-1971), [Lesur 2021](https://www.cambridge.org/core/journals/journal-of-plasma-physics/article/magnetohydrodynamics-of-protoplanetary-discs/0557575DE812AAA9DD8324A5E6F6165A) for the full analytical development).
+
+
+$\frac{\partial \rho}{\partial t} + \vec{\nabla} . \rho \vec{u} = 0$
+
+_Equation 5 : Mass conservation_
+
+
+$\frac{\partial \rho \vec{u}}{\partial t} + \vec{\nabla} . \left(\rho \vec{u} \otimes
+    \vec{u} \right) = \vec{\nabla}(P) + \vec{j} \wedge \vec{B} + \vec{\nabla}. \vec{\vec{\tau}}$
+
+_Equation 6 : Momentum conservation_
+
+
+where $\vec{u}$ and $\vec{j}$ are respectively the local speed and the local current vector. $\vec{\vec{\tau}} $ is 
+the viscous stress tensor, $\vec{\vec{\tau}} = \rho \nu \left(\vec{\nabla}\vec{u} + (\vec{\nabla}\vec{u})^T \right)$.
+
+These two equations are too complex to be numerically integrated over the timescale of a debris disc's lifetime. The long-term evolution of gas in an accretion disc is modelled using a turbulent viscosity $\nu_{turb}$ introduced by [Shakura & Sunyaev 1973](https://ui.adsabs.harvard.edu/abs/1973A&A....24..337S). 
+This coefficient can also model magneto-hydrodynamical effects (see [Kral & Latter, 2016](https://ui.adsabs.harvard.edu/abs/2016MNRAS.461.1614K), [Cui et al 2024](https://ui.adsabs.harvard.edu/abs/2024MNRAS.530.1766C) for debris discs).
+
+Instead of integrating equation 5, we integrate the conservation of angular momentum for an axi-symmetrical thin disc including this viscous torque $\Gamma_{visc} = 2 \pi r \ \Sigma \nu \ r\frac{\partial \Omega}{\partial r} $ (see Pringle 81) :
+
+
+$\frac{\partial \ 2 \pi r \Sigma \ r \Omega \ r}{\partial t} + \frac{\partial \ 2 \pi r \Sigma \ r \Omega \ r \ v_r}{\partial r} = \frac{\partial \Gamma_{visc}}{\partial r}$
+
+_Equation 7 : Angular momentum conservation_
+
+
+With $\Sigma$ the surface density and $\vec{v}_r$ the radial speed such as $\vec{u} = \vec{v}_r + \vec{v}_{turb}$ and all
+turbulence effects included in $\vec{v}_{turb}$ are modelled into the total viscosity $\nu = \nu_{molecular} + \nu_{turb}$
+
+We assume the local angular speed $\Omega$ to be the Keplerian angular speed $\Omega_K$, i.e. we neglect the pressure contribution to the angular rotation of gas.
+So we get : 
+
+
+$\frac{\partial r^{3/2} \Sigma}{\partial t} + \frac{\partial r^{3/2} \Sigma v_r}{\partial r} = - \frac{3}{2}\frac{\partial \sqrt{r} \Sigma \nu}{\partial r}$
+
+_Equation 8_
+
+
+If we integrate the mass conservation equation (Equation 5) along the vertical axis, we get :
+
+
+$\frac{\partial r \Sigma}{\partial t} + \frac{\partial r \Sigma v_r}{\partial r} = 0$
+
+_Equation 9 : Vertically integrated mass conservation_
+
+We can simplify Equation 7 using Equation 8. Then, by using both equations, one can derive the standard diffusion equation for an accretion disc as described in  [Lynden-Bell et al. (1974)](https://ui.adsabs.harvard.edu/abs/1974MNRAS.168..603L) :
+
+
+$\frac{\partial \Sigma}{\partial t} = \frac{3}{r} \frac{\partial}{\partial r} \left(\sqrt{r} \frac{\partial \nu \Sigma \sqrt{r}}{\partial r}\right)$
+
+_Equation 10 : Viscous diffusion_
+
+
+For debris discs, sources of gas are present at the belt level, where the gas is produced, and sinks are present at the planetary levels.
+All of these effects are modelled in the source term $\dot{\Sigma}$ : 
+
+----------------------------------------------------------------------------------------------------------------------
+
+$\frac{\partial \Sigma}{\partial t} = \frac{3}{r} \frac{\partial}{\partial r} \left(\sqrt{r} \frac{\partial \nu \Sigma \sqrt{r}}{\partial r}\right) + \dot{\Sigma}$
+
+_Equation 11 : Viscous diffusion with source term_
+
+----------------------------------------------------------------------------------------------------------------------
+
+In their new model of the evolution of accretion discs, [Shakura & Sunyaev 1973](https://ui.adsabs.harvard.edu/abs/1973A&A....24..337S) introduced the famous dimensionless viscous parameter $\alpha$ was introduced :
+
+
+$\alpha =\frac{\nu}{c_sH_z}$
+
+_Equation 12 : The viscous parameter_
+
+This parameter is important not only because it is dimensionless, but also because it can be assumed to be constant across the entire disc.
+Typical values for $\alpha$ are between $10^{-3}$ and $10^{-1}$ for debris discs ([Kral & Latter, 2016](https://ui.adsabs.harvard.edu/abs/2016MNRAS.461.1614K), [Cui et al 2024](https://ui.adsabs.harvard.edu/abs/2024MNRAS.530.1766C)).
+
+Introducing this parameter into equation 11 with the temperature profile, we get 
+
+
+$\frac{\partial \Sigma}{\partial t} = \frac{3 \nu_0}{r_0^{3/2 + p_{temp}}} \frac{1}{r} \frac{\partial}{\partial r} \left(\sqrt{r} \frac{\partial \Sigma r ^{2 + p_{temp}}}{\partial r} \right) + \dot{\Sigma}$
+
+_Equation 12_
+
+with $r_0$ an arbitrary radius and $\nu_0 = \frac{k_B T(r_0) \alpha r_0^{3/2}}{\mu \sqrt{G M_*}}$ the viscosity at $r_0$
+
+This equation can be radically simplified if we introduce a new space coordinate `X` and a variable `f` such as 
+
+----------------------------------------------------------------------------------------------------------------------
+$X = \sqrt{r}$
+
+$f = \Sigma r^{2 + p_{temp}}$
+
+_Equation 13 :  The new coordinate-variable system_
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+Before introducing them into the Equation 12, one has to get the expression of the new space derivative :
+
+
+$\frac{\partial}{\partial X} = 2 X \frac{\partial}{\partial r}$
+
+_Equation 14 :  The new space derivative_
+
+Finally, one arrives at the typical, very simple, one-dimensional viscous diffusion equation:
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+$\frac{\partial f}{\partial t} = D \frac{\partial^2 f}{\partial X^2} + \dot{f}$
+
+:    where $\dot{f} = X^{4 + 2 p_{temp}} \dot{\Sigma}$ and $D = \frac{3 \nu_0}{4 r_0^{3/2 + p_{temp}}} X ^{1 + 2 p_{temp}}$
+
+_Equation 15 : The final model to be integrated_
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+With the default value for the temperature radial power slope $p_{temp} = - 1/2$, we get a constant diffusion coefficient.
+
+### The physical meaning of $f$
+
+
+In the numerical model, we use f to simplify the equation for numerical integration, reducing the number of mathematical operations and improving numerical efficiency.
+Using a simpler equation, such as Equation 15, also improves the accuracy of the numerical integration.
+
+However, it is possible to attempt to obtain a physical interpretation of the new variable that replaces the surface density.
+
+The radial mass flux $\Phi(r) = 2 \pi r \Sigma v_r$ can be expressed as a function of the surface density's $\Sigma$ spatial derivative:
+
+
+$\Phi(r) = 2 \pi r \Sigma v_r = - 6 \pi \sqrt{r} \frac{\partial}{\partial r} \left[ \nu \Sigma \sqrt{r} \right]$
+
+_Equation 16 : The mass flux in the old coordinate system_
+
+
+Introducing the viscous parameter $\alpha$, our new spatial coordinate X and the new variable f, we get :
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+$\Phi(X) = - 4 \pi D \frac{\partial f}{\partial X}$
+
+_Equation 17 : The mass flux in the new coordinate system_
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+For a radial temperature power slope of $- 1/2$,, f is directly proportional to the integral of the mass flux, $\Phi(X)$.
+In this case, f can be used to quickly estimate how the mass flux evolves within the disc. A negative flux implies a positive slope for f, while a negative flux implies a negative slope.
+
+
+### The evolution of multiple chemical species
+
+Due to photodissociation, and in order to model both a Kuiper belt and an asteroid belt, our models contain multiple chemical species.
+
+We define a turbulent velocity, $v_r^i$, for each species, i, such that their total speed is the sum of the radial speed obtained via the evolution of the total surface density and $v_r^i$: $v_i = v_r + v_r^i$.
+This speed can be related to the mass fraction of species i: $\omega_i = \frac{\Sigma_i}{\Sigma}$ such as ([Charnoz et al 2019](https://ui.adsabs.harvard.edu/abs/2019A&A...627A..50C)) :
+
+
+$v_r^i = -\nu \frac{\partial \omega_i}{\partial r}$
+
+_Equation 18 : The interspecies radial speed_
+
+
+Each species follows a diffusion equation that is similar to Equation 11. :
+
+
+$\frac{\partial \Sigma_i}{\partial t} = \frac{1}{r} \frac{\partial}{\partial r} \left[3 \omega_i\sqrt{r} \frac{\partial}{\partial r} \left[ \nu \Sigma \sqrt{r}\right] + r \nu \Sigma \frac{\partial \omega_i}{\partial r}\right] + \dot{\Sigma_i}$
+
+_Equation 19 : The multi-species equations of evolution in the old coordinate system_
+
+All of these equations are coupled with the radial velocity $v_r$.
+
+As with Equation 11, Equation 19 can be simplified if we introduce the viscous parameter $\alpha$, the new coordinate system and f into a much simpler advection-diffusion equation:
+
+----------------------------------------------------------------------------------------------------------------------
+
+$ \frac{\partial \omega_i}{\partial t} = \frac{D}{3} \left[\frac{\partial^2 \omega_i}{\partial x^2} + 4 \frac{\partial \omega_i}{\partial x} \frac{\partial \ln{f}}{\partial x}\right] + \dot{\omega_i}$
+
+:    with $\dot{\omega_i} = \frac{\dot{\Sigma_i} - \omega_i \dot{\Sigma}}{\Sigma}$
+
+_Equation 20 : The final multi-species equation of evolution_
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+The advective term in this equation can cause oscillations during numerical integration if there are discontinuities in the problem, such as at the borders of the belts or at the critical surface density at which a species begins to be shielded from ionising radiation.
+The spatial discretisation scheme must be adapted to address this issue. One proposed solution is the WENO discretisation scheme ([Jiang et al 1996](https://ui.adsabs.harvard.edu/abs/1996JCoPh.126..202J/abstract)).
+But in our case, we know the sign of the advection speed which is $v_r$. Then we use a different discretisation scheme for the simple derivation of $\omega_i$ as function of the sign of the radial speed.
+
+### The boundary conditions
+
+The boundary conditions for Equations 15 and 20 are set to prevent a positive inner mass flux or a negative outer mass flux, which would result in materials being brought from either the central star or the outer disc. This is not physically possible.
+As it is not possible to model the entire disc, in addition to these two strong constraints on the mass flux, we estimate the innermost and outermost values of f using power slope extrapolation.
+This extrapolation works well when the system is close to steady state, but it can become inaccurate when the gas is slow to reach the boundaries of the integration domain.
+Finally, we apply an additional constraint that ensures the mass flux is at most equal to the mass flux crossing the previous cell.
+
+## Gas productions models
+
+The model can use a variety of more or less sophisticated methods to estimate the gas production rate,  ${\dot{\Sigma}}_{belt}$, at each belt. The model used for each belt is specified in the configuration dictionary by the `sublimation_model` parameter. This choice also determines which chemical elements are modelled in this simulation.
+
+The gas production rate can be completely deactivated for a given belt by setting the sublimation model to `none` in the configuration dictionary.
+Each model has a typical lifetime, `t0_diss`, before dissipation, as well as a dissipation timescale.
+Before `t0_diss` the gas production rate,  $\dot{\Sigma}_{belt}$ , will be as described in the next sections.
+After t_(0,diss), this gas production rate will be multiplied by a factor  $\exp{\left(\frac{t - t0_{diss}}{t1_{diss}}\right)}$, where $t1_{diss}$ stands for the dissipation timescale. These parameters can be set for each belt (the asteroid belt and the Kuiper belt) in the configuration dictionary.
+
+These parameters enable the modelling of Nice-model-like scenarios, in which a primary massive belt is disrupted in the early stages of stellar system evolution, following the evolution of the protoplanetary disc, due to planetary dynamical evolution.
+
+To avoid numerical instabilities when integrating the mass fraction evolution (Equation 20), it is possible to set an initial gas fraction determined by a gas production rate, `mdot_st_init`, for each belt.
+
+
+### The constant gas production rate
+
+This is the simpler gas production rate for this model, which can still be useful for testing the code's efficiency, since an analytical solution exists for the steady state in this case.
+This model can be set using the `constant_rate` value for the `sublimation_model`. The rate is then determined by the value of the `const_mdot` key in the configuration dictionary.
+Assuming a radial distribution of this gas production, the gas surface density source term, $\dot{\Sigma}_{belt}$, is then determined as :
+
+----------------------------------------------------------------------------------------------------------------------
+
+$\dot{\Sigma}_{belt} = \dot{\Sigma}_0 \left(\frac{r}{a0}\right)^{-3/2}$ if $r$ is inside the belt's radial limits
+
+:    where $a_0$ is the belt's mean semi-major axis and $\dot{\Sigma}_0 = \frac{\dot{m}}{4 \pi a_0^2 \left(\sqrt{1 + \frac{\delta_a}{a}} - \sqrt{1 - \frac{\delta_a}{a}}\right)}$ 
+
+_Equation 21 : The gas mass surface density production rate for a constant mass production rate $\dot{m}_
+
+----------------------------------------------------------------------------------------------------------------------
+
+### The thermal diffusion model
+
+This model neglects the sublimation timescale and the molecular diffusion of gas into the solid following sublimation.
+This model is more accurate for the Kuiper-like Belt than the Asteroid-like Belt, since the sublimation timescale is usually close to or higher than the thermal diffusion timescale in the latter.
+
+This model assumes the same radial distribution for the belt as for the constant rate model. The total gas mass generation rate is then determined by the properties of the belt (see [Huet at al 2025](https://ui.adsabs.harvard.edu/abs/2025A%26A...699A.278H/abstract) where this model is described and used and Figure 2) : 
+
+For a given body of size s, at a given time t, it is assumed that all the ice above the radius $r = \sqrt{Kt}$, where K is the thermal diffusion coefficient that can be set in the configuration dictionary, has already sublimated.
+During the infinitesimal time dt, the layer between $\frac{s}{2} - \sqrt{Kt}$ and $\frac{s}{2} - \sqrt{Kt + dt}$ sublimate.
+
+Then the mass loss rate for this body of size s if :
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+$\frac{dM_{gas}}{dt} = 2 \pi \rho_{refr} f_{ice} K^{3/2} \sqrt{t}$ if $t < \frac{s^2}{4 K}$
+
+$\frac{dM_{gas}}{dt} = 0$ if $t >= \frac{s^2}{4 K}$
+
+:    where $\rho_{ref}$ is the density of refractory materials and $f_{ice}$ the ice to refractory mass fraction
+
+_Equation 22 : The gas mass production rate for a given body of size s for the thermal diffusion model_
+
+----------------------------------------------------------------------------------------------------------------------
+
+![Schematic representation of the thermal diffusion model for one body of size s](model_sublimation.png)
+
+_Figure 2 : Schematic representation of the thermal diffusion model for one body of size s_
+
+----------------------------------------------------------------------------------------------------------------------
+
+To calculate the full mass production rate $\dot{m}(t)$, we require the size distribution $n(s)$ of the belt which is defined by several power slopes in the configuration dictionary as well as the total belt's mass `Mbelt`
+
+If $s_{min}$ and $s_{max}$ represent the minimum and maximum sizes of the bodies within the belt, then 
+
+----------------------------------------------------------------------------------------------------------------------
+
+$\dot{m}(t) = \int_{max(s_{min}, \sqrt{Kt})}^{s_{max}} 2 \pi \rho_{refr} f K^{3/2} \sqrt{t} n(s) ds$
+
+_Equation 23 : The gas mass production rate for the thermal diffusion model_
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+### The full thermal sublimation model
+
+The thermal diffusion model is straightforward and allowed fast computation of sublimation rate but is incomplete.
+A more complete model is then also implemented that include the sublimation timescale and a more accurate estimation of thermal diffusion inside bodies.
+
+The sublimation rate of the gas depends on the local temperature as (see [Kral et al 2021](https://ui.adsabs.harvard.edu/abs/2021A&A...653L..11K)) :
+
+
+$\dot{\rho}(T) = S P_{eq} \sqrt{\frac{m_{H_2O}}{2 \pi k_b T}}$
+
+_Equation 24 : The gas density production rate at a temperature T given by the sublimation timescale_
+
+where $S = 3(1 - \Psi) / r_p $ represents the total interstitial surface area for pores of radius $r_p$ and porosity $\Psi$.
+$P_{eq} = P_0 \exp{}\left[\frac{\mu h_{sub}}{k_b} \left(\frac{1}{T_0} - \frac{1}{T}\right)\right]$ is the equilibrium pressure that we take from the Clausius-Clapeyron law.
+$P_0$ is the pressure at the reference temperature $T_0$. And $h_{sub}$ stand for sublimation enthalpie.
+
+For water, for $T_0=373$ K, $P_0 = 10^5$ N.m$^{-2}$ and $h_{sub} = 2.78 \ 10^6 $ J.kg$^{-1}.$
+The parameters $r_p$ and $\Psi$ can be set inside the configuration dictionary `Phi` et `rp`.
+
+To get the local temperature T at a depth d of a bodie of size s, the thermal diffusion equation in spherical coordinate
+is integrated for bodies of different sizes by the `thermal_diff` function :
+
+$\frac{\partial T}{\partial t} = K \ \left( \frac{\partial^2 T}{\partial r_b} + \frac{1}{r_b} \frac{\partial T}{\partial r_b} \right)$
+
+_Equation 25 : The one-dimensional spherical thermal diffusion equation_
+
+$r_b$ is the radial coordinate inside the bodies. 
+The inner boundary condition (at the centre of the bodies, i.e. $r_b=0$) is set as the thermal flux is null.
+The outer boundary condition (at $r_b=\frac{s}{2}$) is set to $T(t, a_0) = 278 \ \left((1. - A) * \frac{L_*(t)}{L_\oplus}\right)^{1 / 4} \ \left(\frac{a_0}{au}\right) ^{-1 / 2}$
+which is the equilibrium temperature of a grey body of albedo A (A can be set in the configuration dictionary for each belt) at the arbitrary distance $a_0$ from the central star.
+To get the temperature at any other distance r from the central star, one simply have to multiply the whole result by $\left(\frac{r}{a_0}\right)^{-1/2}$ (this is equivalent to a change of variable $T^{'} = T \ \left(\frac{r}{a_0}\right)^{-1/2}$ in equation 25. The initial temperature is set sufficiently low that such multiplication would have negligible effect on it (the initial temperature will be smaller than the sublimation temperature around 140/160 K)).
+
+--------------------------------------------------------------------------------------------------------------------
+
+![Evolution of the temperature inside a 100 km body at 0.79 au from a 0.7 $M_\oplus$ star](graph_temp_100.png)
+
+_Figure 3 : Evolution of the temperature inside a 100 km body at 0.79 au from a 0.7 $M_\oplus$ star_
+
+-------------------------------------------------------------------------------------------------------------------
+
+This model is integrated for different sizes logarithmically spaced into a grid of size ITs_p.
+The gas production rate for each body at different distance from the central star is estimated using Equation 24.
+Since there is a limited amount of ice available to sublimate. The gas generation rate is set to 0 when this amount is reached.
+Finally, the gas surface density production rate $\dot{\Sigma}$ is then calculated using the number distribution of bodies inside the belt.
+This final table of $\dot{\Sigma}(r, t)$ is then interpolated at any time needed to solve the dynamical equation (15 and 20).
+
+
+--------------------------------------------------------------------------------------------------------------------
+
+![Evolution of the surface density source term for a belt centered at 0.79 au from a 0.7 $M_\oplus$ star](graph_sig_dot.png)
+
+_Figure 5 : Evolution of the surface density source term $\dot{\Sigma}$ for a belt centered at 0.79 au from a 0.7 $M_\oplus$ star_
+
+-------------------------------------------------------------------------------------------------------------------
+
+## Planetary accretion
+
+Planetary accretion of gas is modelled using two 2 * `dip` sink cells centred on the planet's semi-major axis. The number of sink cells remains fixed throughout the simulation.
+Each planet removes a fraction of the incoming mass flux : 
+
+$\dot{M}_{accr} = f_{accr} min(1, R_H / Hz) \Phi_{in}$
+
+:    where $R_H$ is the planet's Hill radius
+
+_Equation 26 : The accretion rate for a planet_  
+
+
+The accretion efficiency is set for the entire simulation and parameterises the short-timescale, three-dimensional hydrodynamic process that can limit accretion.
+If the planet's Hill radius is smaller than the disc scale height, then only a fraction of the incoming mass flux should be considered when estimating the accretion rate $\dot{M}_{accr}$ (see Figure 5).
+
+We do not expect the accretion efficiency to differ for different chemical species. This implies that, for each chemical species, we have: $\dot{\Sigma}_i = \omega_i \dot{\Sigma}$ which implies $\dot{\omega_i} = 0$. 
+
+----------------------------------------------------------------------------------------------------------------------
+
+![Shema mass flux](masse_flux_planet.png)
+
+_Figure 5: Schematic representation of the mass flux crossing the planet's orbit_
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+In practice, estimating the correct value of the flux arriving at the planet's interior is more difficult than it seems.
+Since there is an accretion width related to the number of sink cells, the gas needs time to diffuse inward from the outer boundary of the sink cell area to the planet. Using the flux at the outer boundary as the inner flux is not advisable, as this can lead to an overestimation of the accretion rate, resulting in negative surface densities at the planet's level and divergence in the code.
+It is also not possible to use the mass flux at the level of the planet, since the flux has already been altered by accretion at this level.
+In this model, we estimate the inner flux from the outer flux by assuming that the gas is in a steady state. This approximation underestimates the accretion rate, but does not lead to the numerical issues that arise with the mass flux at the outer limit.
+
+
+Finally, we modulate the accretion rate for the sink cells using a Gaussian distribution with a standard deviation of dip, normalised to achieve the desired accretion rate.
+
+
+## The photodissociation
+
+As the gas accretion by the planet does not need to be modelled in multi-species evolution equation (Equation 20) sin $\omega_i^{accr} = 0$,
+the photodissociation conserves the total mass and therefore $\dot{\Sigma} = 0$.
+
+We model this photodissociation by estimating the photodissociation timescale  which depends on the incident UV flux and the shielding by other molecules and the self-shielding.
+We get for water : 
+
+$\dot{\omega}_{H_2O}^{photo} = - \frac{\omega_{H_2O}}{t_{ph}^w}$
+
+$\dot{\omega}_{H}^{photo} = \frac{2 \mu_H}{\mu_{H_2O}} \frac{\omega_{H_2O}}{t_{ph}^w}$
+$\dot{\omega}_{O}^{photo} = \frac{\mu_O}{\mu_{H_2O}} \frac{\omega_{H_2O}}{t_{ph}^w}$
+
+_Equation 27 : The masse fraction photodissociation sink and source terms for water_
+
+
+And for the carbon monoxide : 
+
+$\dot{\omega}_{CO}^{photo} = - \frac{\omega_{CO}}{t_{ph}^{co}}$
+
+$\dot{\omega}_{C}^{photo} = \frac{\mu_C}{\mu_{CO}} \frac{\omega_{CO}}{t_{ph}^{co}}$
+$\dot{\omega}_{O}^{photo} = \frac{\mu_O}{\mu_{CO}} \frac{\omega_{CO}}{t_{ph}^{co}}$
+
+_Equation 28 : The masse fraction photodissociation sink and source terms for the carbon monoxide_
+
+### The photodissociation timescale for water
+
+We follow the same procedure as in [Kral et al. (2024)]((https://ui.adsabs.harvard.edu/abs/2024A%26A...692A..70K/abstract)) to estimate this photodissociation timescale :
+
+
+$t_{ph}^w = t_{ph}^f(r, t) \exp{\left(\frac{n_{H_2O} \ \mu_{H_2O}}{\Sigma_{crit}}\right)}$
+
+:  with $t_{ph}^f$ denoting the lifetime of a molecule in the absence of shielding and $n_{H_2O}$ denoting the number density of water molecules in the line of sight between the molecule and the photodissociation source. $\Sigma_{crit} = \frac{mu_{H_2O}}{\sigma_{H_2O}}$ is the surface density at which the optical depth $\tau_w = n_{H_2O} \sigma_w$ is equal to 1. $\sigma_{H_2O}$ is the water vapour photodissociation cross-section in the UV assumed to be a constant equal to $5 \ . \ 10^{-22}$ m$^2$.
+
+_Equation 29 : Water photodissociation timescale_
+
+This model has two photodissociation sources: the central star and the interstellar medium.
+The two photodissociation timescales are calculated separately and the resulting two values of $\dot{\omega}_i$ are summed.
+
+#### The interstellar medium contribution
+
+Interstellar radiation arrives from the top of the disc. We neglect projection effects due to the isotropy of interstellar radiation, meaning the result assumes the radiation arrives at the disc perpendicular to the midplane.
+Then $n_{H_2O}^{ISRF} = \frac{\Sigma_{H_2O}}{\mu{H_2O}}$.
+
+We use the interstellar spectrum in `ISRF.dat` and the water photodissociation cross-section in `H2O.txt` to estimate the free photodissociation timescale $t_{ph}^{f, w}$ :
+
+
+$t_{ph}^{f, ISRF} = \frac{1}{\int I(\lambda)_{ISRF} c_s d \lambda} \simeq 39  \ \mathrm{yr}$
+
+_Equation 30 : the water free photodissociation timescale_
+
+#### The central star contribution
+
+Evaluating the water number density is slightly more complex in this case, but we can obtain a good approximation using :
+
+
+$n_{H_2O} = \int_{r_{in}}^r \frac{\Sigma(R)}{\mu_{H_2O} \ H_z(R)} dR$
+
+_Equation 31 : The water number density at a radius r in the line of sight between the star and the molecule_
+
+An estimation of the free photodissociation timescale at a radis r and time t can be obtained like for the ISRF using the water photodissociation cross section and the star's spectrum :
+
+
+$t_{ph}^{f, *} = \frac{1}{\int L_*(\lambda, r, t) \sigma_w(\lambda) d \lambda}$
+
+:    with $L_*(\lambda, r, t) = \frac{2 \pi r H_z(r)}{\pi r^2} L_*(\lambda, t)$ is the light flux from the central star at a radius rand time t. 
+
+_Equation 32 : First estimation of the photodissociation timescale for a free water molecule at a distance r from the central star_ 
+
+
+Unfortunately, our simulations of star luminosity evolution don't provide a full spectrum for each time and each stars mass.
+However, we have a raw estimation of the flux in the UV (between 91.2 to 200 nm) $L_{UV}^*(t)$. 
+
+$ t_{ph}^{f \ *} \simeq \frac{h c}{\sigma_w L^*_{UV}(r, t) \Delta\lambda_{UV}}$
+
+
+_Equation 33 : Estimation of the photodissociation timescale for a free water molecule at a distance r from the central star_ 
+
+### The photodissociation timescale for the carbon monoxide
+
+Our model for the photodissociation is similar to the model of [Marino et al 2020](https://ui.adsabs.harvard.edu/abs/2020MNRAS.492.4409M), also used by us in [Huet at al 2025](https://ui.adsabs.harvard.edu/abs/2025A%26A...699A.278H/abstract).
+
+For the carbon monoxide, we neglect the effect of the central star on photodissociation, since the disc is usually much farther away than a secondary water gas disc and since the gas is much thicker in the radial direction meaning it is rapidly shielded.
+
+In our model, we assume that the carbon ionisation fraction is small. This assumption is more accurate for a massive disc than a smaller one.
+We model both the self-shielding and the shielding by the neutral carbon. 
+
+The photodissociation timescale is then :
+
+
+
+$t_{ph}^{co} = t_{ph}^f \frac{\exp{\left[ \frac{\Sigma_C}{\Sigma_{crit}}\right]}}{\Theta\left(\Sigma_{CO}\right)}$
+
+:    with $t_{ph}^f$ is the photodissociation timescale for a free molecule, $\Sigma_{crit}$ the critical surface density for the neutral carbon and $\Theta$ the self-shielding function
+
+_Equation 34 : The photodissociation timescale for a CO molecule_
+
+
+As with water, the photodissociation timescale for a free molecule can be calculated using the interstellar spectrum and the CO photodissociation cross-section.
+In the model, we take $t_{ph}^f=120$ yr.
+
+The critical surface density is defined in the same way as for water, as the surface density at which the optical depth is equal to one.
+We get $\Sigma_{crit} = 10^{-7} \ M_\oplus . au^{-2}$.
+
+Finally, the shielding function $\Theta$ is interpolated from the values calculated by [Visser et al 2009.](https://ui.adsabs.harvard.edu/abs/2009A&A...503..323V)
+
+# References
+
+- [Armitage, P. 2020, Astrophysics of planet formation, Second Edition](https://ui.adsabs.harvard.edu/abs/2020apfs.book.....A)    
+- [Charnoz, S., Pignatale, F. C., Hyodo, R., et al. 2019, A&A, 627, A50](https://ui.adsabs.harvard.edu/abs/2019A&A...627A..50C)
+- [Cui, C., Marino, S., Kral, Q., & Latter, H. 2024, MNRAS, 530, 1766 de Pater, I., Romani, P. N., & Atreya, S. K. 1991, Icarus, 91, 220](https://ui.adsabs.harvard.edu/abs/2024MNRAS.530.1766C)
+- [Huet, P., Kral, Q., Guillot, T. 2025 A&A, 699, A278](https://ui.adsabs.harvard.edu/abs/2025A%26A...699A.278H/abstract)
+- [Kral, Q. & Latter, H. 2016, MNRAS, 461, 1614](https://ui.adsabs.harvard.edu/abs/2016MNRAS.461.1614K)
+- [Kral, Q., Pringle, J. E., Guilbert-Lepoutre, A., et al. 2021, A&A, 653, L11](https://ui.adsabs.harvard.edu/abs/2021A&A...653L..11K)
+- [Kral, Q., Huet, P., Bergez-Casalou, C., et al. 2024, A&A, 692, A70](https://ui.adsabs.harvard.edu/abs/2024A%26A...692A..70K/abstract)
+- [Jiang, G.S., Shu, C.W., 1996 J. Comput. Phys](https://ui.adsabs.harvard.edu/abs/1996JCoPh.126..202J/abstract)
+- [Landau, L., Lifchitz, E. 1971 Mécanique des Fluides](http://archive.org/details/landau-lifchitz-physique-theorique-vol-06-mecanique-des-fluides-mir-1971)
+- [Lesur, GRJ. 2021 Magnetohydrodynamics of protoplanetary discs. Journal of Plasma Physics. ](https://www.cambridge.org/core/journals/journal-of-plasma-physics/article/magnetohydrodynamics-of-protoplanetary-discs/0557575DE812AAA9DD8324A5E6F6165A)
+- [Lynden-Bell, D. & Pringle, J. E. 1974, MNRAS, 168, 603](https://ui.adsabs.harvard.edu/abs/1974MNRAS.168..603L) 
+- [Löhne, T., Krivov, A. V., & Rodmann, J. 2008, ApJ, 673, 1123](https://ui.adsabs.harvard.edu/abs/2008ApJ...673.1123L/abstract) 
+- [Marino, S., Flock, M., Henning, T., et al. 2020, MNRAS, 492, 4409](https://ui.adsabs.harvard.edu/abs/2020MNRAS.492.4409M)
+- [Moór, A., Kral, Q., Ábrahám, P., et al. 2019, ApJ, 884, 108](https://ui.adsabs.harvard.edu/abs/2019ApJ...884..108M)
+- [Shakura, N. I. & Sunyaev, R. A. 1973, A&A, 24, 337](https://ui.adsabs.harvard.edu/abs/1973A&A....24..337S)
+- [Visser, R., van Dishoeck, E. F., & Black, J. H. 2009, A&A, 503, 323](https://ui.adsabs.harvard.edu/abs/2009A&A...503..323V)

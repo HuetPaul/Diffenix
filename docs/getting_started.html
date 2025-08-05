@@ -1,0 +1,625 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting started &mdash; Diffenix 0.0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/_static/custum.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=c99591c1"></script>
+      <script src="_static/doctools.js?v=888ff710"></script>
+      <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The model" href="The_model.html" />
+    <link rel="prev" title="Welcome to Diffenix’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #fcc40d" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Diffenix
+              <img src="_static/logo_diffenix.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#directory-and-data-needed-before-starting">Directory and data needed before starting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-directory-structure">The directory structure :</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-paths-txt-file">The paths.txt file</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#a-first-example">A first example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setting-up-a-new-simulation">Setting up a new simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-in-time">Integration in time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#diagnotics">Diagnotics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#surface-density">Surface density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#total-mass">Total mass</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mass-and-momentum-conservation">Mass and momentum conservation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mass-flux">Mass flux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-planet">The planet</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#an-asteroid-belt-with-a-constant-gas-mass-generation-rate">An asteroid belt with a constant gas mass generation rate</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-surface-density">The surface density</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-thermal-sublimations-models">The thermal sublimations models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-configuration-dictionary">The configuration dictionary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#default-unit-system">Default unit system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-luminosity-file">The luminosity file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="The_model.html">The model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="The_model.html#references">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diffenix.html">Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #fcc40d" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Diffenix</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/getting_started.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="getting-started">
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>You can install this library directly with pip:
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">phenigraph</span></code></p>
+<p>Alternatively, you can download it from GitLab, after which you will need to compile it.
+In the main folder, run the following command :</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">bdist_wheel</span></code></p>
+<p>The installation wheel file will be in the newly created ‘dist’ folder.
+To install the library in the local environment, use the following command:</p>
+<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">/path/to/wheelfile.whl</span></code></p>
+<section id="directory-and-data-needed-before-starting">
+<h3>Directory and data needed before starting<a class="headerlink" href="#directory-and-data-needed-before-starting" title="Link to this heading"></a></h3>
+<p>The library assumes that the working directory has a specific structure. You can change the reference directory and the location of necessary data files by creating a <code class="docutils literal notranslate"><span class="pre">paths.txt</span></code> file in the working directory.</p>
+<p>The necessary data are:</p>
+<ul class="simple">
+<li><p>The water cross-section which can be found on this <a class="reference external" href="https://home.strw.leidenuniv.nl/~ewine/photo/display_h2o_b89e91ccf14bfd7f485dd7be7d789b0a.html">page</a>:
+The file should be saved as <code class="docutils literal notranslate"><span class="pre">H2O.txt</span></code> in a directory called <code class="docutils literal notranslate"><span class="pre">Leiden_database</span></code>.
+The name and the location of this directory can be changed in the <code class="docutils literal notranslate"><span class="pre">paths.txt</span></code> file.</p></li>
+<li><p>The interstellar spectrum which can be found at this <a class="reference external" href="https://home.strw.leidenuniv.nl/~ewine/photo/radiation_fields.html">page</a>.
+The file should be saved as <code class="docutils literal notranslate"><span class="pre">ISRF.dat</span></code> in the <code class="docutils literal notranslate"><span class="pre">Leiden_database</span></code> directory
+Several radiations files are available on this page, the standard ISRF works fine for most cases.</p></li>
+<li><p>The luminosity data. These data are much more difficult to obtain since they must be produced by Stellar simulation codes such as <a class="reference external" href="https://www.ias.u-psud.fr/cesam2k20/">cesam2k20</a>. The structure of this file will be described in a dedicated section. Without such files, the luminosity will be assumed to be a constant <code class="docutils literal notranslate"><span class="pre">Ls</span></code> that can be set in a configuration dictionary (see later) and the water photodissociation due to the central star will not be modelled.</p></li>
+</ul>
+<section id="the-directory-structure">
+<h4>The directory structure :<a class="headerlink" href="#the-directory-structure" title="Link to this heading"></a></h4>
+<p>The main directory referred to as <code class="docutils literal notranslate"><span class="pre">racine</span></code> in the paths file is assumed to be the current working directory.
+It is assumed that this main file contains a directory named ‘Leiden_database’, which contains the ‘H2O.txt’ and ‘ISRF.dat’ files.
+If the user has data modelling the central star, it is assumed to be in a ‘data_star’ directory inside the main
+<code class="docutils literal notranslate"><span class="pre">racine</span></code> directory, in a .npz file called <code class="docutils literal notranslate"><span class="pre">data_fus.npz</span></code>.
+Finally, a ‘Results’ directory is needed to save the Sol objects.</p>
+</section>
+<section id="the-paths-txt-file">
+<h4>The paths.txt file<a class="headerlink" href="#the-paths-txt-file" title="Link to this heading"></a></h4>
+<p>If you don’t want to work inside the ‘racine’ directory or want the data to be organised differently, you can write a ‘paths.txt’ file.
+This file is structured as follows:
+One line stands for one directory.
+Each line starts with the name of the directory to be relocated; this can be ‘racine’, ‘Results’, ‘data_leiden’ or ‘data_stars’.
+Then a comma separates this name from the path to the new directory.</p>
+<p>Example: Reproduce the default structure.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">racine</span><span class="p">,</span><span class="o">.</span>
+<span class="n">results</span><span class="p">,</span><span class="o">./</span><span class="n">Results</span>
+<span class="n">data_leiden</span><span class="p">,</span><span class="o">./</span><span class="n">Leiden_database</span>
+<span class="n">data_stars</span><span class="p">,</span><span class="o">./</span><span class="n">data_stars</span><span class="o">/</span><span class="n">data_fus</span><span class="o">.</span><span class="n">npz</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="a-first-example">
+<h2>A first example<a class="headerlink" href="#a-first-example" title="Link to this heading"></a></h2>
+<p>In the following sections, we will assume that these libraries are imported with the following names:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">cumulative_trapezoid</span>
+<span class="kn">import</span> <span class="nn">phenigraph</span> <span class="k">as</span> <span class="nn">g</span>  <span class="c1"># To generate plots</span>
+<span class="kn">from</span> <span class="nn">diffenix</span> <span class="kn">import</span> <span class="n">time_integration</span> <span class="k">as</span> <span class="n">ti</span> <span class="c1"># Only the time_integration submodule is nedded for the user</span>
+</pre></div>
+</div>
+<p>All the information that characterises the system to be modelled, as well as information on the models used and numerical settings,
+should be included in a single dictionary. Examples of such dictionaries are included with the library and can be modified to fit the user’s needs.</p>
+<section id="setting-up-a-new-simulation">
+<h3>Setting up a new simulation<a class="headerlink" href="#setting-up-a-new-simulation" title="Link to this heading"></a></h3>
+<p>Let’s start with a disc that initially contains one Earth’s mass of hydrogen, with no asteroid belts or Kuiper belt, in a solar system-like system.
+This system contains one planet with the same mass as Earth, located one astronomical unit from its central star.
+To achieve this, let’s load the <code class="docutils literal notranslate"><span class="pre">sys_sol_ppd</span></code> configuration dictionary :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conf_dic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">ti</span><span class="o">.</span><span class="n">sys_sol_ppd</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">sys_sol_ppd</span></code> is defined as follows in the library:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sys_sol_ppd</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;racine&quot;</span><span class="p">:</span> <span class="n">racine</span><span class="p">,</span> <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">,</span>
+                     <span class="s2">&quot;C_L&quot;</span><span class="p">:</span> <span class="n">C_L</span><span class="p">,</span> <span class="s2">&quot;C_M&quot;</span><span class="p">:</span> <span class="n">C_M</span><span class="p">,</span> <span class="s2">&quot;C_t&quot;</span><span class="p">:</span> <span class="n">C_t</span><span class="p">,</span>
+                     <span class="s2">&quot;Ms&quot;</span><span class="p">:</span> <span class="n">Msun</span><span class="p">,</span> <span class="s2">&quot;Ts&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">5500.</span><span class="p">),</span> <span class="s2">&quot;Rs&quot;</span><span class="p">:</span> <span class="n">Rsun</span><span class="p">,</span> <span class="s2">&quot;Ls&quot;</span><span class="p">:</span> <span class="n">Lsun</span><span class="p">,</span>
+                     <span class="s2">&quot;a_in&quot;</span><span class="p">:</span> <span class="mf">.05</span> <span class="o">*</span> <span class="n">au</span><span class="p">,</span> <span class="s2">&quot;a_out&quot;</span><span class="p">:</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">au</span><span class="p">,</span> <span class="s2">&quot;a0&quot;</span><span class="p">:</span> <span class="mf">2.65</span> <span class="o">*</span> <span class="n">au</span><span class="p">,</span>
+                     <span class="s2">&quot;T0&quot;</span><span class="p">:</span> <span class="n">T0</span><span class="p">,</span> <span class="s2">&quot;pls_temp&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="s2">&quot;mH_init&quot;</span><span class="p">:</span> <span class="n">Mearth</span><span class="p">,</span>
+                     <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">),</span> <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.</span><span class="p">),</span>
+                     <span class="s2">&quot;AB_mdot_st_init&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-10</span><span class="p">)</span> <span class="o">*</span> <span class="n">Mearth</span> <span class="o">/</span> <span class="n">Myr</span><span class="p">,</span>
+                     <span class="s2">&quot;AB_Mbelt&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.12</span><span class="p">)</span> <span class="o">*</span> <span class="n">Mearth</span><span class="p">,</span>
+                     <span class="s2">&quot;AB_Abelt&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.06</span><span class="p">),</span>
+                     <span class="s2">&quot;AB_a0&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">2.65</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="p">,</span> <span class="s2">&quot;AB_delta_r&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">2.65</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="p">,</span>
+                     <span class="s2">&quot;AB_K&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-5</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">/</span> <span class="n">C_t</span><span class="p">),</span> <span class="s2">&quot;AB_Phi&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.6</span><span class="p">),</span>
+                     <span class="s2">&quot;AB_rp&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-6</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">),</span>
+                     <span class="s2">&quot;AB_f_ice&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.2</span><span class="p">),</span> <span class="s2">&quot;AB_rho_refr&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">2.5e3</span> <span class="o">*</span> <span class="n">C_M</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">)),</span>
+                     <span class="s2">&quot;AB_rho_ice&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.e3</span> <span class="o">*</span> <span class="n">C_M</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">)),</span> <span class="s2">&quot;AB_sublimation_model&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+                     <span class="s2">&quot;AB_const_mdot&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-1</span><span class="p">)</span> <span class="o">*</span> <span class="n">Mearth</span> <span class="o">/</span> <span class="n">Myr</span><span class="p">,</span>
+                     <span class="s2">&quot;AB_SD_amax&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.e6</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span> <span class="s2">&quot;AB_SD_abig&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">120e3</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span>
+                     <span class="s2">&quot;AB_SD_amed&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">20.e3</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span> <span class="s2">&quot;AB_SD_amin&quot;</span><span class="p">:</span> <span class="n">C_L</span><span class="p">,</span>
+                     <span class="s2">&quot;AB_SD_qh&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">4.5</span><span class="p">),</span> <span class="s2">&quot;AB_SD_qm&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">),</span> <span class="s2">&quot;AB_SD_ql&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">3.6</span><span class="p">),</span>
+                     <span class="s2">&quot;AB_sb&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mi">316</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span> <span class="s2">&quot;AB_e&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.075</span><span class="p">),</span> <span class="s2">&quot;AB_i&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.075</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">),</span>
+                     <span class="s2">&quot;AB_As&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">5.</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_E</span> <span class="o">/</span> <span class="n">C_M</span><span class="p">,</span> <span class="s2">&quot;AB_bs&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">),</span> <span class="s2">&quot;AB_bg&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+                     <span class="s2">&quot;AB_t0_diss&quot;</span><span class="p">:</span> <span class="mi">150</span> <span class="o">*</span> <span class="n">Myr</span><span class="p">,</span> <span class="s2">&quot;AB_t1_diss&quot;</span><span class="p">:</span> <span class="n">Myr</span><span class="p">,</span>
+                     <span class="s2">&quot;KB_mdot_st_init&quot;</span><span class="p">:</span> <span class="n">zero</span><span class="p">,</span>
+                     <span class="s2">&quot;KB_Mbelt&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.01</span> <span class="o">*</span> <span class="n">Mearth</span><span class="p">),</span> <span class="s2">&quot;KB_Abelt&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.06</span><span class="p">),</span>
+                     <span class="s2">&quot;KB_a0&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mi">44</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="p">,</span> <span class="s2">&quot;KB_delta_r&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="p">,</span>
+                     <span class="s2">&quot;KB_K&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-10</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">/</span> <span class="n">C_t</span><span class="p">),</span> <span class="s2">&quot;KB_Phi&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.6</span><span class="p">),</span>
+                     <span class="s2">&quot;KB_rp&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-6</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">),</span>
+                     <span class="s2">&quot;KB_f_ice&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.2</span><span class="p">),</span> <span class="s2">&quot;KB_rho_refr&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">2.5e3</span> <span class="o">*</span> <span class="n">C_M</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">)),</span>
+                     <span class="s2">&quot;KB_rho_ice&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.e3</span> <span class="o">*</span> <span class="n">C_M</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">)),</span> <span class="s2">&quot;KB_sublimation_model&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+                     <span class="s2">&quot;KB_const_mdot&quot;</span><span class="p">:</span> <span class="n">zero</span><span class="p">,</span>
+                     <span class="s2">&quot;KB_SD_amax&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.e6</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span> <span class="s2">&quot;KB_SD_abig&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">120e3</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span>
+                     <span class="s2">&quot;KB_SD_amed&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">20.e3</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span> <span class="s2">&quot;KB_SD_amin&quot;</span><span class="p">:</span> <span class="n">C_L</span><span class="p">,</span>
+                     <span class="s2">&quot;KB_SD_qh&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">4.5</span><span class="p">),</span> <span class="s2">&quot;KB_SD_qm&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">),</span> <span class="s2">&quot;KB_SD_ql&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">3.6</span><span class="p">),</span>
+                     <span class="s2">&quot;KB_sb&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mi">316</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span> <span class="s2">&quot;KB_e&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.075</span><span class="p">),</span> <span class="s2">&quot;KB_i&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.075</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">),</span>
+                     <span class="s2">&quot;KB_As&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">5.</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_E</span> <span class="o">/</span> <span class="n">C_M</span><span class="p">,</span> <span class="s2">&quot;KB_bs&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">),</span> <span class="s2">&quot;KB_bg&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+                     <span class="s2">&quot;KB_t0_diss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">10.</span><span class="p">)</span> <span class="o">*</span> <span class="n">Gyr</span><span class="p">,</span> <span class="s2">&quot;KB_t1_diss&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">10.</span><span class="p">)</span> <span class="o">*</span> <span class="n">Gyr</span><span class="p">,</span>
+                     <span class="s2">&quot;a_planets&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">au</span><span class="p">]),</span> <span class="s2">&quot;m_planets&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Mearth</span><span class="p">]),</span> <span class="s2">&quot;f_accr&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+                     <span class="s2">&quot;t0&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">5.</span> <span class="o">*</span> <span class="n">Myr</span><span class="p">),</span>
+                     <span class="s2">&quot;IT_s&quot;</span><span class="p">:</span> <span class="mi">3000</span><span class="p">,</span> <span class="s2">&quot;dip&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;rtol&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">),</span> <span class="s2">&quot;atol&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-250</span><span class="p">),</span> <span class="s2">&quot;method_root&quot;</span><span class="p">:</span> <span class="s1">&#39;RK45&#39;</span><span class="p">,</span>
+                     <span class="p">}</span>
+
+</pre></div>
+</div>
+</section>
+<section id="integration-in-time">
+<h3>Integration in time<a class="headerlink" href="#integration-in-time" title="Link to this heading"></a></h3>
+<p>Then let’s start our first simulation!</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sol</span><span class="p">:</span> <span class="n">ti</span><span class="o">.</span><span class="n">Sol</span> <span class="o">=</span> <span class="n">ti</span><span class="o">.</span><span class="n">time_integration</span><span class="p">(</span><span class="n">tf</span><span class="o">=</span> <span class="n">ti</span><span class="o">.</span><span class="n">Myr</span><span class="p">,</span> <span class="n">save_time_step</span><span class="o">=</span><span class="mf">0.1</span><span class="o">*</span><span class="n">ti</span><span class="o">.</span><span class="n">Myr</span><span class="p">,</span><span class="n">consts_params</span><span class="o">=</span><span class="n">configs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The evolution of the disc is modelled from an initial time of zero to a final time of one million years, t_f.
+The initial time is defined as the point at which the protoplanetary disc dissipates.
+This can be set relative to the star’s lifetime in the configuration dictionary via the “t0” parameter.
+This is only useful where luminosity data are provided for the central star.</p>
+<p>The result is saved in a dedicated Sol object, sol.
+If the integration stops before the end of the integration time tf, the data will not be lost.
+This object is automatically saved to the ‘Results’ directory at each 0.1 Myr time step.
+As there is no <code class="docutils literal notranslate"><span class="pre">Simulation</span></code> entry in the configuration dictionary, the simulation’s name is generated
+automatically and is displayed when the integration begins.
+If the code is run for the first time, it should be ‘Simulation_1’. The number will then increase for each new simulation.
+A new directory with the name of the simulation should have been created inside the ‘Results’ directory.
+The .npz file containing the Sol object is located inside this directory and is named Simulation_diffusion.npz.</p>
+<p>To reload this simulation, follow these steps:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sol</span> <span class="o">=</span> <span class="n">ti</span><span class="o">.</span><span class="n">Sol</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;Simulation_diffusion&quot;</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="n">ti</span><span class="o">.</span><span class="n">results</span><span class="o">+</span><span class="s2">&quot;/Simulation_1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="diagnotics">
+<h3>Diagnotics<a class="headerlink" href="#diagnotics" title="Link to this heading"></a></h3>
+<section id="surface-density">
+<h4>Surface density<a class="headerlink" href="#surface-density" title="Link to this heading"></a></h4>
+<p>All diagnostics can be run for this simulation.
+Let’s begin with the surface density. The Sol object has a specific method that generates a <a class="reference external" href="https://huetpaul.github.io/PheniGraph/">Graphique</a> representing the surface density at different times as a function of the distance to the central star :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">graph_surface_density</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ppd_surface_density.png" /></p>
+<p>The argument ‘save=True’ means that the graph and the PNG image will be saved in the simulation directory.
+If you want to save the <a class="reference external" href="https://huetpaul.github.io/PheniGraph/">Graphique</a> under a different name or in a different location, you can do so by entering the desired name and location :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">graph_surface_density</span><span class="p">()</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;you_new_name&quot;</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="s2">&quot;your directory&quot;</span> <span class="c1"># To save the plot in the current working directory, one can comment this line</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> <span class="c1"># A png image of 100 dpi will be saved</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="c1"># The Graphique object will be saved to be reused (and modified if needed) later</span>
+</pre></div>
+</div>
+</section>
+<section id="total-mass">
+<h4>Total mass<a class="headerlink" href="#total-mass" title="Link to this heading"></a></h4>
+<p>It is also possible to access the total disc mass as a function of time :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">tps</span> <span class="o">/</span> <span class="n">ti</span><span class="o">.</span><span class="n">Myr</span><span class="p">,</span> <span class="n">sol</span><span class="o">.</span><span class="n">total_mass</span><span class="p">()</span> <span class="o">/</span> <span class="n">ti</span><span class="o">.</span><span class="n">Mearth</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># Creation of the Graphique</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">config_ax</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time [Myr]&quot;</span><span class="p">,</span> <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Total mass [M$_\oplus$]&quot;</span><span class="p">)</span> <span class="c1"># Setting label for x and y axis</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">show</span><span class="p">()</span> <span class="c1"># Show the plot</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;Total_mass&quot;</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">directory</span> <span class="c1"># To save the plot in the current working directory, one can comment this line</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> <span class="c1"># A png image of 100 dpi will be saved</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="c1"># The Graphique object will be saved to be reused (and modified if needed) later</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ppd_total_mass.png" /></p>
+</section>
+<section id="mass-and-momentum-conservation">
+<h4>Mass and momentum conservation<a class="headerlink" href="#mass-and-momentum-conservation" title="Link to this heading"></a></h4>
+<p>To save memory, the saved timesteps can be larger than the real timesteps.
+However, the values used for diagnostics are saved at each real timestep in order to control mass and momentum conservation :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">diag</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">ti</span><span class="o">.</span><span class="n">Myr</span><span class="p">,</span> <span class="p">[</span><span class="n">sol</span><span class="o">.</span><span class="n">mass_conservation</span><span class="p">(),</span> <span class="n">sol</span><span class="o">.</span><span class="n">momentum_conservation</span><span class="p">()],</span>
+              <span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Masse conservation&quot;</span><span class="p">,</span> <span class="s2">&quot;Momentum conservation&quot;</span><span class="p">],</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># Creation of the Graphique</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">config_ax</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time [Myr]&quot;</span><span class="p">,</span> <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Relative variations&quot;</span><span class="p">)</span> <span class="c1"># Setting label for x and y axis</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">show</span><span class="p">()</span> <span class="c1"># Show the plot</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;Mass_conservation&quot;</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">directory</span> <span class="c1"># To save the plot in the current working directory, one can comment this line</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> <span class="c1"># A png image of 100 dpi will be saved</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="c1"># The Graphique object will be saved to be reused (and modified if needed) later</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ppd_mass_momentum_conservation.png" /></p>
+</section>
+<section id="mass-flux">
+<h4>Mass flux<a class="headerlink" href="#mass-flux" title="Link to this heading"></a></h4>
+<p>It is possible to get the mass flux for an index i of <code class="docutils literal notranslate"><span class="pre">sol.tps</span></code>. Let’s plot the last one at one million years:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span> <span class="o">=</span> <span class="n">gr</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="p">[</span><span class="n">sol</span><span class="o">.</span><span class="n">mass_flux</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="n">sol</span><span class="o">.</span><span class="n">mass_flux</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)],</span> <span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;&gt;0&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;0&quot;</span><span class="p">],</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="c1"># Creation of the Graphique</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">config_ax</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Distance to the central star [au]&quot;</span><span class="p">,</span> <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Mass flux [M$_\oplus$ / Myr]&quot;</span><span class="p">)</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">show</span><span class="p">()</span> <span class="c1"># Show the plot</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;mass_flux&quot;</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">directory</span> <span class="c1"># To save the plot in the current working directory, one can comment this line</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> <span class="c1"># A png image of 100 dpi will be saved</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="c1"># The Graphique object will be saved to be reused (and modified if needed) later</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ppd_mass_flux.png" /></p>
+<p>As can be seen, there is no outer flux. The boundary condition implies that the outer flux is zero.
+There is a sharp decrease in the mass flux in the inner part of the system due to the planet’s accretion of gas.
+This can be confirmed by plotting a grey-shaded area on the planet’s sink cells :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sol</span><span class="o">.</span><span class="n">add_planets_to_graph</span><span class="p">(</span><span class="n">gr</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> <span class="c1"># A png image of 100 dpi will be saved</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="c1"># The Graphique object will be saved to be reused (and modified if needed) later</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ppd_mass_flux2.png" /></p>
+<p>Similar plots can be done for the radial velocity.</p>
+</section>
+<section id="the-planet">
+<h4>The planet<a class="headerlink" href="#the-planet" title="Link to this heading"></a></h4>
+<p>In addition to the diagnostic values saved at each timestep, the mass flux at the outer and inner areas of the sink cells of the planet are saved. The accretion rate and the final accreted mass can be deduced from these values.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">diag</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">flux_planets</span><span class="p">)[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">flux_planets</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]],</span> 
+<span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Inner flux&quot;</span><span class="p">,</span> <span class="s2">&quot;Outer flux&quot;</span><span class="p">],</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">config_ax</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time [Myr]&quot;</span><span class="p">,</span> <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Mass flux [M$_\oplus$ / Myr]&quot;</span><span class="p">)</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;planet_mass_flux&quot;</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> <span class="c1"># A png image of 100 dpi will be saved</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="c1"># The Graphique object will be saved to be reused (and modified if needed) later</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ppd_planet_mass_flux.png" /></p>
+<p>The shape of <code class="docutils literal notranslate"><span class="pre">sol.flux_planets</span></code> is <code class="docutils literal notranslate"><span class="pre">(len(sol.tps),</span> <span class="pre">2,</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">planets)</span></code>.
+Then we can get an estimation of the accreted mass onto the planet as a function of time :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">diag</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">],</span> <span class="n">ti</span><span class="o">.</span><span class="n">cumulative_trapezoid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">flux_planets</span><span class="p">)[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+                                                      <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">flux_planets</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> 
+                                                      <span class="n">sol</span><span class="o">.</span><span class="n">diag</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">],</span> <span class="n">initial</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span> <span class="o">/</span> <span class="n">ti</span><span class="o">.</span><span class="n">Mearth</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">config_ax</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time [Myr]&quot;</span><span class="p">,</span> <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Accreted mass [M$_\oplus$]&quot;</span><span class="p">)</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;Simulation_ppd_planet_mass&quot;</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ppd_planet_mass.png" /></p>
+</section>
+</section>
+</section>
+<section id="an-asteroid-belt-with-a-constant-gas-mass-generation-rate">
+<h2>An asteroid belt with a constant gas mass generation rate<a class="headerlink" href="#an-asteroid-belt-with-a-constant-gas-mass-generation-rate" title="Link to this heading"></a></h2>
+<p>The previous simulation was initialised with a given mass of hydrogen and no further mass was produced. There was also only one molecular species.
+However, this code can model the evolution of multiple chemical species, from their production at the asteroid belt to their photodissociation.
+Let’s start with a simple case involving a constant gas production rate at the asteroid belt level, using the same system as before.
+After the evolution of the total surface density, the evolution of the mass fraction of each chemical species is integrated and saved at different times.
+To avoid divergence in the numerical integration of this second set of equations, it is recommended that the simulation is initialised with a small amount of water.
+This is controlled by the ‘AB_mdot_st_init’ parameter in the configuration dictionary.
+The system is initialised with a steady-state water gas disc and a gas generation rate of AB_mdot_st_init.
+In this simulation, there is no primordial hydrogen remaining.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">configs</span><span class="o">=</span><span class="n">ti</span><span class="o">.</span><span class="n">sys_sol_ast</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">configs</span><span class="p">[</span><span class="s2">&quot;AB_sublimation_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constant_rate&quot;</span>  
+<span class="n">configs</span><span class="p">[</span><span class="s2">&quot;AB_mdot_st_init&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-10</span><span class="p">)</span> <span class="o">*</span> <span class="n">ti</span><span class="o">.</span><span class="n">Mearth</span> <span class="o">/</span> <span class="n">ti</span><span class="o">.</span><span class="n">Myr</span> <span class="c1"># setting the initial state</span>
+
+<span class="n">sol</span> <span class="o">=</span> <span class="n">ti</span><span class="o">.</span><span class="n">time_integration</span><span class="p">(</span><span class="n">tf</span><span class="o">=</span> <span class="n">ti</span><span class="o">.</span><span class="n">Myr</span><span class="p">,</span> <span class="n">save_time_step</span><span class="o">=</span><span class="mf">0.1</span><span class="o">*</span><span class="n">ti</span><span class="o">.</span><span class="n">Myr</span><span class="p">,</span> <span class="n">consts_params</span><span class="o">=</span><span class="n">configs</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="the-surface-density">
+<h3>The surface density<a class="headerlink" href="#the-surface-density" title="Link to this heading"></a></h3>
+<p>Since there are multiple species, the <code class="docutils literal notranslate"><span class="pre">graph_surface_density</span></code> is a bit more difficult to read</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">graph_surface_density</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ab1_surface_density.png" /></p>
+<p>But it’s possible to only plot the water and neutral oxygen (the behavior of neutral hydrogen is very similar to neutral oxygen).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">graph_surface_density</span><span class="p">(</span><span class="n">species</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;H2O&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">],</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">config_ax</span><span class="p">(</span><span class="n">ylim</span><span class="o">=</span><span class="p">[</span><span class="mf">1e-15</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;Surface_density&quot;</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">directory</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="n">gr</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ab1_surface_density2.png" /></p>
+<p>The species names are all in capital letters and can be found in sol.nom_mu.</p>
+<p>To gain a better understanding of how the surface density has changed over time, you can also use a second type of plot :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gr_tot</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">image_surface_density</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># For the total surface density</span>
+<span class="n">gr_tot</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">image_surface_density</span><span class="p">(</span><span class="s2">&quot;H2O&#39;, save=True, show=True, cmap=&quot;</span><span class="n">default</span><span class="s2">&quot;, color_min=g.C1,</span>
+                                   <span class="n">color_max</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">C2</span><span class="p">)</span> <span class="c1"># For the water surface density</span>
+<span class="n">gr_tot</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">image_surface_density</span><span class="p">(</span><span class="s2">&quot;O&#39;, save=True, show=True, plot_sigma_crit=False, cmap=&quot;</span><span class="n">default</span><span class="s2">&quot;, </span>
+                                   <span class="n">color_min</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">C17</span><span class="p">,</span> <span class="n">color_max</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">C13</span><span class="p">)</span> <span class="c1"># For the oxygen surface density</span>
+</pre></div>
+</div>
+<p><img alt="result" src="_images/Simulation_ab1_Image_total_surface_density.png" />
+<img alt="result" src="_images/Simulation_ab1_Image_H2O_surface_density.png" />
+<img alt="result" src="_images/Simulation_ab1_Image_O_surface_density.png" /></p>
+<p>These plots can be used to evaluate changes in surface density over time, such as those in the neutral oxygen levels.
+For example, it is produced at the beginning of the simulation until the critical surface density is reached. It is produced at the beginning of the simulation until the critical surface density is reached.
+Then the surface density of neutral oxygen decreases.
+You can choose a Matplotlib colour bar; the default is <code class="docutils literal notranslate"><span class="pre">inferno</span></code>. You can also build a custom color bar.
+from the colour minimum to the colour maximum (the cmap parameter should be set to default).
+See the <a class="reference external" href="https://huetpaul.github.io/PheniGraph/">Phenigraph</a> documentation for more information.</p>
+</section>
+</section>
+<section id="the-thermal-sublimations-models">
+<h2>The thermal sublimations models<a class="headerlink" href="#the-thermal-sublimations-models" title="Link to this heading"></a></h2>
+<p>There are different models for the gas generation rate. There are two based on the gas sublimation by thermal heating.
+The first and the simple one is referred in the configuration dictionary to be <code class="docutils literal notranslate"><span class="pre">&quot;thermal_diff&quot;</span></code>.
+This model assumes that the sublimation timescale and gas diffusion into the asteroid or KBO is negligible too.
+It only evaluates the mass generation rate by the thermal diffusion timescale set by the thermal diffusion coefficient K
+in the configuration dictionary (<code class="docutils literal notranslate"><span class="pre">AB_K</span></code> and <code class="docutils literal notranslate"><span class="pre">KB_K</span></code> for the asteroid belt and the Kuiper belt respectively)</p>
+<p>Let model a young Kuiper belt similar to the one of <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2025arXiv250603412H/abstract">huet et al 2025</a> :
+In this simulation, only CO in produced at the Kuiper belt level</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">configs</span><span class="o">=</span><span class="n">ti</span><span class="o">.</span><span class="n">sys_sol_kuip</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">configs</span><span class="p">[</span><span class="s2">&quot;KB_sublimation_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;thermal_diff&quot;</span>  
+
+<span class="n">sol</span> <span class="o">=</span> <span class="n">ti</span><span class="o">.</span><span class="n">time_integration</span><span class="p">(</span><span class="n">tf</span><span class="o">=</span> <span class="mi">50</span> <span class="o">*</span> <span class="n">ti</span><span class="o">.</span><span class="n">Myr</span><span class="p">,</span> <span class="n">save_time_step</span><span class="o">=</span><span class="n">ti</span><span class="o">.</span><span class="n">Myr</span><span class="p">,</span> <span class="n">consts_params</span><span class="o">=</span><span class="n">configs</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-configuration-dictionary">
+<h2>The configuration dictionary<a class="headerlink" href="#the-configuration-dictionary" title="Link to this heading"></a></h2>
+<p>Here, we introduce each value needed to build the configuration dictionary. Best practice is to adapt one of the default configuration dictionaries, such as sys_sol_ast, sys_sol_ast_kuip or sys_sol_appd, to your needs, rather than rebuilding a new one from scratch.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">racine</span></code> → the path to the racine directory</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">results</span></code>→ the path to the subdirectory result</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">C_L</span></code>:  np.float64 → the length conversion unit (cannot be different of the global value (see the <a class="reference internal" href="#Default-unit-system"><span class="xref myst">Default unit system</span></a> subsection to modify the global system of unit))</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">C_M</span></code>:  np.float64 → the mass conversion unit (cannot be different of the global value (see the <a class="reference internal" href="#Default-unit-system"><span class="xref myst">Default unit system</span></a> subsection to modify the global system of unit))</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">C_t</span></code>:  np.float64 → the time conversion unit (cannot be different of the global value (see the <a class="reference internal" href="#Default-unit-system"><span class="xref myst">Default unit system</span></a> subsection to modify the global system of unit))</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Ms</span></code>: np.float64 → The central star’s mass</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Ts</span></code>: np.float64 → The central star’s surface temperature (will be ignored if luminosity datas are provided)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Rs</span></code>: np.float64 → The central star’s radius (will be ignored if luminosity datas are provided)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Ls</span></code>: np.float64 → The central star’s luminosity (will be ignored if luminosity datas are provided)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a_in</span></code>: np.float64 → The inner boundary of the integration domain</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a_out</span></code>: np.float64 → The outer boundary of the integration domain</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a0</span></code>: np.float64 → The radius used for the primordial hydrogen distribution (assumed to be the steady state centered on a0)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">T0</span></code>: np.float64 → the temperature at a0 (will be ignored if luminosity datas are provided)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pls_temp</span></code>: np.float64 → the temperature radial power slope</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mH_init</span></code>: np.float64 → The initial mass of primordial hydrogen</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code>: np.float64 → The viscous parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code>: np.float64 → The adiabatic constant</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_mdot_st_init</span></code>: np.float64 → The initial steady state mass generation rate for the asteroid belt</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_Mbelt</span></code>: np.float64 → The total asteroid belt’s mass</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_Abelt</span></code>: np.float64 → The asteroids albedo</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_a0</span></code>: np.float64 → The mean semi-major axis of the asteroid belt</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_delta_r</span></code>: np.float64 → The half radial width of the asteroid belt (the belt extend from AB_a0 - AB_delta_r ti AB_a0 + AB_delta_r, be carful that the inner and outer bondary of the integration domain is smaller / larger than the inner / outer limit of the belt (i.e. a_in &lt; AB_a0 - AB_delta_r and  AB_a0 + AB_delta_r &lt; a_out).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_K</span></code>: np.float64 → The thermal diffusivity in asteroids (dimension: <span class="math notranslate nohighlight">\([L]^2 . [T]^{-1}\)</span>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_Phi</span></code>: np.float64 → The asteroids porosity (no dimensions)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_rp</span></code>:  np.float64 → The pore’s radius for asteroids</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_f_ice</span></code>: np.float64 → The ice to refractory mass ratio for asteroids (no dimensions)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_rho_refr</span></code>: np.float64 → The density of refractory materials for asteroids (dimension: <span class="math notranslate nohighlight">\([M] . [L]{-3}\)</span>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_rho_ice</span></code>: np;float64 → The ice density for asteroids (dimension: <span class="math notranslate nohighlight">\([M] . [L]{-3}\)</span>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_sublimation_model</span></code>: str → The sublimation model, can be <code class="docutils literal notranslate"><span class="pre">none</span></code>, <code class="docutils literal notranslate"><span class="pre">constant_rate</span></code>, <code class="docutils literal notranslate"><span class="pre">thermal_diffusion</span></code> or <code class="docutils literal notranslate"><span class="pre">thermal_full</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_const_mdot</span></code>: np.float64 → The mass generation rate for the<code class="docutils literal notranslate"><span class="pre">constant_rate</span></code> sublimation level</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_SD_amax</span></code>: np.float64 → The sizes used for the size distribution of asteroid belt (maximum size)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_SD_abig</span></code>: np.float64 → The sizes used for the size distribution of asteroid belt</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_SD_amed</span></code>: np.float64 → The sizes used for the size distribution of asteroid belt</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_SD_amin</span></code>: np.float64 → The sizes used for the size distribution of asteroid belt (minimum size)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_SD_qh</span></code>: np.float64 → The power slope of size distribution between <code class="docutils literal notranslate"><span class="pre">AB_SD_amax</span></code> and <code class="docutils literal notranslate"><span class="pre">AB_SD_big</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_SD_qm</span></code>: np.float64 → The power slope of size distribution between <code class="docutils literal notranslate"><span class="pre">AB_SD_big</span></code> and <code class="docutils literal notranslate"><span class="pre">AB_SD_med</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_SD_ql</span></code>: np.float64 → The power slope of size distribution between <code class="docutils literal notranslate"><span class="pre">AB_SD_med</span></code> and <code class="docutils literal notranslate"><span class="pre">AB_SD_min</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_sb</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_e</span></code>: np.float64 → Asteroids mean eccentricity (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_i</span></code>: np.float64 → Asteroids mean inclination (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_As</span></code>: np.float64 → Asteroids minimum massic disruption energy (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model) (dimension <span class="math notranslate nohighlight">\([L]^2 . [T]^{-2}\)</span>), see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2008ApJ...673.1123L/abstract">Löhne et al. 2008</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_bs</span></code>: np.float64 → Slope of asteroids massic disruption energy (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model) (no dimension), see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2008ApJ...673.1123L/abstract">Löhne et al. 2008</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_bg</span></code>: np.float64 → Slope of asteroids massic disruption energy (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model) (no dimension), see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2008ApJ...673.1123L/abstract">Löhne et al. 2008</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_t0_diss</span></code>: np.float64 → Asteroid belt lifetime before starting being disrupted</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AB_t1_diss</span></code>: np.float64 → Asteroid belt disruption timescale</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_mdot_st_init</span></code>: np float64 → The initial steady state mass generation rate for the Kuiper belt</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_Mbelt</span></code>: np.float64 → The total kuiper belt’s mass</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_Abelt</span></code>: np.float64 → KBO’s albedo (no dimension)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_a0</span></code>: np.float64 → The mean semi-major axis of the Kuiper belt</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_delta_r</span></code>: np.float64 → The half radial width of the Kuiper belt (the belt extend from KB_a0 - KB_delta_r ti KB_a0 + KB_delta_r, be carful that the inner and outer bondary of the integration domain is smaller / larger than the inner / outer limit of the belt (i.e. a_in &lt; KB_a0 - KB_delta_r and  KB_a0 + KB_delta_r &lt; a_out).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_K</span></code>: np.float64 → The thermal diffusivity in Kuiper Belt’s object (dimension: <span class="math notranslate nohighlight">\([L]^2 . [T]^{-1}\)</span>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_Phi</span></code>: np.float64 → The KBO’s porosity (no dimensions)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_rp</span></code>:  np.float64 → The pore’s radius for KBO</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_f_ice</span></code>: np.float64 → The ice to refractory mass ratio for KBO (no dimensions)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_rho_refr</span></code>: np.float64 → The density of refractory materials for KBOs (dimension: <span class="math notranslate nohighlight">\([M] . [L]{-3}\)</span>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_rho_ice</span></code>: np.float64 → The density of CO ice for KBOs (dimension: <span class="math notranslate nohighlight">\([M] . [L]{-3}\)</span>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_sublimation_model</span></code>: str → The sublimation model, can be <code class="docutils literal notranslate"><span class="pre">none</span></code>, <code class="docutils literal notranslate"><span class="pre">constant_rate</span></code>, <code class="docutils literal notranslate"><span class="pre">thermal_diffusion</span></code> or <code class="docutils literal notranslate"><span class="pre">thermal_full</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_const_mdot</span></code>: np.float64 → The mass generation rate for the<code class="docutils literal notranslate"><span class="pre">constant_rate</span></code> sublimation level</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_SD_amax</span></code>: np.float64 → The sizes used for the size distribution of kuiper belt (maximum size)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_SD_abig</span></code>: np.float64 → The sizes used for the size distribution of kuiper belt</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_SD_amed</span></code>: np.float64 → The sizes used for the size distribution of kuiper belt</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_SD_amin</span></code>: np.float64 → The sizes used for the size distribution of kuiper belt (minimum size)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_SD_qh</span></code>: np.float64 → The power slope of size distribution between <code class="docutils literal notranslate"><span class="pre">AB_SD_amax</span></code> and <code class="docutils literal notranslate"><span class="pre">AB_SD_big</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_SD_qm</span></code>: np.float64 → The power slope of size distribution between <code class="docutils literal notranslate"><span class="pre">AB_SD_big</span></code> and <code class="docutils literal notranslate"><span class="pre">AB_SD_med</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_SD_ql</span></code>: np.float64 → The power slope of size distribution between <code class="docutils literal notranslate"><span class="pre">AB_SD_med</span></code> and <code class="docutils literal notranslate"><span class="pre">AB_SD_min</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_sb</span></code>:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_e</span></code>: np.float64 → KBOs mean eccentricity (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_i</span></code>: np.float64 → KBOs mean inclination (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_As</span></code>:  np.float64 → KBOs minimum massic disruption energy (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model) (dimension <span class="math notranslate nohighlight">\([L]^2 . [T]^{-2}\)</span>), see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2008ApJ...673.1123L/abstract">Löhne et al. 2008</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_bs</span></code>: np.float64 → Slope of KBOs massic disruption energy (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model) (no dimension), see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2008ApJ...673.1123L/abstract">Löhne et al. 2008</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_bg</span></code>: np.float64 → Slope of KBOs massic disruption energy (used by the <code class="docutils literal notranslate"><span class="pre">collisions</span></code> sublimation model) (no dimension), see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2008ApJ...673.1123L/abstract">Löhne et al. 2008</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_t0_diss</span></code>: np.float64 → Kuiper belt lifetime before starting being disrupted</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KB_t1_diss</span></code>: np.float64 → Kuiper belt disruption timescale</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a_planets</span></code>: np.array[np.float64] → Array of planet’s semi-major axis (one dimensional array)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">m_planets</span></code>: np.array[np.float64] → Array of planet’s masses (one dimensional array, be sure that it have the same size of <code class="docutils literal notranslate"><span class="pre">a_planets</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">f_accr</span></code>: np.float64 → The planet’s accretion efficiency (no dimension)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">t0</span></code>: np.float64 → The protoplanetary disc lifetime</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IT_s</span></code>: int → The number of spatial steps</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dip</span></code>: int → half of the number of sink cells around a planet</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rtol</span></code>: np.float64 → The relative tolerance for time integration (see <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html">scipy.integrate.solve_ivp</a> documentation)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">atol</span></code>: np.float64 → The absolute tolerance for time integration (see <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html">scipy.integrate.solve_ivp</a> documentation)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">method_root</span></code>: str → The time integration method {<code class="docutils literal notranslate"><span class="pre">RK45</span></code>, <code class="docutils literal notranslate"><span class="pre">RK23</span></code>, <code class="docutils literal notranslate"><span class="pre">DOP853</span></code>, <code class="docutils literal notranslate"><span class="pre">Radau</span></code>, <code class="docutils literal notranslate"><span class="pre">BDF</span></code>, <code class="docutils literal notranslate"><span class="pre">LSODA</span></code>} (see <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html">scipy.integrate.solve_ivp</a> documentation)</p></li>
+</ul>
+</section>
+<section id="default-unit-system">
+<h2>Default unit system<a class="headerlink" href="#default-unit-system" title="Link to this heading"></a></h2>
+<p>It works with its own unit system, which is fully described by the conversion factor from the universal MKSA system.
+Only the temperature unit is set to Kelvin and cannot be modified.
+There are then three main conversion factors, <code class="docutils literal notranslate"><span class="pre">C_L</span></code>, <code class="docutils literal notranslate"><span class="pre">C_M</span></code> and <code class="docutils literal notranslate"><span class="pre">C_t</span></code> to convert any length, mass or time from metres, kilograms and seconds to the code’s length, mass or time units. Multiply the value by the correct conversion factor to make the conversion.
+To simplify operations, there are derived conversion factor units, such as  <code class="docutils literal notranslate"><span class="pre">C_F</span></code> <code class="docutils literal notranslate"><span class="pre">C_rho</span></code> <code class="docutils literal notranslate"><span class="pre">C_E</span></code> and <code class="docutils literal notranslate"><span class="pre">C_Lum</span></code> to convert force, density, energy or luminosity from the MKSA system to the code unit system.</p>
+<p>The default values are:</p>
+<ul class="simple">
+<li><p>For the time : one code unit is equal to one million years (hence <span class="math notranslate nohighlight">\(C_L = 1 / (3600 * 24 * 365.25 * 1e6)\)</span>.)</p></li>
+<li><p>For the mass : one code unit is equal to one earth mass (hecne <span class="math notranslate nohighlight">\(C_L = 1 / M_\oplus\)</span>)</p></li>
+<li><p>For the lenght : one code unit is equal to one astronomical unit</p></li>
+</ul>
+<p>To convert code values into MKSA units, divide them by the relevant conversion facteur unit.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mass_mksa</span> <span class="o">=</span> <span class="n">masse</span> <span class="o">/</span> <span class="n">C_M</span>
+<span class="n">lenght_mksa</span> <span class="o">=</span> <span class="n">length</span> <span class="o">/</span> <span class="n">C_L</span>
+<span class="n">time_mksa</span> <span class="o">=</span> <span class="n">time</span> <span class="o">/</span> <span class="n">C_t</span>
+<span class="n">surface_density_mksa</span> <span class="o">=</span> <span class="n">surface_density</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">/</span> <span class="n">C_M</span> 
+</pre></div>
+</div>
+<p>Typical constants can also be used for unit conversion. For example, the constants <code class="docutils literal notranslate"><span class="pre">yr</span></code>, <code class="docutils literal notranslate"><span class="pre">kyr</span></code>, <code class="docutils literal notranslate"><span class="pre">Myr</span></code> or <code class="docutils literal notranslate"><span class="pre">Gyr</span></code> can be used to convert times into years, kiloyears, megayears or gigayears.
+It is also possible to convert mass into solar mass by dividing the mass by one solar mass.</p>
+<p>The default values were chosen to fit the typical values for our models. However, it is also possible to modify them if needed.
+Since the ‘Sol’ objects keep their own conversion factors, they can be loaded with the system of units that was used to integrate them. All conversions will be made automatically.</p>
+<p>To do so, a new dictionary of constants must be built and saved into the working directory or the ‘racine’ directory with the name ‘constantes’
+using <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.savez_compressed.html">np.saved_compressed</a> method :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">new_consts</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;racine&quot;</span><span class="p">:</span> <span class="n">new_new_racine</span><span class="p">,</span> <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">new_results</span><span class="p">,</span>
+                 <span class="s2">&quot;C_L&quot;</span><span class="p">:</span> <span class="n">new_C_L</span><span class="p">,</span> <span class="s2">&quot;C_M&quot;</span><span class="p">:</span> <span class="n">new_C_M</span><span class="p">,</span> <span class="s2">&quot;C_t&quot;</span><span class="p">:</span> <span class="n">new_C_t</span><span class="p">,</span>
+                 <span class="s2">&quot;Ms&quot;</span><span class="p">:</span> <span class="n">new_Ms</span><span class="p">,</span> <span class="s2">&quot;Ts&quot;</span><span class="p">:</span> <span class="n">new_Ts</span><span class="p">,</span> <span class="s2">&quot;Rs&quot;</span><span class="p">:</span> <span class="n">new_Rs</span><span class="p">,</span> <span class="s2">&quot;Ls&quot;</span><span class="p">:</span> <span class="n">new_Ls</span><span class="p">,</span>
+                 <span class="s2">&quot;a_in&quot;</span><span class="p">:</span> <span class="n">new_a_in</span><span class="p">,</span> <span class="s2">&quot;a_out&quot;</span><span class="p">:</span> <span class="n">new_a_out</span><span class="p">,</span> <span class="s2">&quot;a0&quot;</span><span class="p">:</span> <span class="n">new_a0</span><span class="p">,</span>
+                 <span class="s2">&quot;T0&quot;</span><span class="p">:</span> <span class="n">new_T0</span><span class="p">,</span> <span class="s2">&quot;pls_temp&quot;</span><span class="p">:</span> <span class="n">new_pls_temp</span><span class="p">,</span> <span class="s2">&quot;m_dot&quot;</span><span class="p">:</span> <span class="n">new_m_dot</span><span class="p">,</span>
+                 <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">new_alpha</span><span class="p">,</span> <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="n">new_gamma</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_Mbelt&quot;</span><span class="p">:</span> <span class="n">new_AB_Mbelt</span><span class="p">,</span> <span class="s2">&quot;AB_Abelt&quot;</span><span class="p">:</span> <span class="n">new_AB_Abelt</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_a0&quot;</span><span class="p">:</span> <span class="n">new_AB_a0</span><span class="p">,</span> <span class="s2">&quot;AB_delta_r&quot;</span><span class="p">:</span> <span class="n">new_AB_delta_r</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_K&quot;</span><span class="p">:</span> <span class="n">new_AB_K</span><span class="p">,</span> <span class="s2">&quot;AB_Phi&quot;</span><span class="p">:</span> <span class="n">new_AB_Phi</span><span class="p">,</span> <span class="s2">&quot;AB_rp&quot;</span><span class="p">:</span> <span class="n">new_AB_rp</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_f_ice&quot;</span><span class="p">:</span> <span class="n">new_AB_f_ice</span><span class="p">,</span> <span class="s2">&quot;AB_rho_refr&quot;</span><span class="p">:</span> <span class="n">new_AB_rho_refr</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_rho_ice&quot;</span><span class="p">:</span> <span class="n">new_AB_rho_ice</span><span class="p">,</span> <span class="s2">&quot;AB_sublimation_model&quot;</span><span class="p">:</span> <span class="n">new_AB_sublimation_model</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_SD_amax&quot;</span><span class="p">:</span> <span class="n">new_AB_SD_amax</span><span class="p">,</span> <span class="s2">&quot;AB_SD_abig&quot;</span><span class="p">:</span> <span class="n">new_AB_SD_abig</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_SD_amed&quot;</span><span class="p">:</span> <span class="n">new_AB_SD_amed</span><span class="p">,</span> <span class="s2">&quot;AB_SD_amin&quot;</span><span class="p">:</span> <span class="n">new_AB_SD_amin</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_SD_qh&quot;</span><span class="p">:</span> <span class="n">new_AB_SD_qh</span><span class="p">,</span> <span class="s2">&quot;AB_SD_qm&quot;</span><span class="p">:</span> <span class="n">new_AB_SD_qm</span><span class="p">,</span> <span class="s2">&quot;AB_SD_ql&quot;</span><span class="p">:</span> <span class="n">new_AB_SD_ql</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_sb&quot;</span><span class="p">:</span> <span class="n">new_AB_sb</span><span class="p">,</span> <span class="s2">&quot;AB_e&quot;</span><span class="p">:</span> <span class="n">new_AB_e</span><span class="p">,</span> <span class="s2">&quot;AB_i&quot;</span><span class="p">:</span> <span class="n">new_AB_i</span><span class="p">,</span>
+                 <span class="s2">&quot;AB_As&quot;</span><span class="p">:</span> <span class="n">new_AB_As</span><span class="p">,</span> <span class="s2">&quot;AB_bs&quot;</span><span class="p">:</span> <span class="n">new_AB_bs</span><span class="p">,</span> <span class="s2">&quot;AB_bg&quot;</span><span class="p">:</span> <span class="n">new_AB_bg</span><span class="p">,</span> <span class="s2">&quot;AB_t0_diss&quot;</span><span class="p">:</span> <span class="n">new_AB_t0_diss</span><span class="p">,</span> <span class="s2">&quot;AB_t1_diss&quot;</span><span class="p">:</span> <span class="n">new_AB_t1_diss</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_Mbelt&quot;</span><span class="p">:</span> <span class="n">new_KB_Mbelt</span><span class="p">,</span> <span class="s2">&quot;KB_Abelt&quot;</span><span class="p">:</span> <span class="n">new_KB_Abelt</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_a0&quot;</span><span class="p">:</span> <span class="n">new_KB_a0</span><span class="p">,</span> <span class="s2">&quot;KB_delta_r&quot;</span><span class="p">:</span> <span class="n">new_KB_delta_r</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_K&quot;</span><span class="p">:</span> <span class="n">new_KB_K</span><span class="p">,</span> <span class="s2">&quot;KB_Phi&quot;</span><span class="p">:</span> <span class="n">new_KB_Phi</span><span class="p">,</span> <span class="s2">&quot;KB_rp&quot;</span><span class="p">:</span> <span class="n">new_KB_rp</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_f_ice&quot;</span><span class="p">:</span> <span class="n">new_KB_f_ice</span><span class="p">,</span> <span class="s2">&quot;KB_rho_refr&quot;</span><span class="p">:</span> <span class="n">new_KB_rho_refr</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_rho_ice&quot;</span><span class="p">:</span> <span class="n">new_KB_rho_ice</span><span class="p">,</span> <span class="s2">&quot;KB_sublimation_model&quot;</span><span class="p">:</span> <span class="n">new_KB_sublimation_model</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_SD_amax&quot;</span><span class="p">:</span> <span class="n">new_KB_SD_amax</span><span class="p">,</span> <span class="s2">&quot;KB_SD_abig&quot;</span><span class="p">:</span> <span class="n">new_KB_SD_abig</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_SD_amed&quot;</span><span class="p">:</span> <span class="n">new_KB_SD_amed</span><span class="p">,</span> <span class="s2">&quot;KB_SD_amin&quot;</span><span class="p">:</span> <span class="n">new_KB_SD_amin</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_SD_qh&quot;</span><span class="p">:</span> <span class="n">new_KB_SD_qh</span><span class="p">,</span> <span class="s2">&quot;KB_SD_qm&quot;</span><span class="p">:</span> <span class="n">new_KB_SD_qm</span><span class="p">,</span> <span class="s2">&quot;KB_SD_ql&quot;</span><span class="p">:</span> <span class="n">new_KB_SD_ql</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_sb&quot;</span><span class="p">:</span> <span class="n">new_KB_sb</span><span class="p">,</span> <span class="s2">&quot;KB_e&quot;</span><span class="p">:</span> <span class="n">new_KB_e</span><span class="p">,</span> <span class="s2">&quot;KB_i&quot;</span><span class="p">:</span> <span class="n">new_KB_i</span><span class="p">,</span>
+                 <span class="s2">&quot;KB_As&quot;</span><span class="p">:</span> <span class="n">new_KB_As</span><span class="p">,</span> <span class="s2">&quot;KB_bs&quot;</span><span class="p">:</span> <span class="n">new_KB_bs</span><span class="p">,</span> <span class="s2">&quot;KB_bg&quot;</span><span class="p">:</span> <span class="n">new_KB_bg</span><span class="p">,</span> <span class="s2">&quot;KB_t0_diss&quot;</span><span class="p">:</span> <span class="n">new_KB_t0_diss</span><span class="p">,</span> <span class="s2">&quot;KB_t1_diss&quot;</span><span class="p">:</span> <span class="n">new_KB_t1_diss</span><span class="p">,</span>
+                 <span class="s2">&quot;a_planets&quot;</span><span class="p">:</span> <span class="n">new_a_planets</span><span class="p">,</span> <span class="s2">&quot;m_planets&quot;</span><span class="p">:</span> <span class="n">new_m_planets</span><span class="p">,</span> <span class="s2">&quot;f_accr&quot;</span><span class="p">:</span> <span class="n">new_f_accr</span><span class="p">,</span>
+                 <span class="s2">&quot;t0&quot;</span><span class="p">:</span> <span class="n">new_t0</span><span class="p">,</span>
+                 <span class="s2">&quot;IT_s&quot;</span><span class="p">:</span> <span class="n">new_IT_s</span><span class="p">,</span> <span class="s2">&quot;dip&quot;</span><span class="p">:</span> <span class="n">new_dip</span><span class="p">,</span> <span class="s2">&quot;rtol&quot;</span><span class="p">:</span> <span class="n">new_rtol</span><span class="p">,</span> <span class="s2">&quot;atol&quot;</span><span class="p">:</span> <span class="n">new_atol</span><span class="p">,</span> <span class="s2">&quot;method_root&quot;</span><span class="p">:</span> <span class="n">new_method</span><span class="p">,</span>
+                 <span class="p">}</span>
+<span class="n">np</span><span class="o">.</span><span class="n">saved_compressed</span><span class="p">(</span><span class="n">racine</span> <span class="o">+</span> <span class="s2">&quot;/constantes.npz&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">new_consts</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The current constant dictionary can be loaded using the <code class="docutils literal notranslate"><span class="pre">constantes()</span></code> method, which can then be modified.
+When converting units, ensure that all resulting values are also converted, as every value in the constant dictionary is in code unit.</p>
+</section>
+<section id="the-luminosity-file">
+<h2>The luminosity file<a class="headerlink" href="#the-luminosity-file" title="Link to this heading"></a></h2>
+<p>The central star’s luminosity is a key parameter for estimating the mass generation rate at the belt level in the ‘thermal_full’ model.
+It is also important for estimating the photodissociation rate.
+However, the central star’s luminosity can vary significantly in the early stages of a system’s life, when secondary gas production is assumed to occur (see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2024A%26A...692A..70K/abstract">kral et al 2024</a> for the solar system and Figure 1)</p>
+<hr class="docutils" />
+<p><img alt="luminosity" src="_images/stars_luminosity.png" /></p>
+<p><em>Figure 1 : Evolution of stellar luminosity as function of time for different star’s mass</em></p>
+<hr class="docutils" />
+<p>To provide the requested data, one must first run stellar simulation (for example, using <a class="reference external" href="https://www.ias.u-psud.fr/cesam2k20/">cesam2k20</a>).
+These simulations must be done for several masses (as much as possible to get reliable interpolation).</p>
+<p>All the data should then be merged into a single <code class="docutils literal notranslate"><span class="pre">.npz</span></code> created by <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.savez_compressed.html">np.saved_compressed</a>.</p>
+<p>This table must contain the following keys associated with arrays of the same sizes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Age</span></code> : This array contains the star’s age in Myr at each point</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">M</span></code> : The star’s mass in sun’s mass (must be counstant for each star) at each point</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Lbol</span></code> : The bolometric luminosity at each point in solar luminosity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">R</span></code> : The star’s radius in solar radius at each point</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Reuv_3692</span></code> : The luminosity fraction in the UV</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Reuv_lya</span></code> : The luminosity fraction in the UV</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Diffenix’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="The_model.html" class="btn btn-neutral float-right" title="The model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Paul Huet.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
