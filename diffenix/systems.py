@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os.path
+import shutil
+
 import numpy as np
 import phenigraph as g
 from scipy.integrate import trapezoid, cumulative_trapezoid, solve_ivp
@@ -9,8 +12,10 @@ from scipy.signal import medfilt2d, savgol_filter
 from diffenix.Constantes import *
 from diffenix.solve_asteroid_belt import SolrhoBelt
 
-from diffenix.numericals_methods import gradient, gradient2
+from diffenix.numericals_methods import gradient, gradient2, grid_refine_inner_edge
 
+import radmc3dPy.image as radmc_im
+import radmc3dPy.analyze as radmc_a
 
 # noinspection PyUnresolvedReferences,PyTypeChecker
 
@@ -317,6 +322,7 @@ class Sol:
             self.flux_planets: list[np.ndarray] = [
             ]  # mass fluxes at ip+self.dip and ip-self.dip for each planet for each time
 
+            self.flux_radmc: list[np.ndarray[np.float64]] = [] # Luminosity flux fo 3 differents wavelenghth integrated for the whole disc.
             # Initialisation
             self.initialization(mus0=mus0, mass_fracs0=mass_fracs0, nom_mus0=noms_mus0)
             self.interp_f = None
@@ -401,6 +407,12 @@ class Sol:
             else:
                 self.sol_kuip = SolrhoBelt(kwargs_N=self.sol_kuip_kwargs_N, radius=self.r[self.idxk], **self.sol_kuip_params)
 
+            if "flux_radmc" in dic.keys():
+                self.flux_radmc = list(dic["flux_radmc"])
+            else:
+                self.flux_radmc: list[np.ndarray[
+                    np.float64]] = []  # Luminosity flux fo 3 differents wavelenghth integrated for the whole disc.
+
         # Since the equations of mass fractions and surface density are uncoupled, we use an interpolation
         # function to get the surface density at each time (radii are the same for both)
         if len(self.f) > 2:
@@ -435,6 +447,8 @@ class Sol:
         # sigmasd: np.ndarray = np.array([sigmad0 * ((self.r[self.idxa] / self.a0) ** (-3. / 2.)) for t in tps])
         #
         # self.interpsigdot = Akima1DInterpolator(tps - yr, 0.1 * sigmasd)
+
+
 
     def radial_speed(self, i: int | np.ndarray = ii_max) -> np.ndarray:
         """
@@ -1348,6 +1362,12 @@ class Sol:
             self.name: str = filename
         if directory != "./":
             self.directory = directory
+        if os.path.exists("self.directory" + "/" + self.name):
+            tab = np.load("self.directory" + "/" + self.name)
+            if tab["tps"] >= self.tps or tab["tps_mf"] >= self.tps_mf:
+                raise UserWarning("The solution has already been integrated by another process, the Sol cannot be saved")
+            tab.close()
+
         dic: dict = self.constantes()
         dic["name"] = self.name
         dic["IT_s"] = np.array(self.IT_s, dtype='double')
@@ -1383,6 +1403,7 @@ class Sol:
         dic["idx_mu_kuip"] = self.idx_mu_kuip
         dic["a_planets"] = self.a_planets
         dic["m_planets"] = self.m_planets
+        dic["flux_radmc"] = self.flux_radmc
         np.savez_compressed(self.directory + "/" + self.name, **dic)
 
     def add_planets_to_graph(self, graph: g.Graphique, name_planets: list | np.ndarray = None,
@@ -1440,17 +1461,19 @@ class Sol:
         # Accretion_rates
         colors_planets: list[str] = [g.C1, g.C2, g.C6, g.C5, g.C3, g.C4]
         colors_p: list[str] = []
-        mdots: np.ndarray = abs(np.array(self.flux_planets)[:, 1] - np.array(self.flux_planets)[:, 0])
+        mdots: np.ndarray = abs(np.array(self.flux_planets)[::max(len(self.flux_planets) // 1000, 1), 1]
+                                - np.array(self.flux_planets)[::max(len(self.flux_planets) // 1000, 1), 0])
         for i in range(len(self.a_planets)):
             colors_p.append(colors_planets[i % len(colors_planets)])
-
+        time = np.array(self.diag["time"][::max(len(self.flux_planets) // 1000, 1)])
+        print(mdots.shape, time.shape)
         # Accretion rates
 
         if name_planets is not None and len(name_planets) == len(self.m_planets):
-            gr1: g.Graphique = g.loglog(self.diag["time"], mdots.T, linestyle="-",
+            gr1: g.Graphique = g.loglog(time, mdots.T, linestyle="-",
                                        label=name_planets, color=colors_p, show=False)
         else:
-            gr1: g.Graphique = g.loglog(self.diag["time"], mdots.T, linestyle="-", color=colors_p, show=False)
+            gr1: g.Graphique = g.loglog(time, mdots.T, linestyle="-", color=colors_p, show=False)
         gr1.config_ax(xlabel="Time [Myr]", ylabel="Accretion rate [M$_\oplus$. Myr$^{-1}$]",
                       xlim=[1e-3 * Myr, self.tps[-1]], ylim=[1e-11, 1e-1])
         gr1.filename = self.name + "_accretion_rates"
@@ -1465,12 +1488,12 @@ class Sol:
         # Accreted mass
 
         if name_planets is not None and len(name_planets) == len(self.m_planets):
-            gr2: g.Graphique = g.loglog(self.diag["time"],
-                                        cumulative_trapezoid(mdots, self.diag["time"], initial=zero, axis=0).T,
+            gr2: g.Graphique = g.loglog(time,
+                                        cumulative_trapezoid(mdots, time, initial=zero, axis=0).T,
                                         label=name_planets, color=colors_p, show=False)
         else:
-            gr2: g.Graphique = g.loglog(self.diag["time"],
-                                        cumulative_trapezoid(mdots, self.diag["time"], initial=zero, axis=0).T,
+            gr2: g.Graphique = g.loglog(time,
+                                        cumulative_trapezoid(mdots, time, initial=zero, axis=0).T,
                                         color=colors_p, show=False)
         gr2.config_ax(xlabel="Time [Myr]", ylabel="Masses accreted [M$_\oplus$]",
                       xlim=[1e-3 * Myr, self.tps[-1]])
@@ -1482,13 +1505,14 @@ class Sol:
             gr2.ext = ".png"
             gr2.save_figure(dpi=400)
             gr2.save()
+        return [gr1, gr2]
 
     def graph_surface_density(self, times: np.ndarray = None, idx: np.ndarray = None,
                               species: int | np.ndarray | list[int] = ii_max,
                               plot_mean_volumique_density: bool = False,
                               include_last_index: bool = False,
                               plot_sigma_crit: bool = True, name_planets: np.ndarray[str] | list[str] = None,
-                              show: bool = True, save: bool = False, directory: str = None,
+                              show: bool  = True, save: bool = False, directory: str = None,
                               lw: np.float64 = 2.,
                               **args_ax
                               ) -> g.Graphique:
@@ -1850,9 +1874,10 @@ class Sol:
 
         if ((isinstance(species, int) and (species > len(self.nom_mu) or species < 0))
             or (isinstance(species, str) and species == "all")):
-            gr: g.Graphique = g.image(self.sigma()[::max(len(self.tps) // size_time, 1),
+            tps = np.geomspace(np.min(np.array(self.tps)[np.array(self.tps) > 0]), np.max(self.tps), size_time)
+            gr: g.Graphique = g.image(self.interp_sigma(tps)[:,
                                       ::max(len(self.r) // size_radius, 1)].T,
-                                      np.array(self.tps)[::max(len(self.tps) // size_time, 1)] / Myr,
+                                      tps / Myr,
                                       np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
                                       cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
                                       color_min=color_min, color_max=color_max)
@@ -1908,11 +1933,13 @@ class Sol:
         else:
             if isinstance(species, str):
                 species = np.argwhere(self.nom_mu == species)[0, 0]
-            gr: g.Graphique = g.image(self.interp_sigma(self.tps_mf[::max(len(self.tps_mf) // size_time, 1)]
+            idx = np.arange(0, len(self.tps_mf), max(len(self.tps_mf) // size_time, 1))
+
+            gr: g.Graphique = g.image(self.interp_sigma(np.array(self.tps_mf)[idx]
                                                         )[:, ::max(len(self.r) // size_radius, 1)].T
-                                      * np.array(self.mass_fractions)[::max(len(self.tps_mf) // size_time, 1), species,
+                                      * np.array(self.mass_fractions)[idx, species,
                                       ::max(len(self.r) // size_radius,1)].T,
-                                      np.array(self.tps_mf)[::max(len(self.tps_mf) // size_time, 1)] / Myr,
+                                      np.array(self.tps_mf)[idx] / Myr,
                                       np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
                                       cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
                                       color_min=color_min, color_max=color_max)
@@ -1999,6 +2026,352 @@ class Sol:
             gr.save_figure(dpi=400)
             gr.save()
         return gr
+
+    def graphs(self, plot_planets=True, planets_names: list[str] = None,
+               show: bool = True, save: bool = False, directory: str = None) -> list[g.Graphique]:
+        print("graph accretion : ")
+        res: list[g.Graphique] = self.graphs_accretion(name_planets=planets_names, show=show,
+                                                        save=save, directory=directory)
+        if directory is None:
+            directory = self.directory
+        print("graph image sig_dot :")
+        res.append(self.sol_ast.graph_image_surface_density(show=show, save=save, directory=directory))
+        print("graph image surface density:")
+        res.append(self.graph_image_surface_density(plot_planets=plot_planets, planets_names=planets_names,
+                                                    show=show, save=save, directory=directory))
+        for mu_plot in self.nom_mu:
+            print("mu = ", mu_plot)
+            res.append(self.graph_image_surface_density(species=mu_plot,
+                                                        plot_planets=plot_planets, planets_names=planets_names,
+                                                        show=show, save=save, directory=directory))
+        return res
+
+    def radmc_setup(self, i: int, directory: str = None, size_grid: int = 128) -> None:
+        """
+        Generate the configuration file for radmc3d for the surface density at time self.tps[i]
+
+        Parameters
+        ----------
+        i: int
+            The index at which the surface density is plotted
+        directory : str, default=self.directory+'/'+i
+            The directory where the configuration are stored
+        size_grid : int, default=128
+            THe size of the spatial grid (the water surface density is interpolated on it)
+
+        Returns
+        -------
+        None
+
+        """
+        if directory is not None:
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+            doss: str = directory
+        else:
+            if not os.path.exists(self.directory + "/" + str(i)):
+                os.mkdir(self.directory + "/" + str(i))
+            doss: str = self.directory + "/" + str(i)
+
+        nphot: int = 1000000 # Monte Carlo parameters
+
+        # Grid parameters
+
+        nr: int = size_grid
+        nlev_rin: int = 12  # Grid refinement at the inner edge: nr of cycles
+        nspan_rin: int = 3  # Grid refinement at the inner edge: nr of cells each cycle
+        ntheta: int = 32
+        nphi: int = 1
+        rin: np.float64 = self.r.min()
+        rout: np.float64 = self.r.max()
+        thetaup: np.float64 = np.pi * 0.5 - 1.
+
+        # Disk parameters
+
+        pstar: np.ndarray[np.float64] = np.array([0., 0., 0.])
+
+        # Make the coordinates
+
+        # ri: np.ndarray[np.float64] = self.r[::max(1, len(self.r) // size_grid)]
+        ri: np.ndarray[np.float64] = np.geomspace(rin, rout, nr + 1)
+        # ri: np.ndarray[np.float64] = grid_refine_inner_edge(ri, nlev_rin, nspan_rin)  # Refinement at inner edge
+
+        thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+        phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+        rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+        nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+        thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+        phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+
+        # Make the grid
+
+        qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+        rr: np.ndarray[np.float64] = qq[0]
+        tt: np.ndarray[np.float64] = qq[1]
+        zr: np.ndarray[np.float64] = Pi / 2. - qq[1]
+
+        # Make the temperature model
+        temp: np.ndarray[np.float64] = T(rr, self.tps_mf[i])
+
+        # Make the density model
+        # g.loglog(rr.flatten(), temp.flatten(), ".")
+        h_h2o: np.ndarray[np.float64] = np.sqrt(kb * temp * rr * rr * rr / (18. * mp * G * self.Ms))
+        # g.loglog([self.r, rr.flatten()], [ self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]],  np.interp(rr, self.r, self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]]).flatten()], ".")
+        sigma_H2O: np.ndarray[np.float64] = np.interp(rr, self.r, self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]])
+        rhog_h2o: np.ndarray[np.float64] = (sigma_H2O / (np.sqrt(2. * np.pi) * h_h2o)
+                    ) * np.exp(-zr * zr * rr * rr / (h_h2o * h_h2o * 2.))
+
+        # Make the velocity model
+
+        vr: np.ndarray[np.float64] = np.zeros_like(rr)
+        vtheta: np.ndarray[np.float64] = np.zeros_like(rr)
+        vphi: np.ndarray[np.float64] = np.sqrt(G * self.Ms / rr)
+        vturb: np.ndarray[np.float64] = 0.001 * vphi
+
+        # Write the wavelength_micron.inp file
+
+        lam1: np.float64 = 1.
+        lam2: np.float64 = 9.e2
+        lam3: np.float64 = 4.e3
+        lam4: np.float64 = 1.0e4
+        n12: np.float64 = 200
+        n23: np.float64 = 500
+        n34: np.float64 = 30
+        lam12: np.ndarray[np.float64] = np.logspace(np.log10(lam1), np.log10(lam2), n12, endpoint=False)
+        lam23: np.ndarray[np.float64] = np.logspace(np.log10(lam2), np.log10(lam3), n23, endpoint=False)
+        lam34: np.ndarray[np.float64] = np.logspace(np.log10(lam3), np.log10(lam4), n34, endpoint=True)
+        lam: np.ndarray[np.float64] = np.concatenate([lam12, lam23, lam34])
+        nlam: int = lam.size
+
+        # Write the wavelength file
+
+        with open(doss + '/wavelength_micron.inp', 'w+') as f:
+            f.write('%d\n' % nlam)
+            for value in lam:
+                f.write('%13.6e\n' % value)
+
+        # NB All datas needs to be saved in cgs system....
+
+        # Write the stars.inp file
+
+        with open(doss + '/stars.inp', 'w+') as f:
+            f.write('2\n')
+            f.write('1 %d\n\n' % nlam)
+            f.write('%13.6e %13.6e %13.6e %13.6e %13.6e\n\n' % (interpRs(self.tps_mf[i], self.Ms) * Rsun * 1e2 / C_L,
+                                                                self.Ms * 1e3 / C_M,
+                                                                pstar[0], pstar[1], pstar[2]))
+            for value in lam:
+                f.write('%13.6e\n' % value)
+            f.write('\n%13.6e\n' % (- ((interpLbol(self.tps_mf[i], self.Ms)
+                                       / (4. * Pi * (interpRs(self.tps_mf[i], self.Ms) ** 2) * sigma))) ** (1. / 4.)))
+
+        # Write the grid file
+
+        with open(doss + '/amr_grid.inp', 'w+') as f:
+            f.write('1\n')  # iformat
+            f.write('0\n')  # AMR grid style  (0=regular grid, no AMR)
+            f.write('100\n')  # Coordinate system: spherical
+            f.write('0\n')  # gridinfo
+            f.write('1 1 0\n')  # Include r,theta coordinates
+            f.write('%d %d %d\n' % (nr, ntheta, 1))  # Size of grid
+            for value in ri * 1e-2 / C_L:
+                f.write('%13.6e\n' % value)  # X coordinates (cell walls)
+            for value in thetai:
+                f.write('%13.6e\n' % value)  # Y coordinates (cell walls)
+            for value in phii:
+                f.write('%13.6e\n' % value)  # Z coordinates (cell walls)
+
+        # Write the density file
+
+        with open(doss + '/dust_density.inp', 'w+') as f:
+            f.write('1\n')  # Format number
+            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+            f.write('1\n')  # Nr of dust species
+            data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+            data.tofile(f, sep='\n', format="%13.6e")
+            f.write('\n')
+        # with open(doss + '/dust_density.inp', 'w+') as f:
+        #     f.write('1\n')  # Format number
+        #     f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+        #     f.write('0\n')  # Nr of dust species
+        #     # data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+        #     # data.tofile(f, sep='\n', format="%13.6e")
+        #     # f.write('\n')
+
+        # Dust opacity control file
+
+        with open(doss + '/dustopac.inp', 'w+') as f:
+            f.write('2               Format number of this file\n')
+            f.write('1               Nr of dust species\n')
+            f.write('============================================================================\n')
+            f.write('1               Way in which this dust species is read\n')
+            f.write('0               0=Thermal grain\n')
+            f.write('silicate        Extension of name of dustkappa_***.inp file\n')
+            f.write('----------------------------------------------------------------------------\n')
+
+        # with open(doss + '/dustopac.inp', 'w+') as f:
+        #     f.write('2               Format number of this file\n')
+        #     f.write('0               Nr of dust species\n')
+        #     f.write('============================================================================\n')
+        #     f.write('----------------------------------------------------------------------------\n')
+
+        # Write the molecule number density file.
+
+        mu_h2o = 18  # Mass of a H2O molecule in proton mass unity
+        nh2o = rhog_h2o / (mu_h2o * mp)
+        print("test nh2o", nh2o.sum(), rhog_h2o.sum(), sigma_H2O.sum())
+        with open(doss + '/numberdens_h2op.inp', 'w+') as f:
+            f.write('1\n')  # Format number
+            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+            data = nh2o.ravel(order='F') * 1e-6 / (C_L * C_L * C_L) # Create a 1-D view, fortran-style indexing
+            data.tofile(f, sep='\n', format="%13.6e")
+            f.write('\n')
+
+        with open(doss + '/numberdens_h2oo.inp', 'w+') as f:
+            f.write('1\n')  # Format number
+            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+            data = nh2o.ravel(order='F') * 1e-6 / (C_L * C_L * C_L) # Create a 1-D view, fortran-style indexing
+            data.tofile(f, sep='\n', format="%13.6e")
+            f.write('\n')
+
+        # Write the gas velocity field
+
+        with open(doss + '/gas_velocity.inp', 'w+') as f:
+            f.write('1\n')  # Format number
+            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+            for iphi in range(nphi):
+                for itheta in range(ntheta):
+                    for ir in range(nr):
+                        f.write(
+                            '%13.6e %13.6e %13.6e\n' % (vr[ir, itheta, iphi] * 1e-2 * C_t / C_L,
+                                                        vtheta[ir, itheta, iphi] * 1e-2 * C_t / C_L,
+                                                        vphi[ir, itheta, iphi] * 1e-2 * C_t / C_L))
+
+        # Write the temperature file
+
+        with open(doss + '/gas_temperature.inp', 'w+') as f:
+            f.write('1\n')  # Format number
+            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+            data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+            data.tofile(f, sep='\n', format="%13.6e")
+            f.write('\n')
+
+        # Write the microturbulence file
+
+        with open(doss + '/microturbulence.inp', 'w+') as f:
+            f.write('1\n')  # Format number
+            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+            data = vturb.ravel(order='F') * 1e-2 * C_t / C_L  # Create a 1-D view, fortran-style indexing
+            data.tofile(f, sep='\n', format="%13.6e")
+            f.write('\n')
+
+        # Write the lines.inp control file
+
+        with open(doss + '/lines.inp', 'w') as f:
+            f.write('2\n')
+            f.write('2\n')
+            f.write('h2oo   leiden   0   0   0\n')
+            f.write('h2op   leiden   0   0   0\n')
+
+        # Write the radmc3d.inp control file
+
+        with open(doss + '/radmc3d.inp', 'w+') as f:
+            f.write('nphot = %d\n' % nphot)
+            f.write('scattering_mode_max = 0\n')
+            f.write('iranfreqmode = 1\n')
+            # f.write('tgas_eq_tdust = 1\n')  # Use the dust temperature of dust species 1 as gas temperature
+
+        shutil.copyfile(data_radmc + "/molecule_h2oo.inp", doss + "/molecule_h2oo.inp" )
+        shutil.copyfile(data_radmc + "/molecule_h2op.inp", doss + "/molecule_h2op.inp" )
+        shutil.copyfile(data_radmc + "/dustkappa_silicate.inp", doss + "/dustkappa_silicate.inp" )
+
+    def calc_single_flux_radmc(self, i: int, directory: str = None, size_grid: int = 128,
+                               incl: np.float64 = 13, phi: np.float64 = 59.) -> np.ndarray[np.float64]:
+        """
+
+        Parameters
+        ----------
+        i: int
+            The index at which the surface density is plotted
+        directory : str, default=self.directory+'/'+i
+            The directory where the configuration are stored
+        size_grid : int, default=128
+            The size of the spatial grid (the water surface density is interpolated on it)
+
+        Returns
+        -------
+        np.ndarray[np.float64]
+            The spatially integrated luminosity flux
+
+        """
+        if len(self.flux_radmc) == 0 or i not in np.array(self.flux_radmc)[:, 0]:
+            self.radmc_setup(i=i, directory=directory, size_grid=size_grid)
+            if directory is None:
+                if not os.path.exists(self.directory + "/" + str(i)):
+                    os.mkdir(self.directory + "/" + str(i))
+                directory: str = self.directory + "/" + str(i)
+            cwd: str = os.getcwd()
+            os.chdir(directory)
+            vkms: np.float64 = 0.
+            widthkms: np.float64 = 20.0
+            npix: np.float64 = 400
+            linenlam: np.float64 = 40
+
+            os.system("radmc3d mctherm")
+            # H20p_5
+            print("H2O p-5")
+            command = 'radmc3d image imolspec 2 iline 6 vkms {} widthkms {} incl {}  phi {}' \
+                      ' npix {} linenlam {}'.format(vkms, widthkms, incl, phi, npix, linenlam)
+            os.system(command)
+            im = radmc_im.readImage()
+            tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
+            im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+            im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+            im.nfreq = 1
+            im.freq = np.array([np.mean(im.freq)])
+            im.nwav = 1
+            im.wav = np.array([np.mean(im.freq)])
+            res_H2Op5: np.float64 = im.imageJyppix.sum()
+
+            # H20p_7
+            command = 'radmc3d image imolspec 2 iline 12 vkms {} widthkms {} incl {}  phi {}' \
+                      ' npix {} linenlam {}'.format(vkms, widthkms, incl, phi, npix, linenlam)
+            os.system(command)
+            im = radmc_im.readImage()
+            tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
+            im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+            im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+            im.nfreq = 1
+            im.freq = np.array([np.mean(im.freq)])
+            im.nwav = 1
+            im.wav = np.array([np.mean(im.freq)])
+            res_H2Op7: np.float64 = im.imageJyppix.sum()
+
+            # H20o_7
+            command = 'radmc3d image imolspec 2 iline 42 vkms {} widthkms {} incl {}  phi {}' \
+                      ' npix {} linenlam {}'.format(vkms, widthkms, incl, phi, npix, linenlam)
+            os.system(command)
+            im = radmc_im.readImage()
+            tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
+            im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+            im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+            im.nfreq = 1
+            im.freq = np.array([np.mean(im.freq)])
+            im.nwav = 1
+            im.wav = np.array([np.mean(im.freq)])
+            res_H2Oo7: np.float64 = im.imageJyppix.sum()
+            os.system('rm image.out')
+            os.chdir(cwd)
+            self.flux_radmc.append(np.array([i, res_H2Op5, res_H2Op7, res_H2Oo7]))
+            return res_H2Op5, res_H2Op7, res_H2Oo7
+        else:
+            return self.flux_radmc[np.argwhere(np.array(self.flux_radmc) == i)[0, 0]][1:]
+
+    def calc_flux_radmc(self, temporal_size: int = 50, size_grid: int = 20,
+                        incl: np.float64 = 13, phi: np.float64 = 59.) -> None:
+        indexs: np.ndarray[int] = np.arange(0, len(self.tps_mf), max(1, len(self.tps_mf) // temporal_size))
+        for i in indexs:
+            self.calc_single_flux_radmc(i=i, size_grid=size_grid, incl=incl, phi=phi)
 
 
 def mass_steady_state(sol: Sol, mdot: np.float64=None, a0: np.float64 = None, mu: np.float64 = None
@@ -2181,13 +2554,13 @@ def T0(t: np.float64 = -1, a0: np.float64 = a0, Ms: np.float64 = Ms
         The temperature
 
     """
-    # if t == -1:
-    return 278 * ((Ls / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2))
-    # else:
-    #     return 278 * ((interpLbol(t, Ms) / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2))
+    if t == -1:
+        return 278 * ((Ls / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2))
+    else:
+        return 278 * ((interpLbol(t, Ms) / Lsun) ** (1 / 4)) * ((a0 / (au)) ** (-1 / 2))
 
 
-def T(r: np.ndarray | np.float64, t: np.float64 = -1) -> np.ndarray | np.float64:
+def T(r: np.ndarray | np.float64, t: np.float64 = -1, Ms: np.float64 = Ms) -> np.ndarray | np.float64:
     """
     Calculate and return the temperature at radius r
 

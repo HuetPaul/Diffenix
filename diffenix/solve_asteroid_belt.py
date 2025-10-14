@@ -979,6 +979,125 @@ class SolrhoBelt:
             res[prefix + k] = self.kwargs_N[k]
         return res
 
+    def graph_image_surface_density(self,
+                                    vmin: np.float64 | str = 1e-10 * Mearth / (au * au * Myr),
+                                    vmax: np.float64 | str = None,
+                                    size_time: int = 500, size_radius: int = 1000,
+                                    cmap: str = "inferno", nb_levels: int = 10,
+                                    color_min: str | tuple = None, color_max: str | tuple = None,
+                                    show: bool = True, save: bool = False, directory: str = None,
+                                    plot_label_levels: bool = True,
+                                    **kwargs_ax
+                                    ) -> g.Graphique:
+        """
+        Build a Graphique that represant the evolution of surface density generation rate
+         as function of time and radius
+
+        Parameters
+        ----------
+        vmin : np.float64 | str , optional, {"auto", np.loat64}, default = 1e-10 * Mearth / Myr
+            The minimum value of surface density to represant in the result (below it will be considered as saturated)
+            If "auto", the minimal value will be the minimal value of the surface density represanted
+        vmax : np.float64 | str, optional, {"auto", np.loat64},
+            The maximum value of surface density to represant in the result (above it will be considered as saturated)
+            Default, v_max is not considered like for "auto" where the maximal value will be the maximal value of the surface density represanted
+
+        size_time : int, optional, default=1000
+            The image's size for the time coordinate (x-axis)
+        size_radius : int, optional, default=1000
+            The image's size for the radius coordinate (y-axis)
+        cmap : str, optional, default = "inferno"
+            The colormap used for the image
+        nb_levels : int, optional, default=10
+            The number of levels in the image
+                The number of levels to plot in addition to the image
+        color_min : str | tuple, optional
+            The color associated with the minimum value for a `default` cmap
+        color_max : str | tuple, optional
+            The color associated with the maximum value for a `default` cmap
+        plot_label_levels : bool, optional, default=False
+            To plot (or not) labels for the contours (if True, labels are only plot every two levels)
+        show : bool, optional, default = True
+            Whether to show the image
+        save : bool, optional, default = False
+            Whether to save the image (if True, both the Graphique and the png image will be saved)
+        directory : str, optional
+            The directory to save the Graphique, default=self.directory
+
+        Returns
+        -------
+        g.Graphique
+
+        """
+
+        if isinstance(vmin, str) and vmin != "auto":
+            raise UserWarning(f"The vmin={vmin} is not a valid value for this simulation")
+        elif isinstance(vmin, str):
+            vmin = -inf
+
+        if vmax is None:
+            vmax = np.inf
+        if isinstance(vmax, str) and vmax != "auto":
+            raise UserWarning(f"The vmax={vmax} is not a valid value for this simulation")
+        elif isinstance(vmax, str):
+            vmax = -inf
+
+        gr: g.Graphique = g.image(self.sig_dots[::max(len(self.tps) // size_time, 1),
+                                                ::max(len(self.r) // size_radius, 1)].T,
+                                  np.array(self.tps)[::max(len(self.tps) // size_time, 1)] / Myr,
+                                  np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
+                                  cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
+                                  color_min=color_min, color_max=color_max)
+        if vmin == -inf:
+            vmin = np.min(gr.array_image)
+
+        if vmax < inf:
+            vmax_levels = vmax
+        else:
+            vmax_levels: np.float64 = np.max(gr.array_image)
+
+        if nb_levels > 0:
+            levels = np.geomspace(vmin, vmax_levels, nb_levels)
+            gr.contours(levels, color="k")
+
+            gr.config_colorbar(ticks=levels,
+                               ticks_labels=["{:.2e}".format(t) for t in
+                                             levels],
+                               label="Total surface density [M$_\oplus$ . au$^{-2}]$")
+        else:
+            gr.config_colorbar(ticks=np.geomspace(vmin, vmax_levels, 10),
+                               ticks_labels=["{:.2e}".format(t) for t in
+                                             np.geomspace(vmin, vmax_levels, 10)],
+                               label="Total surface density [M$_\oplus$ . au$^{-2}]$")
+
+        gr.config_ax(xlabel="Time [Myr]", ylabel="Distance to the central star [au] ",
+                     xscale="log", yscale="log", xlim=[self.tps[2], self.tps[-1]], ylim=[self.r[0], self.r[-1]])
+        if vmax < np.inf and np.any(self.sig_dots > vmax):
+            gr.config_colorbar(0, extend="max")
+        if np.any(self.sig_dots < vmin):
+            if 'extend' in gr.param_colorbar[0].keys():
+                gr.config_colorbar(0, extend="both")
+            else:
+                gr.config_colorbar(0, extend="min")
+        gr.filename = "Image_total_surface_density_production"
+
+        gr.config_ax(**kwargs_ax)
+        if plot_label_levels:
+            gr.config_labels_contours(levels=gr.levels[::2], fmt="%.0e")
+        else:
+            gr.config_labels_contours(levels=[], fmt="%.0e")
+
+        if directory is not None:
+            gr.directory = directory
+
+        if show:
+            gr.show()
+        if save:
+            gr.ext = ".png"
+            gr.save_figure(dpi=400)
+            gr.save()
+        return gr
+
 
 def thermal_diff(d: np.float64, consts: dict, It_d: int = 300, t: np.ndarray = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -1006,7 +1125,8 @@ def thermal_diff(d: np.float64, consts: dict, It_d: int = 300, t: np.ndarray = N
     dr = r[1] - r[0]
 
     def system(t: np.float64, T: np.ndarray, compteur: Compteur = Compteur()):
-        T[-1] = (278 * (((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2)))
+        T[-1] = (278 * (((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4))
+                 * ((consts["a0"] / au) ** (-1 / 2)))
         # T[0] = 1
         T[0] = T[1]
         # dT = consts["K"] * (gradient2(T, dr) + np.gradient(T, r) / r) - T * interp_L(t, 1) / (4 * interp_L(t))
@@ -1057,30 +1177,6 @@ def mdot_s_l(rd: np.ndarray, t: np.ndarray, temp: np.ndarray, consts: dict) -> n
         the gas mass generation rate as function of time
 
     """
-
-    # mask = np.cumsum(temp > level, axis=1)
-    # mask[mask > 1] = 0
-    # mask = np.array(mask, dtype=bool)
-    #
-    # rr = rd[:, np.newaxis] + np.zeros(len(t))
-    # dr = rd[1] - rd[0]
-    # mlost = 4 * np.pi * consts["rho_ice"] * ((rr + dr / 2) ** 3 - (rr - dr / 2) ** 3) / 3
-    # mlost[~mask] = zero
-    # mlost = mlost.sum(axis=0)
-    # if np.sum(mlost > 0) > 1:
-    #     return np.interp(t, t[mlost > 0], np.gradient(np.cumsum(mlost[mlost > 0]), t[mlost > 0]))
-    # elif np.any(mlost > 0):
-    #     res = np.zeros_like(t)
-    #     i = np.argwhere(mlost > 0)[0, 0]
-    #     if i < len(t) - 1:
-    #         res[i] = mlost[i] / (t[i + 1] - t[i])
-    #     else:
-    #         res[i] = mlost[i] / (t[i] - t[i-1])
-    #     return res
-    # else:
-    #     # print("mdot_s_l, dmax={:.4f} m, Tsub={:.4f} K, no ice sublimation. Tmax={:.4f} K".format(rd.max() / C_L, level, np.max(temp)))
-    #     return np.zeros_like(t)
-
     S: np.float64 = 3. * (1. - consts["Phi"]) / consts["rp"]
     dr = rd[1] - rd[0]
     rr = rd[:, np.newaxis] + np.zeros(len(t))
@@ -1092,12 +1188,7 @@ def mdot_s_l(rd: np.ndarray, t: np.ndarray, temp: np.ndarray, consts: dict) -> n
     if np.any(cumulative_trapezoid(mdot.sum(axis=0), t, initial=0.) >= mmax):
         i = np.argwhere((cumulative_trapezoid(mdot.sum(axis=0), t, initial=0.) >= mmax))[0, 0]
         mdot[:, max(0, i-1):] *= zero
-    # print("test : ", t.max(), " K", trapezoid(mdot.sum(axis=0), t) / mmax)
     return mdot.sum(axis=0)
-    # mlost = np.minimum(cumulative_trapezoid(mdot, t, initial=0., axis=1), mlost_max)
-    # mmax =  (4 * Pi / 3.) * consts["rho_ice"] * (rd.max() ** 3 - rd.min() ** 3)
-    # print("test : ",rd.max() / C_L, trapezoid(np.gradient(mlost.sum(axis=0), t), t) / mmax, (mlost < mlost_max).sum() / len(mlost_max.flatten()))
-    # return np.gradient(mlost.sum(axis=0), t)
 
 
 def mdot_s(s: np.float64, t: np.ndarray, r: np.ndarray, consts: dict, It_d=300) -> np.ndarray:
@@ -1126,14 +1217,81 @@ def mdot_s(s: np.float64, t: np.ndarray, r: np.ndarray, consts: dict, It_d=300) 
     print("s={:.4f}".format(s / C_L), "m")
 
     rd, t, temp = thermal_diff(d=s / 2, consts=consts, It_d=It_d, t=t)
-    # gr=g.image(temp, t, rd, cmap="inferno", colorscale="log", show=False)
-    # gr.contours(levels, color="w")
-    # gr.show()
-    # return np.array([mdot_s_l(rd=rd, t=t, temp=temp, level=l, consts=consts) for l in levels])
     return np.array([mdot_s_l(rd=rd, t=t, temp=temp * (abs(R) / consts["a0"]) ** (-1 / 2),
                               consts=consts) for R in r])
-    # mlost_max = (4 * Pi / 3.) * consts["rho_ice"] * ((s / 2) ** 3)
-    # return np.array([np.ones_like(t) * mlost_max / (t.max() - t.min()) for R in r])
+
+
+def mdot_s_surf(s: np.float64, t: np.ndarray, r: np.ndarray, consts: dict, It_d=300) -> np.ndarray:
+    """
+    Compute the gas mass generation rate for a given bodies at differents radius if
+    the gas sublimate only at its surface
+
+    Parameters
+    ----------
+    s: np.float64
+        The size of the considered bodie
+    t: np.ndarray
+        The time at which evaluate the gas mass generation rate
+    r: np.ndarray
+        The distances from the central star at which evaluate the gas mass generation rate
+    consts : dict
+        The dictionary of constants
+    It_d : int
+        The number of iterations
+
+    Returns
+    -------
+    np.ndarray
+        the gas mass generation rate as function of time and radius
+
+    """
+    # print("s={:.4f}".format(s / C_L), "m")
+    a1: np.float64 = 7.08e35 / (C_L * C_L * C_t)
+    a2: np.float64 = 6062 # K
+    T0: np.ndarray[np.float64] = (278 * ((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)
+                                  * ((consts["a0"] / au) ** (-1 / 2)))
+    res: np.ndarray[np.float64] = np.array([Pi * s * s * 18 * mp * a1 *
+                                            np.exp(- a2 / (T0 * (abs(R) / consts["a0"]) ** (-1 / 2)))
+                                            / np.sqrt(T0 * (abs(R) / consts["a0"]) ** (-1 / 2)) for R in r])
+    mlost_max = (Pi * s * s * s / 6.) * consts["rho_ice"]
+    res[cumulative_trapezoid(res, t, initial=0., axis=1) >= mlost_max] *= zero
+    return res
+
+
+def mdot_s_vol(s: np.float64, t: np.ndarray, r: np.ndarray, consts: dict, It_d=300) -> np.ndarray:
+    """
+    Compute the gas mass generation rate for a given bodies at differents radius if
+    the gas sublimate in the whole volume neglecting thermal diffusion
+
+    Parameters
+    ----------
+    s: np.float64
+        The size of the considered bodie
+    t: np.ndarray
+        The time at which evaluate the gas mass generation rate
+    r: np.ndarray
+        The distances from the central star at which evaluate the gas mass generation rate
+    consts : dict
+        The dictionary of constants
+    It_d : int
+        The number of iterations
+
+    Returns
+    -------
+    np.ndarray
+        the gas mass generation rate as function of time and radius
+
+    """
+    # print("s={:.4f}".format(s / C_L), "m")
+    T0: np.ndarray[np.float64] = (278 * ((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)
+                                  * ((consts["a0"] / au) ** (-1 / 2)))
+    res: np.ndarray[np.float64] =  np.array([(s * s * s / 6) * (3 * (1 - consts["Phi"]) / consts["rp"])
+                     * Ah2o * np.exp(- Bh2o / (T0 * (abs(R) / consts["a0"]) ** (-1 / 2)))
+                     * np.sqrt(18 * mp / (2. * Pi * kb * T0 * (abs(R) / consts["a0"]) ** (-1 / 2)))
+                     for R in r])
+    mlost_max = (Pi * s * s * s / 6.) * consts["rho_ice"]
+    res[cumulative_trapezoid(res, t, initial=0., axis=1) >= mlost_max] *= zero
+    return res
 
 
 def sig_dot_full_diff(tps: np.ndarray, r: np.ndarray, const: dict, kwargsN: dict = None, It_d: int = 100) -> np.ndarray:
@@ -1181,4 +1339,102 @@ def sig_dot_full_diff(tps: np.ndarray, r: np.ndarray, const: dict, kwargsN: dict
     ni: np.ndarray = ni[..., np.newaxis] + np.zeros(mdots.shape[-1])
     print("ni max={:.4f} min={:.4f}".format(ni.max(), ni.min()))
     print("mdots max={:.4f} mdots={:.4f}".format(mdots.max(), mdots.min()))
+    return trapezoid(ni * mdots, sizes, axis=0).T
+
+
+def sig_dot_sub_surf(tps: np.ndarray, r: np.ndarray, const: dict, kwargsN: dict = None, It_d: int = 100) -> np.ndarray:
+    """
+    Compute the gas surface density generation rate for a belt discribed into the const dictionary
+    if the sublimation append only at the surface of asteroids
+
+    Parameters
+    ----------
+    tps : np.ndarray
+        The time at which evaluate the result
+    r : np.ndarray
+        The distance to the central star at which evaluate the solution
+    const : dict
+        The dictionary of constants
+    kwargsN : dict
+        The dictionary that defined the size distribution
+    It_d : int
+        The number of depth steps for thermal diffusion integration
+
+    Returns
+    -------
+    np.ndarray
+
+    """
+
+    sizes = np.geomspace(const["dmin"], const["dmax"], const["Its_p"])
+
+    mdots = np.array([mdot_s_surf(s=s, t=tps, r=r, consts=const, It_d=It_d) for s in sizes])
+    # The gas mass generation rates of each bodies's size for each radius for each time
+
+    if kwargsN is None:  # Default size distribution
+        kwargsN = dict(amax=np.double(1.e6) * C_L,
+                       abig=np.double(120e3) * C_L,
+                       amed=np.double(20.e3) * C_L, amin=C_L,
+                       qh=np.double(-4.5), qm=np.double(-1.2), ql=np.double(-3.6),
+                       rho=np.double(3e3 * C_M / (C_L * C_L * C_L)))
+
+    ## Calcul of number of asteroids for all diameters and distance to central star
+    sigma0: np.ndarray = (const["Mbelt"] * ((r / const["a0"]) ** (-3. / 2.))
+                          / (4. * Pi * const["a0"] * const["a0"] * (np.sqrt(1. + const["delta_a"] / const["a0"])
+                                                  - np.sqrt(1. - const["delta_a"] / const["a0"]))))  # initial surface density
+    ni: np.ndarray = ((np.array([number_density(s, Mtot=np.double(1.), **kwargsN)
+                                 for s in sizes])[:, np.newaxis] + np.zeros(len(r)))
+                      * (sigma0[:, np.newaxis] + np.zeros(len(sizes))).T)  # number density
+    ni: np.ndarray = ni[..., np.newaxis] + np.zeros(mdots.shape[-1])
+    # print("ni max={:.4f} min={:.4f}".format(ni.max(), ni.min()))
+    # print("mdots max={:.4f} mdots={:.4f}".format(mdots.max(), mdots.min()))
+    return trapezoid(ni * mdots, sizes, axis=0).T
+
+
+def sig_dot_sub_vol(tps: np.ndarray, r: np.ndarray, const: dict, kwargsN: dict = None, It_d: int = 100) -> np.ndarray:
+    """
+    Compute the gas surface density generation rate for a belt discribed into the const dictionary
+    if the sublimation append only at the surface of asteroids
+
+    Parameters
+    ----------
+    tps : np.ndarray
+        The time at which evaluate the result
+    r : np.ndarray
+        The distance to the central star at which evaluate the solution
+    const : dict
+        The dictionary of constants
+    kwargsN : dict
+        The dictionary that defined the size distribution
+    It_d : int
+        The number of depth steps for thermal diffusion integration
+
+    Returns
+    -------
+    np.ndarray
+
+    """
+
+    sizes = np.geomspace(const["dmin"], const["dmax"], const["Its_p"])
+
+    mdots = np.array([mdot_s_vol(s=s, t=tps, r=r, consts=const, It_d=It_d) for s in sizes])
+    # The gas mass generation rates of each bodies's size for each radius for each time
+
+    if kwargsN is None:  # Default size distribution
+        kwargsN = dict(amax=np.double(1.e6) * C_L,
+                       abig=np.double(120e3) * C_L,
+                       amed=np.double(20.e3) * C_L, amin=C_L,
+                       qh=np.double(-4.5), qm=np.double(-1.2), ql=np.double(-3.6),
+                       rho=np.double(3e3 * C_M / (C_L * C_L * C_L)))
+
+    ## Calcul of number of asteroids for all diameters and distance to central star
+    sigma0: np.ndarray = (const["Mbelt"] * ((r / const["a0"]) ** (-3. / 2.))
+                          / (4. * Pi * const["a0"] * const["a0"] * (np.sqrt(1. + const["delta_a"] / const["a0"])
+                                                  - np.sqrt(1. - const["delta_a"] / const["a0"]))))  # initial surface density
+    ni: np.ndarray = ((np.array([number_density(s, Mtot=np.double(1.), **kwargsN)
+                                 for s in sizes])[:, np.newaxis] + np.zeros(len(r)))
+                      * (sigma0[:, np.newaxis] + np.zeros(len(sizes))).T)  # number density
+    ni: np.ndarray = ni[..., np.newaxis] + np.zeros(mdots.shape[-1])
+    # print("ni max={:.4f} min={:.4f}".format(ni.max(), ni.min()))
+    # print("mdots max={:.4f} mdots={:.4f}".format(mdots.max(), mdots.min()))
     return trapezoid(ni * mdots, sizes, axis=0).T

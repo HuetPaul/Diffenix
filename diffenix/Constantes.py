@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import numpy as np
-from diffenix.chemains import racine, results, data_leiden, data_stars
+from diffenix.chemains import racine, results, data_leiden, data_stars, data_radmc
 from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator, CubicSpline
 
 ii = np.iinfo(int)  # Informations sur les results possibles de la
@@ -83,6 +83,7 @@ sigma: np.float64 = np.double(5.670374419 * 1e-8 * C_E / (C_t * C_L * C_L)
 kb: np.float64 = np.double(1.380649e-23 * C_E)  #: 1.380649e-23 J/K Boltzmann constant
 Na: np.float64 = np.double(Rgp / kb)  #: Avogadro constant
 h: np.float64 = np.double(6.62607015e-34 * C_E * C_t)  #: 6.62607015e-34 J/s Planck constant
+mp = np.double(1.6726e-27) * C_M  # Mass of proton
 
 # Earth
 Rearth: np.float64 = np.double(6371009 * C_L)  # 6371009 m Earth's radius
@@ -241,7 +242,7 @@ photo_diss["I"] = np.interp(photo_diss["lambdas_nm"], tabI[:, 0], tabI[:, 1]) / 
 photo_diss["I"][photo_diss["lambdas_nm"] < tabI[0, 0]] = 0.
 
 # Integration parameter
-IT_s: int = 1000  #: Spatials steps
+IT_s: int = 700  #: Spatials steps
 dip: int = 10  #: half of the number of sink cells for a given planets to model the accretion
 method: str = 'RK45'  #: 'LSODA','BDF','DOP853','RK45' : Temporal integration method_root
 rtol: np.float64 = np.double(1e-5)  #: Relative tolerance for temporal integration
@@ -619,7 +620,6 @@ def chargement_constantes(consts_filename: str) -> None:
 
 if "constantes.npz" in os.listdir():
     chargement_constantes("constantes.npz")
-
 elif "constantes.npz" in os.listdir(racine):
     chargement_constantes(racine + "/constantes.npz")
 

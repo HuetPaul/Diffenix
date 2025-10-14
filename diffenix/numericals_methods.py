@@ -6,6 +6,39 @@ import numpy as np
 from scipy.linalg import solve
 
 
+def grid_refine_inner_edge(x_orig: np.ndarray[np.float64],
+                           nlev: int, nspan: int) -> np.ndarray[np.float64]:
+    """
+    A simple grid refinement function
+
+    Parameters
+    ----------
+    x_orig: np.ndarray[np.float64]
+        The origi,al grid to be refined
+    nlev: int
+    nspan: int
+
+    Returns
+    -------
+    np.ndarray[np.float64]
+        The refined grid
+
+    """
+
+    x: np.ndarray[np.float64] = x_orig.copy()
+    rev: bool = x[0] > x[1]
+
+    for ilev in range(nlev):
+        x_new = 0.5 * (x[1:nspan+1] + x[:nspan])
+        x_ref = np.hstack((x, x_new))
+        x_ref.sort()
+        x = x_ref
+        if rev:
+            x = x[::-1]
+
+    return x
+
+
 def gradient_weno5(y: np.ndarray, dx: np.float64 = 1.0, axis: int = -1) -> np.ndarray:
     """
     Compute the spatial derivative of y following the WENO discretization scheme, robust to discontinuity,
