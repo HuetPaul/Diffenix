@@ -1063,12 +1063,14 @@ class SolrhoBelt:
             gr.config_colorbar(ticks=levels,
                                ticks_labels=["{:.2e}".format(t) for t in
                                              levels],
-                               label="Total surface density [M$_\oplus$ . au$^{-2}]$")
+                               label="Surface density production rate"
+                                     " [M$_\oplus$.au$^{-2}$.Myr$^{-1}$]")
         else:
             gr.config_colorbar(ticks=np.geomspace(vmin, vmax_levels, 10),
                                ticks_labels=["{:.2e}".format(t) for t in
                                              np.geomspace(vmin, vmax_levels, 10)],
-                               label="Total surface density [M$_\oplus$ . au$^{-2}]$")
+                               label="Surface density production rate"
+                                     " [M$_\oplus$.au$^{-2}$.Myr$^{-1}$]")
 
         gr.config_ax(xlabel="Time [Myr]", ylabel="Distance to the central star [au] ",
                      xscale="log", yscale="log", xlim=[self.tps[2], self.tps[-1]], ylim=[self.r[0], self.r[-1]])
