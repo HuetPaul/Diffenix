@@ -2598,6 +2598,30 @@ sigma_crit_h2o: np.float64 = np.double(1. / ((Na / (18 * 1e-2 * C_M)) * cross_se
 
 # tph_h2o: np.float64 = yr
 
+def sigma_rad_w(t: np.float64, surf_dens: np.ndarray, sol: Sol) -> np.ndarray:
+    H: np.ndarray = np.sqrt(
+    (Rgp * T(sol.x * sol.x, t + sol.t0)
+     / sol.mu.mean()) / (G * Ms / (sol.x ** 6)))
+
+    return (cumulative_trapezoid(surf_dens,
+                                sol.x * sol.x, initial=zero)
+           / (2. * Pi * sol.x * sol.x * H))
+
+
+def sigma_rad_w(t: np.float64, ys: np.ndarray, sol: Sol) -> np.ndarray:
+    surf_dens: np.ndarray = sol.interp_f(t) * (sol.x ** (-4 - 2 * sol.pls_temp))
+    if "H2O" in sol.nom_mu:
+        H: np.ndarray = np.sqrt(
+        (Rgp * T(sol.x * sol.x, t + sol.t0)
+         / sol.mu[0]) / (G * Ms / (sol.x ** 6)))
+
+        ys0_mean = ys[sol.idx_mu_ast[0], :]
+        return (cumulative_trapezoid(surf_dens * ys0_mean,
+                                    sol.x * sol.x, initial=zero)
+               / (2. * Pi * sol.x * sol.x * H))
+    else:
+        return np.zeros_like(surf_dens)
+
 
 def sigma_dot(t: np.float64, ys: np.ndarray, phi: np.ndarray, sol: Sol) \
         -> np.ndarray:

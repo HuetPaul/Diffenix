@@ -26,7 +26,6 @@ def linear_interp(t_new, t_old, values):
         return (1 - alpha) * values[i - 1] + alpha * values[i]
 
 
-
 class Compteur:
     """
     This object can be used to estimate the number of calls for a function if given in parameter
@@ -149,7 +148,8 @@ def temp_belt(r: np.ndarray | np.float64, t: np.float64 | np.ndarray, consts: di
                     (a0 / au) ** (-1 / 2)))
     else:
         if interpLbol is not None:
-            temp0 = (278 * (((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2)))
+            temp0 = (278 * (((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)) * (
+                        (a0 / au) ** (-1 / 2)))
         else:
             temp0 = (278 * (((1. - consts["Abelt"]) * consts["Ls"] / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2)))
     if isinstance(t, float | np.float64 | int | np.int64) and t < 0:
@@ -235,7 +235,6 @@ def sigmap_rho(t: np.float64 | np.ndarray,
 
 def minit(r: np.ndarray, pinit: np.float64, rho_ice: np.float64, a0: np.float64, delta_a: np.float64,
           Mbelt: np.float64, kwargsN) -> np.float64:
-
     p: np.ndarray = np.geomspace(kwargsN['amin'], kwargsN['amax'], 10000)
     rr: np.ndarray = r[:, np.newaxis] + np.zeros_like(p)
     pp: np.ndarray = (p[:, np.newaxis] + np.zeros_like(r)).T
@@ -372,6 +371,7 @@ def sigma_dot(Mbelt: np.float64, r: np.ndarray,
             # yp[y > 0.9 * rho_ice] *= (y[y > 0.9 * rho_ice] / Myr) * np.exp(- np.maximum(200, rho_ice / np.maximum(abs(y[y > 0.9 * rho_ice] - rho_ice), 1e-200)))
             # yp[pp.flatten() < pmin] *= zero
             return yp
+
         #
         sol_ivp = solve_ivp(system, t_span=[ti, tf],
                             y0=yinit,
@@ -384,7 +384,6 @@ def sigma_dot(Mbelt: np.float64, r: np.ndarray,
         times_loc = sol_ivp.t
 
         rhodot = np.gradient(sol_ivp.y.T.reshape((len(sol_ivp.t), pp.shape[0], pp.shape[1])), sol_ivp.t, axis=0)
-
 
         yplot = sol_ivp.y.T[-1].reshape(pp.shape).T
         yplot[np.isnan(yplot)] = zero
@@ -404,8 +403,9 @@ def sigma_dot(Mbelt: np.float64, r: np.ndarray,
 
         rhodot_d: np.ndarray = 4. * Pi * cumulative_trapezoid(p * p * rhodot, p, axis=2, initial=zero)
 
-        rho_d: np.ndarray = 4. * Pi * cumulative_trapezoid(p * p * (sol_ivp.y.T.reshape((len(sol_ivp.t), pp.shape[0], pp.shape[1]))),
-                                                           p, axis=2, initial=zero)
+        rho_d: np.ndarray = 4. * Pi * cumulative_trapezoid(
+            p * p * (sol_ivp.y.T.reshape((len(sol_ivp.t), pp.shape[0], pp.shape[1]))),
+            p, axis=2, initial=zero)
         if kwargsN is None:  # Default size distribution
             kwargsN = dict(amax=np.double(1.e6) * C_L,
                            abig=np.double(120e3) * C_L,
@@ -806,7 +806,7 @@ class SolrhoBelt:
 
             self.interp_sig_dot = linear_interp
             # self.interp_sig_dot = linear_interpolation(self.tps, self.sig_dots)
-            
+
             # def interp_sig_dot(t: np.float64 | np.ndarray) -> np.ndarray[np.float64]:
             #     return np.interp(t, self.tps, self.sig_dots)
             # self.interp_sig_dot = interp_sig_dot
@@ -847,8 +847,8 @@ class SolrhoBelt:
             # self.Itt = len(self.tps)
             # self.sig_dots = (self.sig_dots[idx]).copy()
 
-            self.sig_dots =  sig_dot_full_diff(tps=self.tps, r=self.r, const=self.const(),
-                                               kwargsN=self.kwargs_N, It_d=200)
+            self.sig_dots = sig_dot_full_diff(tps=self.tps, r=self.r, const=self.const(),
+                                              kwargsN=self.kwargs_N, It_d=200)
 
             def linear_interp(t_new):
                 if isinstance(t_new, list | np.ndarray):
@@ -897,7 +897,7 @@ class SolrhoBelt:
                 mdot_[self.tps - 0.1 * Myr > t0_diss] *= np.exp(
                     -(self.tps[self.tps - 0.1 * Myr > t0_diss] - t0_diss) / t1_diss)
             sigmad0: np.float64 = mdot_ / (
-                        4. * Pi * a0 * a0 * (np.sqrt(1. + delta_a / a0) - np.sqrt(1. - delta_a / a0)))
+                    4. * Pi * a0 * a0 * (np.sqrt(1. + delta_a / a0) - np.sqrt(1. - delta_a / a0)))
             self.sig_dots: np.ndarray = np.full((len(self.tps), len(self.r)), sigmad0)
             self.sig_dots *= ((self.r / self.a0) ** (-3. / 2.))
             self.interp_sig_dot = CubicSpline(self.tps - 0.5 * Myr, self.sig_dots)
@@ -929,7 +929,7 @@ class SolrhoBelt:
                                   * trapezoid([n(d) for d in diams], diams) * np.sqrt(t))
 
                 sigmad0: np.float64 = mdot_t / (
-                            4. * Pi * a0 * a0 * (np.sqrt(1. + delta_a / a0) - np.sqrt(1. - delta_a / a0)))
+                        4. * Pi * a0 * a0 * (np.sqrt(1. + delta_a / a0) - np.sqrt(1. - delta_a / a0)))
                 if t > t0_diss:
                     sigmad0 *= np.exp(-(t - t0_diss) / t1_diss)
                 return sigmad0 * ((self.r / self.a0) ** (-3. / 2.))
@@ -944,9 +944,10 @@ class SolrhoBelt:
             #         2. * sigmar * sigmar))
             # sigmap_0: np.float64 = m_dot / (4. * Pi * self.a0  * self.a0 * (
             #         np.sqrt(1 + self.delta_a / (2 * self.a0)) - np.sqrt(1 - self.delta_a / (2 * self.a0))))
-            sigmap_0: np.float64 = const_mdot / (4. * Pi * self.a0  * self.a0 * (
+            sigmap_0: np.float64 = const_mdot / (4. * Pi * self.a0 * self.a0 * (
                     np.sqrt(1 + self.delta_a / self.a0) - np.sqrt(1 - self.delta_a / self.a0)))
-            sigmap: np.ndarray = sigmap_0 * ((self.r / self.a0) ** (-3/2))
+            sigmap: np.ndarray = sigmap_0 * ((self.r / self.a0) ** (-3 / 2))
+
             def cons_rate(t: np.float64 | np.ndarray) -> np.ndarray:
                 if t < t0_diss:
                     return sigmap
@@ -1043,7 +1044,7 @@ class SolrhoBelt:
             vmax = -inf
 
         gr: g.Graphique = g.image(self.sig_dots[::max(len(self.tps) // size_time, 1),
-                                                ::max(len(self.r) // size_radius, 1)].T,
+        ::max(len(self.r) // size_radius, 1)].T,
                                   np.array(self.tps)[::max(len(self.tps) // size_time, 1)] / Myr,
                                   np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
                                   cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
@@ -1100,8 +1101,51 @@ class SolrhoBelt:
             gr.save()
         return gr
 
+    def graph_mdot(self, size_time: int = 500,
+                   show: bool = True, save: bool = False, directory: str = None,
+                   **kwargs_ax) -> g.Graphique:
+        """
+        Build a Graphique that represant the evolution of total gas mass generation rate
+         as function of time
 
-def thermal_diff(d: np.float64, consts: dict, It_d: int = 300, t: np.ndarray = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        Parameters
+        ----------
+        size_time : int, optional, default=1000
+            The size for the time coordinate (x-axis)
+        show : bool, optional, default = True
+            Whether to show the image
+        save : bool, optional, default = False
+            Whether to save the image (if True, both the Graphique and the png image will be saved)
+        directory : str, optional
+            The directory to save the Graphique, default=self.directory
+
+        Returns
+        -------
+        g.Graphique
+
+        """
+        gr: g.Graphique = g.loglog(np.array(self.tps)[::max(len(self.tps) // size_time, 1)] / Myr,
+                                   trapezoid(self.sig_dots[::max(len(self.tps) // size_time, 1)], self.r, axis=1)
+                                   * Myr / Mearth, show=False)
+        gr.config_ax(xlabel="Time [Myr]", ylabel="$\dot{M}$ [M$_\oplus$.Myr$^{-1}] ",
+                     xscale="log", yscale="log", xlim=[self.tps[2], self.tps[-1]])
+        gr.filename = "Image_total_mass_production_rate"
+
+        gr.config_ax(**kwargs_ax)
+
+        if directory is not None:
+            gr.directory = directory
+        if show:
+            gr.show()
+        if save:
+            gr.ext = ".png"
+            gr.save_figure(dpi=400)
+            gr.save()
+        return gr
+
+
+def thermal_diff(d: np.float64, consts: dict, It_d: int = 300, t: np.ndarray = None) -> tuple[
+    np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute the thermal diffusion equation into a bodi of radius d as a function of time assuming the bodi to be
     at the distance a_0 from the central star. To get the temperatures at others location r, one must multiplie the
@@ -1151,9 +1195,11 @@ def thermal_diff(d: np.float64, consts: dict, It_d: int = 300, t: np.ndarray = N
         print(sol_ivp.message)
         if t is None:
             t = np.geomspace(consts["tinit"], consts["tmax"], 1000)
-        temp_lim = (278 * (((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2)))
+        temp_lim = (278 * (((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)) * (
+                    (a0 / au) ** (-1 / 2)))
         return r, t, (temp_lim[:, np.newaxis] + np.zeros_like(r)).T
-    sol_ivp.y[-1] = (278 * (((1. - consts["Abelt"]) * interpLbol(sol_ivp.t, consts["Ms"]) / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2)))
+    sol_ivp.y[-1] = (278 * (((1. - consts["Abelt"]) * interpLbol(sol_ivp.t, consts["Ms"]) / Lsun) ** (1 / 4)) * (
+                (a0 / au) ** (-1 / 2)))
     sol_ivp.y[0] = sol_ivp.y[1]
     return r, sol_ivp.t, sol_ivp.y
 
@@ -1183,13 +1229,13 @@ def mdot_s_l(rd: np.ndarray, t: np.ndarray, temp: np.ndarray, consts: dict) -> n
     dr = rd[1] - rd[0]
     rr = rd[:, np.newaxis] + np.zeros(len(t))
     mdot = (4 * Pi / 3.) * (S * Ah2o * np.exp(-Bh2o / temp) * np.sqrt(mu_H2O / (2. * Pi * Rgp * temp))) * (
-                (rr + dr) ** 3 - (rr - dr) ** 3)
+            (rr + dr) ** 3 - (rr - dr) ** 3)
     mlost_max = (4 * Pi / 3.) * consts["rho_ice"] * ((rr + dr) ** 3 - (rr - dr) ** 3)
     mdot[cumulative_trapezoid(mdot, t, initial=0., axis=1) >= mlost_max] *= zero
     mmax = (4 * Pi / 3.) * consts["rho_ice"] * (rd.max() ** 3 - rd.min() ** 3)
     if np.any(cumulative_trapezoid(mdot.sum(axis=0), t, initial=0.) >= mmax):
         i = np.argwhere((cumulative_trapezoid(mdot.sum(axis=0), t, initial=0.) >= mmax))[0, 0]
-        mdot[:, max(0, i-1):] *= zero
+        mdot[:, max(0, i - 1):] *= zero
     return mdot.sum(axis=0)
 
 
@@ -1249,7 +1295,7 @@ def mdot_s_surf(s: np.float64, t: np.ndarray, r: np.ndarray, consts: dict, It_d=
     """
     # print("s={:.4f}".format(s / C_L), "m")
     a1: np.float64 = 7.08e35 / (C_L * C_L * C_t)
-    a2: np.float64 = 6062 # K
+    a2: np.float64 = 6062  # K
     T0: np.ndarray[np.float64] = (278 * ((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)
                                   * ((consts["a0"] / au) ** (-1 / 2)))
     res: np.ndarray[np.float64] = np.array([Pi * s * s * 18 * mp * a1 *
@@ -1287,10 +1333,11 @@ def mdot_s_vol(s: np.float64, t: np.ndarray, r: np.ndarray, consts: dict, It_d=3
     # print("s={:.4f}".format(s / C_L), "m")
     T0: np.ndarray[np.float64] = (278 * ((1. - consts["Abelt"]) * interpLbol(t, consts["Ms"]) / Lsun) ** (1 / 4)
                                   * ((consts["a0"] / au) ** (-1 / 2)))
-    res: np.ndarray[np.float64] =  np.array([(s * s * s / 6) * (3 * (1 - consts["Phi"]) / consts["rp"])
-                     * Ah2o * np.exp(- Bh2o / (T0 * (abs(R) / consts["a0"]) ** (-1 / 2)))
-                     * np.sqrt(18 * mp / (2. * Pi * kb * T0 * (abs(R) / consts["a0"]) ** (-1 / 2)))
-                     for R in r])
+    res: np.ndarray[np.float64] = np.array([(s * s * s / 6) * (3 * (1 - consts["Phi"]) / consts["rp"])
+                                            * Ah2o * np.exp(- Bh2o / (T0 * (abs(R) / consts["a0"]) ** (-1 / 2)))
+                                            * np.sqrt(
+        18 * mp / (2. * Pi * kb * T0 * (abs(R) / consts["a0"]) ** (-1 / 2)))
+                                            for R in r])
     mlost_max = (Pi * s * s * s / 6.) * consts["rho_ice"]
     res[cumulative_trapezoid(res, t, initial=0., axis=1) >= mlost_max] *= zero
     return res
@@ -1334,7 +1381,8 @@ def sig_dot_full_diff(tps: np.ndarray, r: np.ndarray, const: dict, kwargsN: dict
     ## Calcul of number of asteroids for all diameters and distance to central star
     sigma0: np.ndarray = (const["Mbelt"] * ((r / const["a0"]) ** (-3. / 2.))
                           / (4. * Pi * const["a0"] * const["a0"] * (np.sqrt(1. + const["delta_a"] / const["a0"])
-                                                  - np.sqrt(1. - const["delta_a"] / const["a0"]))))  # initial surface density
+                                                                    - np.sqrt(
+                        1. - const["delta_a"] / const["a0"]))))  # initial surface density
     ni: np.ndarray = ((np.array([number_density(s, Mtot=np.double(1.), **kwargsN)
                                  for s in sizes])[:, np.newaxis] + np.zeros(len(r)))
                       * (sigma0[:, np.newaxis] + np.zeros(len(sizes))).T)  # number density
@@ -1383,7 +1431,8 @@ def sig_dot_sub_surf(tps: np.ndarray, r: np.ndarray, const: dict, kwargsN: dict 
     ## Calcul of number of asteroids for all diameters and distance to central star
     sigma0: np.ndarray = (const["Mbelt"] * ((r / const["a0"]) ** (-3. / 2.))
                           / (4. * Pi * const["a0"] * const["a0"] * (np.sqrt(1. + const["delta_a"] / const["a0"])
-                                                  - np.sqrt(1. - const["delta_a"] / const["a0"]))))  # initial surface density
+                                                                    - np.sqrt(
+                        1. - const["delta_a"] / const["a0"]))))  # initial surface density
     ni: np.ndarray = ((np.array([number_density(s, Mtot=np.double(1.), **kwargsN)
                                  for s in sizes])[:, np.newaxis] + np.zeros(len(r)))
                       * (sigma0[:, np.newaxis] + np.zeros(len(sizes))).T)  # number density
@@ -1432,7 +1481,8 @@ def sig_dot_sub_vol(tps: np.ndarray, r: np.ndarray, const: dict, kwargsN: dict =
     ## Calcul of number of asteroids for all diameters and distance to central star
     sigma0: np.ndarray = (const["Mbelt"] * ((r / const["a0"]) ** (-3. / 2.))
                           / (4. * Pi * const["a0"] * const["a0"] * (np.sqrt(1. + const["delta_a"] / const["a0"])
-                                                  - np.sqrt(1. - const["delta_a"] / const["a0"]))))  # initial surface density
+                                                                    - np.sqrt(
+                        1. - const["delta_a"] / const["a0"]))))  # initial surface density
     ni: np.ndarray = ((np.array([number_density(s, Mtot=np.double(1.), **kwargsN)
                                  for s in sizes])[:, np.newaxis] + np.zeros(len(r)))
                       * (sigma0[:, np.newaxis] + np.zeros(len(sizes))).T)  # number density
