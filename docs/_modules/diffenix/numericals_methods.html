@@ -43,8 +43,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../The_model.html">The model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../The_model.html">The Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../The_model.html#references">References</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../diffenix.html">Documentation</a></li>
 </ul>
@@ -80,6 +80,42 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">solve</span>
+
+
+<div class="viewcode-block" id="grid_refine_inner_edge">
+<a class="viewcode-back" href="../../diffenix.html#diffenix.numericals_methods.grid_refine_inner_edge">[docs]</a>
+<span class="k">def</span> <span class="nf">grid_refine_inner_edge</span><span class="p">(</span><span class="n">x_orig</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+                           <span class="n">nlev</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">nspan</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A simple grid refinement function</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x_orig: np.ndarray[np.float64]</span>
+<span class="sd">        The origi,al grid to be refined</span>
+<span class="sd">    nlev: int</span>
+<span class="sd">    nspan: int</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray[np.float64]</span>
+<span class="sd">        The refined grid</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_orig</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">rev</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">ilev</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nlev</span><span class="p">):</span>
+        <span class="n">x_new</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">nspan</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[:</span><span class="n">nspan</span><span class="p">])</span>
+        <span class="n">x_ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">x_new</span><span class="p">))</span>
+        <span class="n">x_ref</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x_ref</span>
+        <span class="k">if</span> <span class="n">rev</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">x</span></div>
+
 
 
 <div class="viewcode-block" id="gradient_weno5">

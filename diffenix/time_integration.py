@@ -188,6 +188,19 @@ def restart(number: int | str, tf: np.float64 = 0.1 * Gyr, save_time_step : np.f
         print("Restarting ", number)
         name = number
 
+
+    if os.path.exists(results + "/" + name + "/infos.npz"):
+        infos: dict = dict(np.load(results + "/" + name + "/infos.npz"))
+        if infos["status"] == "integrating":
+            raise UserWarning("The simulation is already being integrated by another process")
+        elif infos["status"] == "integreted":
+            raise UserWarning("The simulation has already been integrated until the end")
+        infos["status"] = "integrating"
+        np.savez_compressed(results + "/" + name + "/infos.npz", **infos)
+    else:
+        infos: dict = {"status": "integrating"}
+        np.savez_compressed(results + "/" + name + "/infos.npz", **infos)
+
     sol = Sol(directory=results + '/' + name, filename="Simulation_diffusion")
     if rtol is not None:
         sol.rtol = rtol
@@ -218,6 +231,12 @@ def restart(number: int | str, tf: np.float64 = 0.1 * Gyr, save_time_step : np.f
             gc.collect()
             sol.time_integration(tfi, dtmax=dtmax, integrate_only_surface_density=integrate_only_surface_density)
             gc.collect()
+    if sol.tps_mf[-1] < tf:
+        infos["status"] = "done"
+    else:
+        infos["status"] = "integreted"
+    np.savez_compressed(results + "/" + name + "/infos.npz", **infos)
+
     return sol
 
 

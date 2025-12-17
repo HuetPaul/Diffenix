@@ -138,8 +138,10 @@ class Sol:
                 raise UserWarning("The size of the initial element array mus0 (",
                                   len(mus0), ") must be equal to the size of the "
                                              "initial element names array nom_mus0 (", len(noms_mus0), ")")
-            if "directory" in consts.keys():
+            if consts is not None and "directory" in consts.keys():
                 self.directory = str(consts["directory"])
+            elif directory != "":
+                self.directory = directory
             else:
                 self.directory: str = results
             if consts is None or consts == {}:
@@ -172,6 +174,8 @@ class Sol:
                 self.m_planets: np.ndarray = m_planets.copy()  # The mass of planets
                 self.f_accr: np.float64 = f_accr  # hydrodynamic accretion efficiency
                 self.t0: np.float64 = t0  # Protoplanetary disc lifetime
+                self.stellar_radiations: bool = True  # The central star's radiations are used to estimate photodissociation rate
+                self.interstellar_radiations: bool = True  # The interstellar radiations are used to estimate photodissociation rate
                 self.sol_ast_params = dict(sublimation_model=AB_sublimation_model,
                                            mdot_st_init=np.double(1e-10) * Mearth / Myr,
                                            Mbelt=AB_Mbelt, Ms=Ms,
@@ -242,7 +246,11 @@ class Sol:
                                                        a0=self.sol_ast_params["a0"], mu=np.double(18. * 1e-3 * C_M))
             minit_kuips: np.float64 = mass_steady_state(sol=self, mdot=self.sol_kuip_params["mdot_st_init"],
                                                        a0=self.sol_kuip_params["a0"], mu=np.double(28. * 1e-3 * C_M))
-            minit: np.float64 = self.mH_init + minit_asts + minit_kuips
+            minit: np.float64 = self.mH_init
+            if self.sol_ast_params["sublimation_model"] != "none":
+                minit += minit_asts
+            if self.sol_kuip_params["sublimation_model"] != "none":
+                minit += minit_kuips
 
             if self.sol_ast_params["sublimation_model"] != "none":
                 self.idx_mu_ast = len(mu) + np.arange(3)
@@ -535,6 +543,10 @@ class Sol:
                 - a_out : np.float64, Outer radius of the integration domain
                 - T0 : np.float64, Temperature at a0
                 - mH_init : np.float64, The initial hydrogen mass
+                - stellar_radiations : bool, to include the radiations of the central star to
+                    estimate the photodissiciation rate
+                - interstellar_radiations : bool, to include the interstellar radiations to
+                    estimate the photodissiciation rate
                 - AB_mdot_st_init : np.float64, The gas mass generation rate that generate the initial steady state
                 - AB_Mbelt : np.float64, Asteroid belt's size
                 - AB_Abelt : np.float64, Asteroids albedo
@@ -624,6 +636,7 @@ class Sol:
                 "a_in": self.a_in, "a_out": self.a_out, "mH_init": self.mH_init, "a0": self.a0,
                 "T0": self.T0, "pls_temp": self.pls_temp,
                 "alpha": self.alpha, "gamma": self.gamma,
+                "stellar_radiations": self.stellar_radiations, "interstellar_radiations": self.interstellar_radiations,
                 "AB_mdot_st_init" : self.sol_ast_params["mdot_st_init"],
                 "AB_Mbelt": self.sol_ast_params["Mbelt"], "AB_Abelt": self.sol_ast_params["A_ast"],
                 "AB_a0": self.sol_ast_params["a0"],
@@ -806,6 +819,15 @@ class Sol:
         self.gamma = np.double(dic["gamma"])
         self.t0 = np.double(dic["t0"]) * C_t / self.C_t
         m_init_asts = zero
+        if "stellar_radiations" in dic.keys():
+            self.stellar_radiations = bool(dic["stellar_radiations"])
+        else:
+            self.stellar_radiations = True
+        if "interstellar_radiations" in dic.keys():
+            self.interstellar_radiations = bool(dic["interstellar_radiations"])
+        else:
+            self.interstellar_radiations = True
+
         if "AB_m_init" in dic.keys():
             m_init_asts = dic["AB_m_init"] * C_M / self.C_M
 
@@ -1103,7 +1125,7 @@ class Sol:
             )
             if len(ips) > 0:
                 self.flux_planets.append(
-                    np.array([phi[ips + dip], phi[ips - dip]]))
+                    np.array([phi[ips - 2 + dip], phi[ips - 2 - dip]]))
 
             if i % step == 0:
                 self.tps.append(tps[i])
@@ -1212,7 +1234,7 @@ class Sol:
         if dtmax == inf:
             nu0: np.float64 = (Rgp * T0(self.t0, self.a0, self.Ms) * self.alpha * (self.a0 ** (3 / 2))
                                / (self.mu.mean() * np.sqrt(G * self.Ms)))
-            dtmax: np.float64 = min((self.r[1] - self.r[0]) * (self.r[1] - self.r[0]) 
+            dtmax: np.float64 = min((self.r[1] - self.r[0]) * (self.r[1] - self.r[0])
                                     / (nu0 * ((self.r / self.a0) ** (3/2 + self.pls_temp))),
                                     60. * yr)
         if self.tps[-1] < tf:
@@ -1461,11 +1483,23 @@ class Sol:
         # Accretion_rates
         colors_planets: list[str] = [g.C1, g.C2, g.C6, g.C5, g.C3, g.C4]
         colors_p: list[str] = []
-        mdots: np.ndarray = abs(np.array(self.flux_planets)[::max(len(self.flux_planets) // 1000, 1), 1]
+        mdots: list = abs(np.array(self.flux_planets)[::max(len(self.flux_planets) // 1000, 1), 1]
                                 - np.array(self.flux_planets)[::max(len(self.flux_planets) // 1000, 1), 0])
+        ips = []
+        for r_planet in self.a_planets:
+            ips.append(np.argwhere(self.r >= r_planet)[0, 0])
+        ips = np.array(ips)
+        mdots = []
+        for i in range(len(self.tps)):
+            flux=self.mass_flux(i)
+            mdots_i = []
+            for ip in ips:
+                mdots_i.append(abs(flux[ip+self.dip]-flux[ip-self.dip]))
+            mdots.append(np.array(mdots_i))
+        mdots = np.array(mdots)
         for i in range(len(self.a_planets)):
             colors_p.append(colors_planets[i % len(colors_planets)])
-        time = np.array(self.diag["time"][::max(len(self.flux_planets) // 1000, 1)])
+        time = np.array(self.tps)
         print(mdots.shape, time.shape)
         # Accretion rates
 
@@ -1875,6 +1909,9 @@ class Sol:
         if ((isinstance(species, int) and (species > len(self.nom_mu) or species < 0))
             or (isinstance(species, str) and species == "all")):
             tps = np.geomspace(np.min(np.array(self.tps)[np.array(self.tps) > 0]), np.max(self.tps), size_time)
+            if np.max(self.interp_sigma(tps)[:,
+                                      ::max(len(self.r) // size_radius, 1)].T) < vmin:
+                vmin = -inf
             gr: g.Graphique = g.image(self.interp_sigma(tps)[:,
                                       ::max(len(self.r) // size_radius, 1)].T,
                                       tps / Myr,
@@ -1934,7 +1971,11 @@ class Sol:
             if isinstance(species, str):
                 species = np.argwhere(self.nom_mu == species)[0, 0]
             idx = np.arange(0, len(self.tps_mf), max(len(self.tps_mf) // size_time, 1))
-
+            if np.max(self.interp_sigma(np.array(self.tps_mf)[idx]
+                                                        )[:, ::max(len(self.r) // size_radius, 1)].T
+                                      * np.array(self.mass_fractions)[idx, species,
+                                      ::max(len(self.r) // size_radius,1)].T) < vmin:
+                vmin = - inf
             gr: g.Graphique = g.image(self.interp_sigma(np.array(self.tps_mf)[idx]
                                                         )[:, ::max(len(self.r) // size_radius, 1)].T
                                       * np.array(self.mass_fractions)[idx, species,
@@ -2027,6 +2068,262 @@ class Sol:
             gr.save()
         return gr
 
+    def graph_image_radial_surface_density(self, species: int | np.ndarray | list[int] = ii_max,
+                                    plot_sigma_crit: bool = True,
+                                    vmin: np.float64 | str = 1e-10 * Mearth / Myr, vmax: np.float64 | str= None,
+                                    size_time: int = 500, size_radius: int = 1000,
+                                    color_sigma_crit_h2o: str | tuple = "w",
+                                    color_sigma_crit_co: str | tuple = "g",
+                                    cmap: str = "inferno", nb_levels: int = 10,
+                                    color_min: str | tuple = None, color_max: str | tuple = None,
+                                    plot_planets: bool = True, planets_names: list[str] = None,
+                                    show: bool = True, save: bool = False, directory: str = None,
+                                    plot_label_levels: bool = True,
+                                    **kwargs_ax
+                                    ) -> g.Graphique:
+        """
+        Build a Graphique that represant the evolution of radial surface density as function of time and radius
+
+        Parameters
+        ----------
+        species : str | int, optional
+            The specie for which the surface density is represanted, default the total surface density is represanted
+        plot_sigma_crit : bool, optional, default = True
+            To plot a specific level line at the critical surface density
+        vmin : np.float64 | str , optional, {"auto", np.loat64}, default = 1e-10 * Mearth / Myr
+            The minimum value of surface density to represant in the result (below it will be considered as saturated)
+            If "auto", the minimal value will be the minimal value of the surface density represanted
+        vmax : np.float64 | str, optional, {"auto", np.loat64},
+            The maximum value of surface density to represant in the result (above it will be considered as saturated)
+            Default, v_max is not considered like for "auto" where the maximal value will be the maximal value of the surface density represanted
+
+        size_time : int, optional, default=1000
+            The image's size for the time coordinate (x-axis)
+        size_radius : int, optional, default=1000
+            The image's size for the radius coordinate (y-axis)
+        color_sigma_crit_h2o : str, optional, default = "w"
+            The color of the level line associated with the critical surface density of water
+        color_sigma_crit_co : str, optional, default = "g"
+            The color of the level line associated with the critical surface density of CO
+        cmap : str, optional, default = "inferno"
+            The colormap used for the image
+        nb_levels : int, optional, default=10
+            The number of levels in the image
+                The number of levels to plot in addition to the image
+        color_min : str | tuple, optional
+            The color associated with the minimum value for a `default` cmap
+        color_max : str | tuple, optional
+            The color associated with the maximum value for a `default` cmap
+        plot_planets : bool, optional, default = True
+            Whether or not to plot a grey shaded era that delimitate the planet's sink cell's era
+        planets_names : list[str], optional
+            A list of names for the planets to write close to the grey shadeds eras
+        plot_label_levels : bool, optional, default=False
+            To plot (or not) labels for the contours (if True, labels are only plot every two levels)
+        show : bool, optional, default = True
+            Whether to show the image
+        save : bool, optional, default = False
+            Whether to save the image (if True, both the Graphique and the png image will be saved)
+        directory : str, optional
+            The directory to save the Graphique, default=self.directory
+
+        Returns
+        -------
+        g.Graphique
+
+        """
+
+        if isinstance(species, str) and species != "all" and species not in self.nom_mu:
+            raise UserWarning(f"The specie {species} doesn't exist for this simulation,"
+                              f" Please use 'all' for the total surface density of one of{self.nom_mu}")
+        if isinstance(species, int) and len(self.nom_mu) <= species < ii_max:
+            print(f"Graphique.graph_image_surface_density : the specie number {species} cannot be reffered to any"
+                  f" specie of this solution. The total surface density will be represanted")
+
+        if isinstance(vmin, str) and vmin !="auto":
+            raise UserWarning(f"The vmin={vmin} is not a valid value for this simulation")
+        elif isinstance(vmin, str):
+            vmin = -inf
+
+        if vmax is None:
+            vmax = np.inf
+        if isinstance(vmax, str) and vmax !="auto":
+            raise UserWarning(f"The vmax={vmax} is not a valid value for this simulation")
+        elif isinstance(vmax, str):
+            vmax = -inf
+
+        if planets_names is not None and len(planets_names) != len(self.a_planets):
+            raise UserWarning(f"The number of planets {len(planets_names)} in the name_planet parameter does not match"
+                              f"to the actual number of planets in this simulation {len(self.a_planets)}")
+
+        sigma_crit_co: np.float64 = zero
+        sigma_crit_h2o: np.float64 = zero
+        if "CO" in self.nom_mu:
+            sigma_crit_co: np.float64 = np.double(1e-7) * Mearth / (au * au)
+        elif "H2O" in self.nom_mu:
+            cross_section_h2o: np.float64 = np.double(5.e-22) * C_L * C_L  # mean cross-section
+            sigma_crit_h2o: np.float64 = np.double(1. / ((Na / (18 * 1e-2 * C_M)) * cross_section_h2o))
+
+        if ((isinstance(species, int) and (species > len(self.nom_mu) or species < 0))
+            or (isinstance(species, str) and species == "all")):
+            print("species=full")
+            tps = np.geomspace(np.min(np.array(self.tps)[np.array(self.tps) > 0]), np.max(self.tps), size_time)
+            if np.max(sigma_rad(tps, self.interp_sigma(tps), self)[:,
+                                      ::max(len(self.r) // size_radius, 1)].T) < vmin:
+                vmin = - inf
+            gr: g.Graphique = g.image(sigma_rad(tps, self.interp_sigma(tps), self)[:,
+                                      ::max(len(self.r) // size_radius, 1)].T,
+                                      tps / Myr,
+                                      np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
+                                      cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
+                                      color_min=color_min, color_max=color_max)
+            if vmin == -inf:
+                vmin = np.min(gr.array_image)
+
+            if vmax < inf:
+                vmax_levels = vmax
+            else:
+                vmax_levels: np.float64 = np.max(gr.array_image)
+
+            if nb_levels > 0:
+                levels = np.geomspace(vmin, vmax_levels, nb_levels)
+                if "CO" in self.nom_mu and "H2O" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(np.append(levels, [sigma_crit_co, sigma_crit_h2o]),
+                                color=np.append(["k" for l in levels], color_sigma_crit_co, color_sigma_crit_h2o))
+                elif "CO" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(np.append(levels, sigma_crit_co),
+                                color=np.append(["k" for l in levels], color_sigma_crit_co))
+                elif "H2O" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(np.append(levels, sigma_crit_h2o),
+                                color=np.append(["k" for l in levels], color_sigma_crit_h2o))
+                else:
+                    gr.contours(levels, color="k")
+
+                gr.config_colorbar(ticks=levels,
+                                   ticks_labels=["{:.2e}".format(t) for t in
+                                                 levels],
+                                   label="Total surface density [M$_\oplus$ . au$^{-2}]$")
+            else:
+                if "CO" in self.nom_mu and "H2O" in self.nom_mu and plot_sigma_crit:
+                    gr.contours([sigma_crit_co, sigma_crit_h2o],
+                                colors=[color_sigma_crit_co, color_sigma_crit_h2o])
+                elif "CO" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(sigma_crit_co, colors=color_sigma_crit_co)
+                elif "H2O" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(sigma_crit_h2o, colors=color_sigma_crit_h2o)
+                gr.config_colorbar(ticks=np.geomspace(vmin, vmax_levels, 10),
+                                   ticks_labels=["{:.2e}".format(t) for t in
+                                                 np.geomspace(vmin, vmax_levels, 10)],
+                                   label="Total surface density [M$_\oplus$ . au$^{-2}]$")
+
+            gr.config_ax(xlabel="Time [Myr]", ylabel="Distance to the central star [au] ",
+                         xscale="log", yscale="log", xlim=[self.tps[2], self.tps[-1]], ylim=[self.r[0], self.r[-1]])
+            if vmax < np.inf and np.any(self.sigma() > vmax):
+                gr.config_colorbar(0, extend="max")
+            if np.any(self.sigma() < vmin):
+                if 'extend' in gr.param_colorbar[0].keys():
+                    gr.config_colorbar(0, extend="both")
+                else:
+                    gr.config_colorbar(0, extend="min")
+            gr.filename = "Image_total_radial_surface_density"
+        else:
+            if isinstance(species, str):
+                species = np.argwhere(self.nom_mu == species)[0, 0]
+            idx = np.arange(0, len(self.tps_mf), max(len(self.tps_mf) // size_time, 1))
+            print("species=", species)
+            if np.max(sigma_rad_w(np.array(self.tps_mf)[idx], np.array(self.mass_fractions)[idx], self)[:,
+                                      ::max(len(self.r) // size_radius, 1)].T) < vmin:
+                vmin = - inf
+            gr: g.Graphique = g.image(sigma_rad_w(np.array(self.tps_mf)[idx], np.array(self.mass_fractions)[idx], self)[:,
+                                      ::max(len(self.r) // size_radius, 1)].T,
+                                      np.array(self.tps_mf)[idx] / Myr,
+                                      np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
+                                      cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
+                                      color_min=color_min, color_max=color_max)
+
+            if vmin == -inf:
+                vmin = np.min(gr.array_image)
+            if vmax < inf:
+                vmax_levels = vmax
+            else:
+                vmax_levels: np.float64 = np.max(gr.array_image)
+
+            if nb_levels > 0:
+                levels = np.geomspace(vmin, vmax_levels, nb_levels)
+                if "CO" in self.nom_mu and "H2O" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(np.append(levels, [sigma_crit_co, sigma_crit_h2o]),
+                                color=np.append(["k" for l in levels], color_sigma_crit_co, color_sigma_crit_h2o))
+                elif "CO" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(np.append(levels, sigma_crit_co),
+                                color=np.append(["k" for l in levels], color_sigma_crit_co))
+                elif "H2O" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(np.append(levels, sigma_crit_h2o),
+                                color=np.append(["k" for l in levels], color_sigma_crit_h2o))
+                else:
+                    gr.contours(levels, color="k")
+
+                gr.config_colorbar(ticks=levels,
+                                   ticks_labels=["{:.2e}".format(t) for t in
+                                                 levels],
+                                   label=self.nom_mu[species] + " surface density [M$_\oplus$ . au$^{-2}]$")
+            else:
+                if "CO" in self.nom_mu and "H2O" in self.nom_mu and plot_sigma_crit:
+                    gr.contours([sigma_crit_co, sigma_crit_h2o],
+                                colors=[color_sigma_crit_co, color_sigma_crit_h2o])
+                elif "CO" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(sigma_crit_co, colors=color_sigma_crit_co)
+                elif "H2O" in self.nom_mu and plot_sigma_crit:
+                    gr.contours(sigma_crit_h2o, colors=color_sigma_crit_h2o)
+                gr.config_colorbar(ticks=np.geomspace(vmin, vmax_levels, 10),
+                                   ticks_labels=["{:.2e}".format(t) for t in
+                                                 np.geomspace(vmin, vmax_levels, 10)],
+                                   label=self.nom_mu[species] + " surface density [M$_\oplus$ . au$^{-2}]$")
+
+            gr.config_ax(xlabel="Time [Myr]", ylabel="Distance to the central star [au] ",
+                         xscale="log", yscale="log", xlim=[self.tps_mf[1], self.tps_mf[-1]], ylim=[self.r[0], self.r[-1]])
+
+            if vmax < np.inf and np.any(self.sigma() > vmax):
+                gr.config_colorbar(0, extend="max")
+            if np.any(self.sigma() < vmin):
+                if 'extend' in gr.param_colorbar[0].keys():
+                    gr.config_colorbar(0, extend="both")
+                else:
+                    gr.config_colorbar(0, extend="min")
+            gr.filename = "Image_" + self.nom_mu[species] + "_radial_surface_density"
+
+        gr.config_ax(**kwargs_ax)
+        if plot_planets:
+            for (r_planet, m_planet, j) in \
+                    zip(self.a_planets, self.m_planets, range(len(self.a_planets))):
+                ip = np.argwhere(self.r >= r_planet)[0, 0]
+                ind: np.ndarray = np.array([[gr.param_ax["xlim"][0], self.r[ip - self.dip] / au],
+                                            [gr.param_ax["xlim"][1], self.r[ip - self.dip] / au],
+                                            [gr.param_ax["xlim"][1], self.r[ip + self.dip] / au],
+                                            [gr.param_ax["xlim"][0], self.r[ip + self.dip] / au], ])
+
+                gr.polygon(ind=ind, facecolor="#929292", plot_borders=False)
+                if planets_names is not None:
+                    gr.text(gr.param_ax["xlim"][0], self.r[ip - self.dip] / au, planets_names[j],
+                            horizontalalignment="left", verticalalignment="top", rotation="horizontal",
+                            color="#929292")
+
+        if plot_label_levels:
+            gr.config_labels_contours(levels=gr.levels[::2], fmt="%.0e")
+        else:
+            gr.config_labels_contours(levels=[], fmt="%.0e")
+
+        if directory is not None:
+            gr.directory = directory
+        else:
+            gr.directory = self.directory
+        if show:
+            gr.show()
+        if save:
+            gr.ext = ".png"
+            gr.save_figure(dpi=400)
+            gr.save()
+        return gr
+
     def graphs(self, plot_planets=True, planets_names: list[str] = None,
                show: bool = True, save: bool = False, directory: str = None) -> list[g.Graphique]:
         print("graph accretion : ")
@@ -2036,14 +2333,20 @@ class Sol:
             directory = self.directory
         print("graph image sig_dot :")
         res.append(self.sol_ast.graph_image_surface_density(show=show, save=save, directory=directory))
+        res.append(self.sol_ast.graph_mdot(show=show, save=save, directory=directory))
         print("graph image surface density:")
         res.append(self.graph_image_surface_density(plot_planets=plot_planets, planets_names=planets_names,
+                                                    show=show, save=save, directory=directory))
+        res.append(self.graph_image_radial_surface_density(plot_planets=plot_planets, planets_names=planets_names,
                                                     show=show, save=save, directory=directory))
         for mu_plot in self.nom_mu:
             print("mu = ", mu_plot)
             res.append(self.graph_image_surface_density(species=mu_plot,
                                                         plot_planets=plot_planets, planets_names=planets_names,
                                                         show=show, save=save, directory=directory))
+            res.append(self.graph_image_radial_surface_density(species=mu_plot,
+                                                            plot_planets=plot_planets, planets_names=planets_names,
+                                                            show=show, save=save, directory=directory))
         return res
 
     def radmc_setup(self, i: int, directory: str = None, size_grid: int = 128) -> None:
@@ -2393,8 +2696,8 @@ def mass_steady_state(sol: Sol, mdot: np.float64=None, a0: np.float64 = None, mu
 
     Returns
     -------
-    np.ndarray
-        the surface density of the steady state
+    np.float64
+        the mass of the gas disc
     """
     if mu is None:
         mu = np.mean(sol.mu)  # Mean molar mass
@@ -2405,6 +2708,44 @@ def mass_steady_state(sol: Sol, mdot: np.float64=None, a0: np.float64 = None, mu
                        / (mu * np.sqrt(G * sol.Ms)))
     return ((mdot / (3. * Pi * nu0))
             * (2. * Pi * (
+                ((a0 ** (-pls_temp + 1 / 2)) - (sol.a_in ** (-pls_temp + 1 / 2)))
+                / (a0 ** (-pls_temp - 3 / 2) * (-pls_temp + 1 / 2))
+                +
+                ((sol.a_out ** (-pls_temp)) - (a0 ** (-pls_temp)))
+                / (a0 ** (-pls_temp - 2) * (-pls_temp)))))
+
+
+def mdot_steady_state(sol: Sol, m: np.float, a0: np.float64 = None, mu: np.float64 = None
+                      ) -> np.float64:
+    """
+
+    Return the mass mass generation rate mdot for a stady stae disc of mass m
+
+    Parameters
+    ----------
+    sol : Sol
+        The associated Sol
+    m : np.float64
+
+    a0 : np.float64, optional, default=sol.a0
+        The radius at wich the gas is produced
+    mu : np.float64
+        Mean molar mass, default sol.mu.mean()
+
+    Returns
+    -------
+    np.ndarray
+        the surface density of the steady state
+    """
+    if mu is None:
+        mu = np.mean(sol.mu)  # Mean molar mass
+    if a0 is None:
+        a0 = sol.a0
+
+    nu0: np.float64 = (Rgp * T0(np.double(100.) * Myr + sol.t0, a0, sol.Ms) * sol.alpha * (a0 ** (3 / 2))
+                       / (mu * np.sqrt(G * sol.Ms)))
+    return ((m * (3. * Pi * nu0))
+            / (2. * Pi * (
                 ((a0 ** (-pls_temp + 1 / 2)) - (sol.a_in ** (-pls_temp + 1 / 2)))
                 / (a0 ** (-pls_temp - 3 / 2) * (-pls_temp + 1 / 2))
                 +
@@ -2576,8 +2917,10 @@ def T(r: np.ndarray | np.float64, t: np.float64 = -1, Ms: np.float64 = Ms) -> np
         The temperature
 
     """
-    if t == -1 or interpLbol is None:
+    if (isinstance(t, float | int | np.float64 | np.int64) and t == -1) or interpLbol is None:
         T0 = (278 * ((Ls / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2)))
+    elif isinstance(t, np.ndarray) and isinstance(r, np.ndarray):
+        T0 = np.full((len(r), len(t)), (278 * ((interpLbol(t, Ms) / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2)))).T
     else:
         T0 = (278 * ((interpLbol(t, Ms) / Lsun) ** (1 / 4)) * ((a0 / au) ** (-1 / 2)))
     return T0 * (abs(r) / a0) ** pls_temp
@@ -2598,7 +2941,7 @@ sigma_crit_h2o: np.float64 = np.double(1. / ((Na / (18 * 1e-2 * C_M)) * cross_se
 
 # tph_h2o: np.float64 = yr
 
-def sigma_rad_w(t: np.float64, surf_dens: np.ndarray, sol: Sol) -> np.ndarray:
+def sigma_rad(t: np.float64, surf_dens: np.ndarray, sol: Sol) -> np.ndarray:
     H: np.ndarray = np.sqrt(
     (Rgp * T(sol.x * sol.x, t + sol.t0)
      / sol.mu.mean()) / (G * Ms / (sol.x ** 6)))
@@ -2615,8 +2958,8 @@ def sigma_rad_w(t: np.float64, ys: np.ndarray, sol: Sol) -> np.ndarray:
         (Rgp * T(sol.x * sol.x, t + sol.t0)
          / sol.mu[0]) / (G * Ms / (sol.x ** 6)))
 
-        ys0_mean = ys[sol.idx_mu_ast[0], :]
-        return (cumulative_trapezoid(surf_dens * ys0_mean,
+        ys0 = ys[..., sol.idx_mu_ast[0], :]
+        return (cumulative_trapezoid(surf_dens * ys0,
                                     sol.x * sol.x, initial=zero)
                / (2. * Pi * sol.x * sol.x * H))
     else:
@@ -2741,20 +3084,26 @@ def mass_frac_dot(t: np.float64, ys: np.ndarray, sol: Sol) \
 
         H: np.ndarray = np.sqrt(
             (Rgp * T(sol.x[idx] * sol.x[idx], t + sol.t0)
-             / sol.mu[0]) / (G * Ms / (sol.x[idx] ** 6)))
+             / sol.mu[0]) / (G * sol.Ms / (sol.x[idx] ** 6)))
 
         # H2O
         if len(idx) > 2:
             ys0_mean = ys[sol.idx_mu_ast[0], idx]
-            sig_dot = (ys0_mean * np.exp(- surf_dens[idx] * ys0_mean / sigma_crit_h2o) / tph_h2o)
-            sig_dot += (ys0_mean
-                        * (1 / ((Luv * H / (2. * sol.x[idx] * sol.x[idx]))
-                                / (h * c / (100 * 1e-9 * C_L)) * cross_section_h2o))
-                        * np.exp(-((cumulative_trapezoid(surf_dens[idx] * ys0_mean,
-                                                         sol.x[idx] * sol.x[idx], initial=zero)
-                                    / (2. * Pi * sol.x[idx] * sol.x[idx] * H)) / sigma_crit_h2o)))
+            if sol.interstellar_radiations:
+                sig_dot = (ys0_mean * np.exp(- surf_dens[idx] * ys0_mean / sigma_crit_h2o) / tph_h2o)
+            else:
+                sig_dot = np.zeros_like(ys0_mean)
+            if sol.stellar_radiations:
+                sig_dot += (ys0_mean
+                            * (cross_section_h2o * (200 - 91.2) * 1e-9 * C_L*Luv
+                               * (sol.Rs**2 / (sol.x[idx] * sol.x[idx] * sol.x[idx] * sol.x[idx]))
+                               / (h * c))
+                            * np.exp(-((cumulative_trapezoid(2. * Pi * sol.x[idx] * sol.x[idx]
+                                                             * surf_dens[idx] * ys0_mean,
+                                                             sol.x[idx] * sol.x[idx], initial=zero)
+                                        / (2. * Pi * sol.x[idx] * sol.x[idx] * H)) / sigma_crit_h2o)))
 
-            sig_dot = np.maximum(np.minimum(sig_dot, ys[sol.idx_mu_ast[0], idx] / (6000. * yr)),
+            sig_dot = np.maximum(np.minimum(sig_dot, ys[sol.idx_mu_ast[0], idx] / (6. * yr)),
                                  ys[sol.idx_mu_ast[0], idx] / (1e3 * Myr))
             # sig_dot = ys[0, idx] / (100 * kyr)
             ydot[sol.idx_mu_ast[0], idx] -= sig_dot

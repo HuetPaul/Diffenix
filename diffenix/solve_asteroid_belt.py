@@ -850,6 +850,15 @@ class SolrhoBelt:
             self.sig_dots = sig_dot_full_diff(tps=self.tps, r=self.r, const=self.const(),
                                               kwargsN=self.kwargs_N, It_d=200)
 
+            minit = 1e-1 * self.Mbelt * self.f_ice
+            iinit = np.argwhere(cumulative_trapezoid(trapezoid(2. * Pi * self.r * self.sig_dots, self.r),
+                                                     self.tps, initial=0.) >= minit)[0, 0]
+            if self.tps[iinit] - self.t0 < 0.1 * Myr:
+                self.m_init = trapezoid(trapezoid(2. * Pi * self.r * self.sig_dots[:iinit], self.r), self.tps[:iinit])
+                self.tps -= self.tps[iinit]
+            else:
+                self.m_init = 0.
+
             def linear_interp(t_new):
                 if isinstance(t_new, list | np.ndarray):
                     return np.array([linear_interp(t) for t in t_new])
@@ -1125,9 +1134,10 @@ class SolrhoBelt:
 
         """
         gr: g.Graphique = g.loglog(np.array(self.tps)[::max(len(self.tps) // size_time, 1)] / Myr,
-                                   trapezoid(self.sig_dots[::max(len(self.tps) // size_time, 1)], self.r, axis=1)
+                                   trapezoid(2. * Pi * self.r * self.sig_dots[::max(len(self.tps) // size_time, 1)],
+                                             self.r, axis=1)
                                    * Myr / Mearth, show=False)
-        gr.config_ax(xlabel="Time [Myr]", ylabel="$\dot{M}$ [M$_\oplus$.Myr$^{-1}] ",
+        gr.config_ax(xlabel="Time [Myr]", ylabel="$\dot{M}$ [M$_\oplus$.Myr$^{-1}$] ",
                      xscale="log", yscale="log", xlim=[self.tps[2], self.tps[-1]])
         gr.filename = "Image_total_mass_production_rate"
 
@@ -1144,8 +1154,8 @@ class SolrhoBelt:
         return gr
 
 
-def thermal_diff(d: np.float64, consts: dict, It_d: int = 300, t: np.ndarray = None) -> tuple[
-    np.ndarray, np.ndarray, np.ndarray]:
+def thermal_diff(d: np.float64, consts: dict, It_d: int = 300, t: np.ndarray = None
+                 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute the thermal diffusion equation into a bodi of radius d as a function of time assuming the bodi to be
     at the distance a_0 from the central star. To get the temperatures at others location r, one must multiplie the

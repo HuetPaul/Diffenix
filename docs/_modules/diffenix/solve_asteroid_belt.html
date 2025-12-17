@@ -43,8 +43,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../The_model.html">The model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../The_model.html">The Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../The_model.html#references">References</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../diffenix.html">Documentation</a></li>
 </ul>
@@ -1088,6 +1088,128 @@
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs_N</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">res</span><span class="p">[</span><span class="n">prefix</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs_N</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="SolrhoBelt.graph_image_surface_density">
+<a class="viewcode-back" href="../../diffenix.html#diffenix.solve_asteroid_belt.SolrhoBelt.graph_image_surface_density">[docs]</a>
+    <span class="k">def</span> <span class="nf">graph_image_surface_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                    <span class="n">vmin</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="mf">1e-10</span> <span class="o">*</span> <span class="n">Mearth</span> <span class="o">/</span> <span class="p">(</span><span class="n">au</span> <span class="o">*</span> <span class="n">au</span> <span class="o">*</span> <span class="n">Myr</span><span class="p">),</span>
+                                    <span class="n">vmax</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">size_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">size_radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+                                    <span class="n">cmap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;inferno&quot;</span><span class="p">,</span> <span class="n">nb_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                                    <span class="n">color_min</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">color_max</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">plot_label_levels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                    <span class="o">**</span><span class="n">kwargs_ax</span>
+                                    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">Graphique</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build a Graphique that represant the evolution of surface density generation rate</span>
+<span class="sd">         as function of time and radius</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vmin : np.float64 | str , optional, {&quot;auto&quot;, np.loat64}, default = 1e-10 * Mearth / Myr</span>
+<span class="sd">            The minimum value of surface density to represant in the result (below it will be considered as saturated)</span>
+<span class="sd">            If &quot;auto&quot;, the minimal value will be the minimal value of the surface density represanted</span>
+<span class="sd">        vmax : np.float64 | str, optional, {&quot;auto&quot;, np.loat64},</span>
+<span class="sd">            The maximum value of surface density to represant in the result (above it will be considered as saturated)</span>
+<span class="sd">            Default, v_max is not considered like for &quot;auto&quot; where the maximal value will be the maximal value of the surface density represanted</span>
+
+<span class="sd">        size_time : int, optional, default=1000</span>
+<span class="sd">            The image&#39;s size for the time coordinate (x-axis)</span>
+<span class="sd">        size_radius : int, optional, default=1000</span>
+<span class="sd">            The image&#39;s size for the radius coordinate (y-axis)</span>
+<span class="sd">        cmap : str, optional, default = &quot;inferno&quot;</span>
+<span class="sd">            The colormap used for the image</span>
+<span class="sd">        nb_levels : int, optional, default=10</span>
+<span class="sd">            The number of levels in the image</span>
+<span class="sd">                The number of levels to plot in addition to the image</span>
+<span class="sd">        color_min : str | tuple, optional</span>
+<span class="sd">            The color associated with the minimum value for a `default` cmap</span>
+<span class="sd">        color_max : str | tuple, optional</span>
+<span class="sd">            The color associated with the maximum value for a `default` cmap</span>
+<span class="sd">        plot_label_levels : bool, optional, default=False</span>
+<span class="sd">            To plot (or not) labels for the contours (if True, labels are only plot every two levels)</span>
+<span class="sd">        show : bool, optional, default = True</span>
+<span class="sd">            Whether to show the image</span>
+<span class="sd">        save : bool, optional, default = False</span>
+<span class="sd">            Whether to save the image (if True, both the Graphique and the png image will be saved)</span>
+<span class="sd">        directory : str, optional</span>
+<span class="sd">            The directory to save the Graphique, default=self.directory</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        g.Graphique</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">vmin</span> <span class="o">!=</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The vmin=</span><span class="si">{</span><span class="n">vmin</span><span class="si">}</span><span class="s2"> is not a valid value for this simulation&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="o">-</span><span class="n">inf</span>
+
+        <span class="k">if</span> <span class="n">vmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vmax</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">vmax</span> <span class="o">!=</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The vmax=</span><span class="si">{</span><span class="n">vmax</span><span class="si">}</span><span class="s2"> is not a valid value for this simulation&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vmax</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="o">-</span><span class="n">inf</span>
+
+        <span class="n">gr</span><span class="p">:</span> <span class="n">g</span><span class="o">.</span><span class="n">Graphique</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sig_dots</span><span class="p">[::</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tps</span><span class="p">)</span> <span class="o">//</span> <span class="n">size_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                                <span class="p">::</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">)</span> <span class="o">//</span> <span class="n">size_radius</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                                  <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tps</span><span class="p">)[::</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tps</span><span class="p">)</span> <span class="o">//</span> <span class="n">size_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">/</span> <span class="n">Myr</span><span class="p">,</span>
+                                  <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">)[::</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">)</span> <span class="o">//</span> <span class="n">size_radius</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">/</span> <span class="n">au</span><span class="p">,</span>
+                                  <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">colorscale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
+                                  <span class="n">color_min</span><span class="o">=</span><span class="n">color_min</span><span class="p">,</span> <span class="n">color_max</span><span class="o">=</span><span class="n">color_max</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vmin</span> <span class="o">==</span> <span class="o">-</span><span class="n">inf</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">gr</span><span class="o">.</span><span class="n">array_image</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">vmax</span> <span class="o">&lt;</span> <span class="n">inf</span><span class="p">:</span>
+            <span class="n">vmax_levels</span> <span class="o">=</span> <span class="n">vmax</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vmax_levels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">gr</span><span class="o">.</span><span class="n">array_image</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">nb_levels</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax_levels</span><span class="p">,</span> <span class="n">nb_levels</span><span class="p">)</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">contours</span><span class="p">(</span><span class="n">levels</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
+
+            <span class="n">gr</span><span class="o">.</span><span class="n">config_colorbar</span><span class="p">(</span><span class="n">ticks</span><span class="o">=</span><span class="n">levels</span><span class="p">,</span>
+                               <span class="n">ticks_labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="si">{:.2e}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span>
+                                             <span class="n">levels</span><span class="p">],</span>
+                               <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Total surface density [M$_\oplus$ . au$^{-2}]$&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">config_colorbar</span><span class="p">(</span><span class="n">ticks</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax_levels</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+                               <span class="n">ticks_labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="si">{:.2e}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span>
+                                             <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax_levels</span><span class="p">,</span> <span class="mi">10</span><span class="p">)],</span>
+                               <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Total surface density [M$_\oplus$ . au$^{-2}]$&quot;</span><span class="p">)</span>
+
+        <span class="n">gr</span><span class="o">.</span><span class="n">config_ax</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time [Myr]&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Distance to the central star [au] &quot;</span><span class="p">,</span>
+                     <span class="n">xscale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="n">yscale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tps</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">tps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="n">ylim</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="n">vmax</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sig_dots</span> <span class="o">&gt;</span> <span class="n">vmax</span><span class="p">):</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">config_colorbar</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">extend</span><span class="o">=</span><span class="s2">&quot;max&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sig_dots</span> <span class="o">&lt;</span> <span class="n">vmin</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;extend&#39;</span> <span class="ow">in</span> <span class="n">gr</span><span class="o">.</span><span class="n">param_colorbar</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">config_colorbar</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">extend</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gr</span><span class="o">.</span><span class="n">config_colorbar</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">extend</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">)</span>
+        <span class="n">gr</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;Image_total_surface_density_production&quot;</span>
+
+        <span class="n">gr</span><span class="o">.</span><span class="n">config_ax</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs_ax</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">plot_label_levels</span><span class="p">:</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">config_labels_contours</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="n">gr</span><span class="o">.</span><span class="n">levels</span><span class="p">[::</span><span class="mi">2</span><span class="p">],</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.0e</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">config_labels_contours</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">[],</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.0e</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">directory</span>
+
+        <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">ext</span> <span class="o">=</span> <span class="s2">&quot;.png&quot;</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">save_figure</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+            <span class="n">gr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">gr</span></div>
 </div>
 
 
@@ -1120,7 +1242,8 @@
     <span class="n">dr</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">system</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">compteur</span><span class="p">:</span> <span class="n">Compteur</span> <span class="o">=</span> <span class="n">Compteur</span><span class="p">()):</span>
-        <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">278</span> <span class="o">*</span> <span class="p">(((</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Abelt&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">interpLbol</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Ms&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">Lsun</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">4</span><span class="p">))</span> <span class="o">*</span> <span class="p">((</span><span class="n">a0</span> <span class="o">/</span> <span class="n">au</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+        <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">278</span> <span class="o">*</span> <span class="p">(((</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Abelt&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">interpLbol</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Ms&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">Lsun</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">4</span><span class="p">))</span>
+                 <span class="o">*</span> <span class="p">((</span><span class="n">consts</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">au</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
         <span class="c1"># T[0] = 1</span>
         <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="c1"># dT = consts[&quot;K&quot;] * (gradient2(T, dr) + np.gradient(T, r) / r) - T * interp_L(t, 1) / (4 * interp_L(t))</span>
@@ -1174,30 +1297,6 @@
 <span class="sd">        the gas mass generation rate as function of time</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># mask = np.cumsum(temp &gt; level, axis=1)</span>
-    <span class="c1"># mask[mask &gt; 1] = 0</span>
-    <span class="c1"># mask = np.array(mask, dtype=bool)</span>
-    <span class="c1">#</span>
-    <span class="c1"># rr = rd[:, np.newaxis] + np.zeros(len(t))</span>
-    <span class="c1"># dr = rd[1] - rd[0]</span>
-    <span class="c1"># mlost = 4 * np.pi * consts[&quot;rho_ice&quot;] * ((rr + dr / 2) ** 3 - (rr - dr / 2) ** 3) / 3</span>
-    <span class="c1"># mlost[~mask] = zero</span>
-    <span class="c1"># mlost = mlost.sum(axis=0)</span>
-    <span class="c1"># if np.sum(mlost &gt; 0) &gt; 1:</span>
-    <span class="c1">#     return np.interp(t, t[mlost &gt; 0], np.gradient(np.cumsum(mlost[mlost &gt; 0]), t[mlost &gt; 0]))</span>
-    <span class="c1"># elif np.any(mlost &gt; 0):</span>
-    <span class="c1">#     res = np.zeros_like(t)</span>
-    <span class="c1">#     i = np.argwhere(mlost &gt; 0)[0, 0]</span>
-    <span class="c1">#     if i &lt; len(t) - 1:</span>
-    <span class="c1">#         res[i] = mlost[i] / (t[i + 1] - t[i])</span>
-    <span class="c1">#     else:</span>
-    <span class="c1">#         res[i] = mlost[i] / (t[i] - t[i-1])</span>
-    <span class="c1">#     return res</span>
-    <span class="c1"># else:</span>
-    <span class="c1">#     # print(&quot;mdot_s_l, dmax={:.4f} m, Tsub={:.4f} K, no ice sublimation. Tmax={:.4f} K&quot;.format(rd.max() / C_L, level, np.max(temp)))</span>
-    <span class="c1">#     return np.zeros_like(t)</span>
-
     <span class="n">S</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="mf">3.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Phi&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;rp&quot;</span><span class="p">]</span>
     <span class="n">dr</span> <span class="o">=</span> <span class="n">rd</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">rd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">rr</span> <span class="o">=</span> <span class="n">rd</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
@@ -1209,13 +1308,8 @@
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">cumulative_trapezoid</span><span class="p">(</span><span class="n">mdot</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">mmax</span><span class="p">):</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">((</span><span class="n">cumulative_trapezoid</span><span class="p">(</span><span class="n">mdot</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">mmax</span><span class="p">))[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">mdot</span><span class="p">[:,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">):]</span> <span class="o">*=</span> <span class="n">zero</span>
-    <span class="c1"># print(&quot;test : &quot;, t.max(), &quot; K&quot;, trapezoid(mdot.sum(axis=0), t) / mmax)</span>
     <span class="k">return</span> <span class="n">mdot</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 
-    <span class="c1"># mlost = np.minimum(cumulative_trapezoid(mdot, t, initial=0., axis=1), mlost_max)</span>
-    <span class="c1"># mmax =  (4 * Pi / 3.) * consts[&quot;rho_ice&quot;] * (rd.max() ** 3 - rd.min() ** 3)</span>
-    <span class="c1"># print(&quot;test : &quot;,rd.max() / C_L, trapezoid(np.gradient(mlost.sum(axis=0), t), t) / mmax, (mlost &lt; mlost_max).sum() / len(mlost_max.flatten()))</span>
-    <span class="c1"># return np.gradient(mlost.sum(axis=0), t)</span>
 
 
 <div class="viewcode-block" id="mdot_s">
@@ -1246,15 +1340,88 @@
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s=</span><span class="si">{:.4f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span> <span class="o">/</span> <span class="n">C_L</span><span class="p">),</span> <span class="s2">&quot;m&quot;</span><span class="p">)</span>
 
     <span class="n">rd</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">temp</span> <span class="o">=</span> <span class="n">thermal_diff</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="n">s</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">consts</span><span class="o">=</span><span class="n">consts</span><span class="p">,</span> <span class="n">It_d</span><span class="o">=</span><span class="n">It_d</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
-    <span class="c1"># gr=g.image(temp, t, rd, cmap=&quot;inferno&quot;, colorscale=&quot;log&quot;, show=False)</span>
-    <span class="c1"># gr.contours(levels, color=&quot;w&quot;)</span>
-    <span class="c1"># gr.show()</span>
-    <span class="c1"># return np.array([mdot_s_l(rd=rd, t=t, temp=temp, level=l, consts=consts) for l in levels])</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mdot_s_l</span><span class="p">(</span><span class="n">rd</span><span class="o">=</span><span class="n">rd</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span> <span class="o">*</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">/</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
                               <span class="n">consts</span><span class="o">=</span><span class="n">consts</span><span class="p">)</span> <span class="k">for</span> <span class="n">R</span> <span class="ow">in</span> <span class="n">r</span><span class="p">])</span></div>
 
-    <span class="c1"># mlost_max = (4 * Pi / 3.) * consts[&quot;rho_ice&quot;] * ((s / 2) ** 3)</span>
-    <span class="c1"># return np.array([np.ones_like(t) * mlost_max / (t.max() - t.min()) for R in r])</span>
+
+
+<div class="viewcode-block" id="mdot_s_surf">
+<a class="viewcode-back" href="../../diffenix.html#diffenix.solve_asteroid_belt.mdot_s_surf">[docs]</a>
+<span class="k">def</span> <span class="nf">mdot_s_surf</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">consts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">It_d</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the gas mass generation rate for a given bodies at differents radius if</span>
+<span class="sd">    the gas sublimate only at its surface</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    s: np.float64</span>
+<span class="sd">        The size of the considered bodie</span>
+<span class="sd">    t: np.ndarray</span>
+<span class="sd">        The time at which evaluate the gas mass generation rate</span>
+<span class="sd">    r: np.ndarray</span>
+<span class="sd">        The distances from the central star at which evaluate the gas mass generation rate</span>
+<span class="sd">    consts : dict</span>
+<span class="sd">        The dictionary of constants</span>
+<span class="sd">    It_d : int</span>
+<span class="sd">        The number of iterations</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        the gas mass generation rate as function of time and radius</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># print(&quot;s={:.4f}&quot;.format(s / C_L), &quot;m&quot;)</span>
+    <span class="n">a1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="mf">7.08e35</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_t</span><span class="p">)</span>
+    <span class="n">a2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="mi">6062</span> <span class="c1"># K</span>
+    <span class="n">T0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">278</span> <span class="o">*</span> <span class="p">((</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Abelt&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">interpLbol</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Ms&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">Lsun</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+                                  <span class="o">*</span> <span class="p">((</span><span class="n">consts</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">au</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+    <span class="n">res</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Pi</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">mp</span> <span class="o">*</span> <span class="n">a1</span> <span class="o">*</span>
+                                            <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">a2</span> <span class="o">/</span> <span class="p">(</span><span class="n">T0</span> <span class="o">*</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">/</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+                                            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">T0</span> <span class="o">*</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">/</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="k">for</span> <span class="n">R</span> <span class="ow">in</span> <span class="n">r</span><span class="p">])</span>
+    <span class="n">mlost_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pi</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span> <span class="o">/</span> <span class="mf">6.</span><span class="p">)</span> <span class="o">*</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;rho_ice&quot;</span><span class="p">]</span>
+    <span class="n">res</span><span class="p">[</span><span class="n">cumulative_trapezoid</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">mlost_max</span><span class="p">]</span> <span class="o">*=</span> <span class="n">zero</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="mdot_s_vol">
+<a class="viewcode-back" href="../../diffenix.html#diffenix.solve_asteroid_belt.mdot_s_vol">[docs]</a>
+<span class="k">def</span> <span class="nf">mdot_s_vol</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">consts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">It_d</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the gas mass generation rate for a given bodies at differents radius if</span>
+<span class="sd">    the gas sublimate in the whole volume neglecting thermal diffusion</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    s: np.float64</span>
+<span class="sd">        The size of the considered bodie</span>
+<span class="sd">    t: np.ndarray</span>
+<span class="sd">        The time at which evaluate the gas mass generation rate</span>
+<span class="sd">    r: np.ndarray</span>
+<span class="sd">        The distances from the central star at which evaluate the gas mass generation rate</span>
+<span class="sd">    consts : dict</span>
+<span class="sd">        The dictionary of constants</span>
+<span class="sd">    It_d : int</span>
+<span class="sd">        The number of iterations</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        the gas mass generation rate as function of time and radius</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># print(&quot;s={:.4f}&quot;.format(s / C_L), &quot;m&quot;)</span>
+    <span class="n">T0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">278</span> <span class="o">*</span> <span class="p">((</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Abelt&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">interpLbol</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Ms&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">Lsun</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+                                  <span class="o">*</span> <span class="p">((</span><span class="n">consts</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">au</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+    <span class="n">res</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">s</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;Phi&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;rp&quot;</span><span class="p">])</span>
+                     <span class="o">*</span> <span class="n">Ah2o</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">Bh2o</span> <span class="o">/</span> <span class="p">(</span><span class="n">T0</span> <span class="o">*</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">/</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+                     <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">18</span> <span class="o">*</span> <span class="n">mp</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">Pi</span> <span class="o">*</span> <span class="n">kb</span> <span class="o">*</span> <span class="n">T0</span> <span class="o">*</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">/</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+                     <span class="k">for</span> <span class="n">R</span> <span class="ow">in</span> <span class="n">r</span><span class="p">])</span>
+    <span class="n">mlost_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pi</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span> <span class="o">/</span> <span class="mf">6.</span><span class="p">)</span> <span class="o">*</span> <span class="n">consts</span><span class="p">[</span><span class="s2">&quot;rho_ice&quot;</span><span class="p">]</span>
+    <span class="n">res</span><span class="p">[</span><span class="n">cumulative_trapezoid</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">mlost_max</span><span class="p">]</span> <span class="o">*=</span> <span class="n">zero</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
 
 
 <div class="viewcode-block" id="sig_dot_full_diff">
@@ -1304,6 +1471,110 @@
     <span class="n">ni</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">ni</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mdots</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ni max=</span><span class="si">{:.4f}</span><span class="s2"> min=</span><span class="si">{:.4f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ni</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">ni</span><span class="o">.</span><span class="n">min</span><span class="p">()))</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;mdots max=</span><span class="si">{:.4f}</span><span class="s2"> mdots=</span><span class="si">{:.4f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mdots</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">mdots</span><span class="o">.</span><span class="n">min</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="n">trapezoid</span><span class="p">(</span><span class="n">ni</span> <span class="o">*</span> <span class="n">mdots</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
+
+
+
+<div class="viewcode-block" id="sig_dot_sub_surf">
+<a class="viewcode-back" href="../../diffenix.html#diffenix.solve_asteroid_belt.sig_dot_sub_surf">[docs]</a>
+<span class="k">def</span> <span class="nf">sig_dot_sub_surf</span><span class="p">(</span><span class="n">tps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">const</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">kwargsN</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">It_d</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the gas surface density generation rate for a belt discribed into the const dictionary</span>
+<span class="sd">    if the sublimation append only at the surface of asteroids</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tps : np.ndarray</span>
+<span class="sd">        The time at which evaluate the result</span>
+<span class="sd">    r : np.ndarray</span>
+<span class="sd">        The distance to the central star at which evaluate the solution</span>
+<span class="sd">    const : dict</span>
+<span class="sd">        The dictionary of constants</span>
+<span class="sd">    kwargsN : dict</span>
+<span class="sd">        The dictionary that defined the size distribution</span>
+<span class="sd">    It_d : int</span>
+<span class="sd">        The number of depth steps for thermal diffusion integration</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="n">const</span><span class="p">[</span><span class="s2">&quot;dmin&quot;</span><span class="p">],</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;dmax&quot;</span><span class="p">],</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;Its_p&quot;</span><span class="p">])</span>
+
+    <span class="n">mdots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mdot_s_surf</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">tps</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span> <span class="n">consts</span><span class="o">=</span><span class="n">const</span><span class="p">,</span> <span class="n">It_d</span><span class="o">=</span><span class="n">It_d</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">])</span>
+    <span class="c1"># The gas mass generation rates of each bodies&#39;s size for each radius for each time</span>
+
+    <span class="k">if</span> <span class="n">kwargsN</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Default size distribution</span>
+        <span class="n">kwargsN</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">amax</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.e6</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span>
+                       <span class="n">abig</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">120e3</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span>
+                       <span class="n">amed</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">20.e3</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span> <span class="n">amin</span><span class="o">=</span><span class="n">C_L</span><span class="p">,</span>
+                       <span class="n">qh</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">4.5</span><span class="p">),</span> <span class="n">qm</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">),</span> <span class="n">ql</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">3.6</span><span class="p">),</span>
+                       <span class="n">rho</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">3e3</span> <span class="o">*</span> <span class="n">C_M</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">)))</span>
+
+    <span class="c1">## Calcul of number of asteroids for all diameters and distance to central star</span>
+    <span class="n">sigma0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span><span class="p">[</span><span class="s2">&quot;Mbelt&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">((</span><span class="n">r</span> <span class="o">/</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">))</span>
+                          <span class="o">/</span> <span class="p">(</span><span class="mf">4.</span> <span class="o">*</span> <span class="n">Pi</span> <span class="o">*</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;delta_a&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span>
+                                                  <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;delta_a&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]))))</span>  <span class="c1"># initial surface density</span>
+    <span class="n">ni</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">number_density</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">Mtot</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargsN</span><span class="p">)</span>
+                                 <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">])[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)))</span>
+                      <span class="o">*</span> <span class="p">(</span><span class="n">sigma0</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sizes</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>  <span class="c1"># number density</span>
+    <span class="n">ni</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">ni</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mdots</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c1"># print(&quot;ni max={:.4f} min={:.4f}&quot;.format(ni.max(), ni.min()))</span>
+    <span class="c1"># print(&quot;mdots max={:.4f} mdots={:.4f}&quot;.format(mdots.max(), mdots.min()))</span>
+    <span class="k">return</span> <span class="n">trapezoid</span><span class="p">(</span><span class="n">ni</span> <span class="o">*</span> <span class="n">mdots</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
+
+
+
+<div class="viewcode-block" id="sig_dot_sub_vol">
+<a class="viewcode-back" href="../../diffenix.html#diffenix.solve_asteroid_belt.sig_dot_sub_vol">[docs]</a>
+<span class="k">def</span> <span class="nf">sig_dot_sub_vol</span><span class="p">(</span><span class="n">tps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">const</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">kwargsN</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">It_d</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the gas surface density generation rate for a belt discribed into the const dictionary</span>
+<span class="sd">    if the sublimation append only at the surface of asteroids</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tps : np.ndarray</span>
+<span class="sd">        The time at which evaluate the result</span>
+<span class="sd">    r : np.ndarray</span>
+<span class="sd">        The distance to the central star at which evaluate the solution</span>
+<span class="sd">    const : dict</span>
+<span class="sd">        The dictionary of constants</span>
+<span class="sd">    kwargsN : dict</span>
+<span class="sd">        The dictionary that defined the size distribution</span>
+<span class="sd">    It_d : int</span>
+<span class="sd">        The number of depth steps for thermal diffusion integration</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="n">const</span><span class="p">[</span><span class="s2">&quot;dmin&quot;</span><span class="p">],</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;dmax&quot;</span><span class="p">],</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;Its_p&quot;</span><span class="p">])</span>
+
+    <span class="n">mdots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mdot_s_vol</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">tps</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span> <span class="n">consts</span><span class="o">=</span><span class="n">const</span><span class="p">,</span> <span class="n">It_d</span><span class="o">=</span><span class="n">It_d</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">])</span>
+    <span class="c1"># The gas mass generation rates of each bodies&#39;s size for each radius for each time</span>
+
+    <span class="k">if</span> <span class="n">kwargsN</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Default size distribution</span>
+        <span class="n">kwargsN</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">amax</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.e6</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span>
+                       <span class="n">abig</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">120e3</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span>
+                       <span class="n">amed</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">20.e3</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">,</span> <span class="n">amin</span><span class="o">=</span><span class="n">C_L</span><span class="p">,</span>
+                       <span class="n">qh</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">4.5</span><span class="p">),</span> <span class="n">qm</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="p">),</span> <span class="n">ql</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="o">-</span><span class="mf">3.6</span><span class="p">),</span>
+                       <span class="n">rho</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">3e3</span> <span class="o">*</span> <span class="n">C_M</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">)))</span>
+
+    <span class="c1">## Calcul of number of asteroids for all diameters and distance to central star</span>
+    <span class="n">sigma0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span><span class="p">[</span><span class="s2">&quot;Mbelt&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">((</span><span class="n">r</span> <span class="o">/</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">))</span>
+                          <span class="o">/</span> <span class="p">(</span><span class="mf">4.</span> <span class="o">*</span> <span class="n">Pi</span> <span class="o">*</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;delta_a&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">])</span>
+                                                  <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;delta_a&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">const</span><span class="p">[</span><span class="s2">&quot;a0&quot;</span><span class="p">]))))</span>  <span class="c1"># initial surface density</span>
+    <span class="n">ni</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">number_density</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">Mtot</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargsN</span><span class="p">)</span>
+                                 <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">])[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)))</span>
+                      <span class="o">*</span> <span class="p">(</span><span class="n">sigma0</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sizes</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>  <span class="c1"># number density</span>
+    <span class="n">ni</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">ni</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mdots</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c1"># print(&quot;ni max={:.4f} min={:.4f}&quot;.format(ni.max(), ni.min()))</span>
+    <span class="c1"># print(&quot;mdots max={:.4f} mdots={:.4f}&quot;.format(mdots.max(), mdots.min()))</span>
     <span class="k">return</span> <span class="n">trapezoid</span><span class="p">(</span><span class="n">ni</span> <span class="o">*</span> <span class="n">mdots</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
 
 </pre></div>

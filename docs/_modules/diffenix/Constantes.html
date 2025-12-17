@@ -43,8 +43,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../The_model.html">The model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../The_model.html">The Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../The_model.html#references">References</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../diffenix.html">Documentation</a></li>
 </ul>
@@ -80,7 +80,7 @@
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">diffenix.chemains</span> <span class="kn">import</span> <span class="n">racine</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">data_leiden</span><span class="p">,</span> <span class="n">data_stars</span>
+<span class="kn">from</span> <span class="nn">diffenix.chemains</span> <span class="kn">import</span> <span class="n">racine</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">data_leiden</span><span class="p">,</span> <span class="n">data_stars</span><span class="p">,</span> <span class="n">data_radmc</span>
 <span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">LinearNDInterpolator</span><span class="p">,</span> <span class="n">CloughTocher2DInterpolator</span><span class="p">,</span> <span class="n">CubicSpline</span>
 
 <span class="n">ii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># Informations sur les results possibles de la</span>
@@ -159,6 +159,7 @@
 <span class="n">kb</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.380649e-23</span> <span class="o">*</span> <span class="n">C_E</span><span class="p">)</span>  <span class="c1">#: 1.380649e-23 J/K Boltzmann constant</span>
 <span class="n">Na</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="n">Rgp</span> <span class="o">/</span> <span class="n">kb</span><span class="p">)</span>  <span class="c1">#: Avogadro constant</span>
 <span class="n">h</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">6.62607015e-34</span> <span class="o">*</span> <span class="n">C_E</span> <span class="o">*</span> <span class="n">C_t</span><span class="p">)</span>  <span class="c1">#: 6.62607015e-34 J/s Planck constant</span>
+<span class="n">mp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1.6726e-27</span><span class="p">)</span> <span class="o">*</span> <span class="n">C_M</span>  <span class="c1"># Mass of proton</span>
 
 <span class="c1"># Earth</span>
 <span class="n">Rearth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mi">6371009</span> <span class="o">*</span> <span class="n">C_L</span><span class="p">)</span>  <span class="c1"># 6371009 m Earth&#39;s radius</span>
@@ -317,7 +318,7 @@
 <span class="n">photo_diss</span><span class="p">[</span><span class="s2">&quot;I&quot;</span><span class="p">][</span><span class="n">photo_diss</span><span class="p">[</span><span class="s2">&quot;lambdas_nm&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">tabI</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">0.</span>
 
 <span class="c1"># Integration parameter</span>
-<span class="n">IT_s</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span>  <span class="c1">#: Spatials steps</span>
+<span class="n">IT_s</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">700</span>  <span class="c1">#: Spatials steps</span>
 <span class="n">dip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1">#: half of the number of sink cells for a given planets to model the accretion</span>
 <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;RK45&#39;</span>  <span class="c1">#: &#39;LSODA&#39;,&#39;BDF&#39;,&#39;DOP853&#39;,&#39;RK45&#39; : Temporal integration method_root</span>
 <span class="n">rtol</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="mf">1e-5</span><span class="p">)</span>  <span class="c1">#: Relative tolerance for temporal integration</span>
@@ -704,7 +705,6 @@
 
 <span class="k">if</span> <span class="s2">&quot;constantes.npz&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">():</span>
     <span class="n">chargement_constantes</span><span class="p">(</span><span class="s2">&quot;constantes.npz&quot;</span><span class="p">)</span>
-
 <span class="k">elif</span> <span class="s2">&quot;constantes.npz&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">racine</span><span class="p">):</span>
     <span class="n">chargement_constantes</span><span class="p">(</span><span class="n">racine</span> <span class="o">+</span> <span class="s2">&quot;/constantes.npz&quot;</span><span class="p">)</span>
 

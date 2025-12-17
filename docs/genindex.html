@@ -43,8 +43,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="The_model.html">The model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="The_model.html">The Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="The_model.html#references">References</a></li>
 <li class="toctree-l1"><a class="reference internal" href="diffenix.html">Documentation</a></li>
 </ul>
@@ -149,9 +149,13 @@
 </li>
       <li><a href="diffenix.html#diffenix.Constantes.C_rho">C_rho (in module diffenix.Constantes)</a>
 </li>
+      <li><a href="diffenix.html#diffenix.Constantes.C_t">C_t (in module diffenix.Constantes)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="diffenix.html#diffenix.Constantes.C_t">C_t (in module diffenix.Constantes)</a>
+      <li><a href="diffenix.html#diffenix.systems.Sol.calc_flux_radmc">calc_flux_radmc() (diffenix.systems.Sol method)</a>
+</li>
+      <li><a href="diffenix.html#diffenix.systems.Sol.calc_single_flux_radmc">calc_single_flux_radmc() (diffenix.systems.Sol method)</a>
 </li>
       <li><a href="diffenix.html#diffenix.Constantes.chargement_constantes">chargement_constantes() (in module diffenix.Constantes)</a>
 </li>
@@ -237,17 +241,25 @@
 </li>
       <li><a href="diffenix.html#diffenix.numericals_methods.gradient_d">gradient_d() (in module diffenix.numericals_methods)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="diffenix.html#diffenix.numericals_methods.gradient_g">gradient_g() (in module diffenix.numericals_methods)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="diffenix.html#diffenix.numericals_methods.gradient_weno5">gradient_weno5() (in module diffenix.numericals_methods)</a>
 </li>
-      <li><a href="diffenix.html#diffenix.systems.Sol.graph_image_surface_density">graph_image_surface_density() (diffenix.systems.Sol method)</a>
+      <li><a href="diffenix.html#diffenix.solve_asteroid_belt.SolrhoBelt.graph_image_surface_density">graph_image_surface_density() (diffenix.solve_asteroid_belt.SolrhoBelt method)</a>
+
+      <ul>
+        <li><a href="diffenix.html#diffenix.systems.Sol.graph_image_surface_density">(diffenix.systems.Sol method)</a>
 </li>
+      </ul></li>
       <li><a href="diffenix.html#diffenix.systems.Sol.graph_surface_density">graph_surface_density() (diffenix.systems.Sol method)</a>
 </li>
+      <li><a href="diffenix.html#diffenix.systems.Sol.graphs">graphs() (diffenix.systems.Sol method)</a>
+</li>
       <li><a href="diffenix.html#diffenix.systems.Sol.graphs_accretion">graphs_accretion() (diffenix.systems.Sol method)</a>
+</li>
+      <li><a href="diffenix.html#diffenix.numericals_methods.grid_refine_inner_edge">grid_refine_inner_edge() (in module diffenix.numericals_methods)</a>
 </li>
       <li><a href="diffenix.html#diffenix.Constantes.Gyr">Gyr (in module diffenix.Constantes)</a>
 </li>
@@ -331,10 +343,14 @@
 </li>
       <li><a href="diffenix.html#diffenix.solve_asteroid_belt.mdot_s_l">mdot_s_l() (in module diffenix.solve_asteroid_belt)</a>
 </li>
-      <li><a href="diffenix.html#diffenix.systems.merge_y">merge_y() (in module diffenix.systems)</a>
+      <li><a href="diffenix.html#diffenix.solve_asteroid_belt.mdot_s_surf">mdot_s_surf() (in module diffenix.solve_asteroid_belt)</a>
+</li>
+      <li><a href="diffenix.html#diffenix.solve_asteroid_belt.mdot_s_vol">mdot_s_vol() (in module diffenix.solve_asteroid_belt)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="diffenix.html#diffenix.systems.merge_y">merge_y() (in module diffenix.systems)</a>
+</li>
       <li><a href="diffenix.html#diffenix.Constantes.method">method (in module diffenix.Constantes)</a>
 </li>
       <li><a href="diffenix.html#diffenix.solve_asteroid_belt.minit">minit() (in module diffenix.solve_asteroid_belt)</a>
@@ -400,6 +416,8 @@
         <li><a href="diffenix.html#diffenix.systems.radial_speed">(in module diffenix.systems)</a>
 </li>
       </ul></li>
+      <li><a href="diffenix.html#diffenix.systems.Sol.radmc_setup">radmc_setup() (diffenix.systems.Sol method)</a>
+</li>
       <li><a href="diffenix.html#diffenix.time_integration.restart">restart() (in module diffenix.time_integration)</a>
 </li>
   </ul></td>
@@ -422,6 +440,10 @@
 </li>
       <li><a href="diffenix.html#diffenix.solve_asteroid_belt.sig_dot_full_diff">sig_dot_full_diff() (in module diffenix.solve_asteroid_belt)</a>
 </li>
+      <li><a href="diffenix.html#diffenix.solve_asteroid_belt.sig_dot_sub_surf">sig_dot_sub_surf() (in module diffenix.solve_asteroid_belt)</a>
+</li>
+      <li><a href="diffenix.html#diffenix.solve_asteroid_belt.sig_dot_sub_vol">sig_dot_sub_vol() (in module diffenix.solve_asteroid_belt)</a>
+</li>
       <li><a href="diffenix.html#diffenix.Constantes.sigma">sigma (in module diffenix.Constantes)</a>
 </li>
       <li><a href="diffenix.html#diffenix.systems.Sol.sigma">sigma() (diffenix.systems.Sol method)</a>
@@ -432,10 +454,10 @@
         <li><a href="diffenix.html#diffenix.systems.sigma_dot">(in module diffenix.systems)</a>
 </li>
       </ul></li>
-      <li><a href="diffenix.html#diffenix.solve_asteroid_belt.sigmap_rho">sigmap_rho() (in module diffenix.solve_asteroid_belt)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="diffenix.html#diffenix.solve_asteroid_belt.sigmap_rho">sigmap_rho() (in module diffenix.solve_asteroid_belt)</a>
+</li>
       <li><a href="diffenix.html#diffenix.systems.Sol">Sol (class in diffenix.systems)</a>
 </li>
       <li><a href="diffenix.html#diffenix.solve_asteroid_belt.SolrhoBelt">SolrhoBelt (class in diffenix.solve_asteroid_belt)</a>

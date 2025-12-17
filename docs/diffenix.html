@@ -20,7 +20,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="The model" href="The_model.html" /> 
+    <link rel="prev" title="The Model" href="The_model.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,8 +45,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="The_model.html">The model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="The_model.html">The Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="The_model.html#references">References</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a><ul>
@@ -83,9 +83,13 @@
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.mbelt_coll"><code class="docutils literal notranslate"><span class="pre">mbelt_coll()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.mdot_s"><code class="docutils literal notranslate"><span class="pre">mdot_s()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.mdot_s_l"><code class="docutils literal notranslate"><span class="pre">mdot_s_l()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.mdot_s_surf"><code class="docutils literal notranslate"><span class="pre">mdot_s_surf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.mdot_s_vol"><code class="docutils literal notranslate"><span class="pre">mdot_s_vol()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.minit"><code class="docutils literal notranslate"><span class="pre">minit()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.number_density"><code class="docutils literal notranslate"><span class="pre">number_density()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.sig_dot_full_diff"><code class="docutils literal notranslate"><span class="pre">sig_dot_full_diff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.sig_dot_sub_surf"><code class="docutils literal notranslate"><span class="pre">sig_dot_sub_surf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.sig_dot_sub_vol"><code class="docutils literal notranslate"><span class="pre">sig_dot_sub_vol()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.sigma_dot"><code class="docutils literal notranslate"><span class="pre">sigma_dot()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.sigmap_rho"><code class="docutils literal notranslate"><span class="pre">sigmap_rho()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.solve_asteroid_belt.tau_diff"><code class="docutils literal notranslate"><span class="pre">tau_diff()</span></code></a></li>
@@ -100,6 +104,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.numericals_methods.gradient_d"><code class="docutils literal notranslate"><span class="pre">gradient_d()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.numericals_methods.gradient_g"><code class="docutils literal notranslate"><span class="pre">gradient_g()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.numericals_methods.gradient_weno5"><code class="docutils literal notranslate"><span class="pre">gradient_weno5()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#diffenix.numericals_methods.grid_refine_inner_edge"><code class="docutils literal notranslate"><span class="pre">grid_refine_inner_edge()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.numericals_methods.linear_interpolation"><code class="docutils literal notranslate"><span class="pre">linear_interpolation()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#diffenix.numericals_methods.rk4"><code class="docutils literal notranslate"><span class="pre">rk4()</span></code></a></li>
 </ul>
@@ -215,7 +220,7 @@ the dictionary with all the constants</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="diffenix.time_integration.restart">
-<span class="sig-prename descclassname"><span class="pre">diffenix.time_integration.</span></span><span class="sig-name descname"><span class="pre">restart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(100.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_time_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(0.3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integrate_only_surface_density</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></span><a class="reference internal" href="_modules/diffenix/time_integration.html#restart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.time_integration.restart" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">diffenix.time_integration.</span></span><span class="sig-name descname"><span class="pre">restart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(100.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_time_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(0.1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integrate_only_surface_density</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></span><a class="reference internal" href="_modules/diffenix/time_integration.html#restart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.time_integration.restart" title="Link to this definition"></a></dt>
 <dd><p>Restart the simulation number</p>
 <section id="id1">
 <h4>Parameters<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
@@ -303,6 +308,34 @@ colored shaded area (one for each planet) and the label will be name_planets</p>
 </section>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="diffenix.systems.Sol.calc_flux_radmc">
+<span class="sig-name descname"><span class="pre">calc_flux_radmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temporal_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">13</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">59.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.calc_flux_radmc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.calc_flux_radmc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="diffenix.systems.Sol.calc_single_flux_radmc">
+<span class="sig-name descname"><span class="pre">calc_single_flux_radmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">13</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">59.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.calc_single_flux_radmc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.calc_single_flux_radmc" title="Link to this definition"></a></dt>
+<dd><section id="id7">
+<h4>Parameters<a class="headerlink" href="#id7" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>i: int</dt><dd><p>The index at which the surface density is plotted</p>
+</dd>
+<dt>directory<span class="classifier">str, default=self.directory+’/’+i</span></dt><dd><p>The directory where the configuration are stored</p>
+</dd>
+<dt>size_grid<span class="classifier">int, default=128</span></dt><dd><p>The size of the spatial grid (the water surface density is interpolated on it)</p>
+</dd>
+</dl>
+</section>
+<section id="id8">
+<h4>Returns<a class="headerlink" href="#id8" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>np.ndarray[np.float64]</dt><dd><p>The spatially integrated luminosity flux</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="diffenix.systems.Sol.compteur">
 <span class="sig-name descname"><span class="pre">compteur</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#diffenix.systems.Sol.compteur" title="Link to this definition"></a></dt>
@@ -312,8 +345,8 @@ colored shaded area (one for each planet) and the label will be name_planets</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.constantes">
 <span class="sig-name descname"><span class="pre">constantes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.constantes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.constantes" title="Link to this definition"></a></dt>
 <dd><p>All the constants needed for the integration</p>
-<section id="id7">
-<h4>Returns<a class="headerlink" href="#id7" title="Link to this heading"></a></h4>
+<section id="id9">
+<h4>Returns<a class="headerlink" href="#id9" title="Link to this heading"></a></h4>
 <dl>
 <dt>dict<span class="classifier">dict</span></dt><dd><dl>
 <dt>A dictionary with all the constantes :</dt><dd><ul class="simple">
@@ -447,8 +480,8 @@ colored shaded area (one for each planet) and the label will be name_planets</p>
 <span class="sig-name descname"><span class="pre">get_final_mass_fractions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.get_final_mass_fractions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.get_final_mass_fractions" title="Link to this definition"></a></dt>
 <dd><p>Transform the result get by solve_ivp for the integration of the mass fractions
 to the format of self.sigmas</p>
-<section id="id8">
-<h4>Parameters<a class="headerlink" href="#id8" title="Link to this heading"></a></h4>
+<section id="id10">
+<h4>Parameters<a class="headerlink" href="#id10" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>y<span class="classifier">np.ndarray</span></dt><dd><p>result of solve_ivp</p>
 </dd>
@@ -460,8 +493,8 @@ to the format of self.sigmas</p>
 </dd>
 </dl>
 </section>
-<section id="id9">
-<h4>Returns<a class="headerlink" href="#id9" title="Link to this heading"></a></h4>
+<section id="id11">
+<h4>Returns<a class="headerlink" href="#id11" title="Link to this heading"></a></h4>
 <p>None</p>
 </section>
 </dd></dl>
@@ -472,8 +505,8 @@ to the format of self.sigmas</p>
 <dd><p>Save into this Sol the result of a temporal integration contain in ys. This save a fraction of
 y in self.f (fraction given by step) and calculate some test variable such as the flux at the planets levels or
 the variables needed to calculate the mass conservation (inner and outer flux, total mass produced…)</p>
-<section id="id10">
-<h4>Parameters<a class="headerlink" href="#id10" title="Link to this heading"></a></h4>
+<section id="id12">
+<h4>Parameters<a class="headerlink" href="#id12" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>y<span class="classifier">np.ndarray</span></dt><dd><p>result of solve_ivp = sigma * (r ** (2 + pls_temp))</p>
 </dd>
@@ -483,8 +516,8 @@ the variables needed to calculate the mass conservation (inner and outer flux, t
 </dd>
 </dl>
 </section>
-<section id="id11">
-<h4>Returns<a class="headerlink" href="#id11" title="Link to this heading"></a></h4>
+<section id="id13">
+<h4>Returns<a class="headerlink" href="#id13" title="Link to this heading"></a></h4>
 <p>None</p>
 </section>
 </dd></dl>
@@ -493,8 +526,8 @@ the variables needed to calculate the mass conservation (inner and outer flux, t
 <dt class="sig sig-object py" id="diffenix.systems.Sol.graph_image_surface_density">
 <span class="sig-name descname"><span class="pre">graph_image_surface_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9223372036854775807</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_sigma_crit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(1e-10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_sigma_crit_h2o</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'w'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_sigma_crit_co</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'g'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'inferno'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_planets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">planets_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs_ax</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graphique</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.graph_image_surface_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.graph_image_surface_density" title="Link to this definition"></a></dt>
 <dd><p>Build a Graphique that represant the evolution of surface density as function of time and radius</p>
-<section id="id12">
-<h4>Parameters<a class="headerlink" href="#id12" title="Link to this heading"></a></h4>
+<section id="id14">
+<h4>Parameters<a class="headerlink" href="#id14" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>species<span class="classifier">str | int, optional</span></dt><dd><p>The specie for which the surface density is represanted, default the total surface density is represanted</p>
 </dd>
@@ -539,8 +572,8 @@ Default, v_max is not considered like for “auto” where the maximal value wil
 </dd>
 </dl>
 </section>
-<section id="id13">
-<h4>Returns<a class="headerlink" href="#id13" title="Link to this heading"></a></h4>
+<section id="id15">
+<h4>Returns<a class="headerlink" href="#id15" title="Link to this heading"></a></h4>
 <p>g.Graphique</p>
 </section>
 </dd></dl>
@@ -549,8 +582,8 @@ Default, v_max is not considered like for “auto” where the maximal value wil
 <dt class="sig sig-object py" id="diffenix.systems.Sol.graph_surface_density">
 <span class="sig-name descname"><span class="pre">graph_surface_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">times</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9223372036854775807</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_mean_volumique_density</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_last_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_sigma_crit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_planets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">args_ax</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graphique</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.graph_surface_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.graph_surface_density" title="Link to this definition"></a></dt>
 <dd><p>Create a Graphique of surface density as a function of radius for different time for given species</p>
-<section id="id14">
-<h4>Parameters<a class="headerlink" href="#id14" title="Link to this heading"></a></h4>
+<section id="id16">
+<h4>Parameters<a class="headerlink" href="#id16" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>times<span class="classifier">np.ndarray, optional,</span></dt><dd><p>table of the times we want to show the surface density.
 If None and idx is None, an arbitrary subset of self.tps will be taken</p>
@@ -584,14 +617,19 @@ if str, the specie associated with this name is plotted</p>
 </dl>
 <p>x_lim=[1,100])</p>
 </section>
-<section id="id15">
-<h4>Returns<a class="headerlink" href="#id15" title="Link to this heading"></a></h4>
+<section id="id17">
+<h4>Returns<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>g.Graphique</dt><dd><p>the requested Graphique</p>
 </dd>
 </dl>
 </section>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="diffenix.systems.Sol.graphs">
+<span class="sig-name descname"><span class="pre">graphs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plot_planets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">planets_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Graphique</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.graphs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.graphs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="diffenix.systems.Sol.graphs_accretion">
@@ -604,8 +642,8 @@ if str, the specie associated with this name is plotted</p>
 <dd><p>Initialize the solution with a steady state of the first element
 generated by a 10**-10 Mearth/Myr gas generation rate
 The radii are linearly spaced between a_min and a_max with IT_s points</p>
-<section id="id16">
-<h4>Returns<a class="headerlink" href="#id16" title="Link to this heading"></a></h4>
+<section id="id18">
+<h4>Returns<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
 <p>None</p>
 </section>
 </dd></dl>
@@ -614,15 +652,15 @@ The radii are linearly spaced between a_min and a_max with IT_s points</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.interp_sigma">
 <span class="sig-name descname"><span class="pre">interp_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.interp_sigma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.interp_sigma" title="Link to this definition"></a></dt>
 <dd><p>Return surface density</p>
-<section id="id17">
-<h4>Parameters<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
+<section id="id19">
+<h4>Parameters<a class="headerlink" href="#id19" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>i<span class="classifier">int, optional</span></dt><dd><p>The index at wich calculate sigma</p>
 </dd>
 </dl>
 </section>
-<section id="id18">
-<h4>Returns<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
+<section id="id20">
+<h4>Returns<a class="headerlink" href="#id20" title="Link to this heading"></a></h4>
 <p>np.float64 | np.ndarray</p>
 </section>
 </dd></dl>
@@ -631,8 +669,8 @@ The radii are linearly spaced between a_min and a_max with IT_s points</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.mass_conservation">
 <span class="sig-name descname"><span class="pre">mass_conservation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.mass_conservation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.mass_conservation" title="Link to this definition"></a></dt>
 <dd><p>Calculate the mass conservation in the whole system</p>
-<section id="id19">
-<h4>Returns<a class="headerlink" href="#id19" title="Link to this heading"></a></h4>
+<section id="id21">
+<h4>Returns<a class="headerlink" href="#id21" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>An array fo size self.diag[“time”], equal to zero only if the mass is conserved</p>
 </dd>
@@ -644,15 +682,15 @@ The radii are linearly spaced between a_min and a_max with IT_s points</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.mass_flux">
 <span class="sig-name descname"><span class="pre">mass_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9223372036854775807</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.mass_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.mass_flux" title="Link to this definition"></a></dt>
 <dd><p>The mass flux for the temporal index(s) i of tps/f</p>
-<section id="id20">
-<h4>Parameters<a class="headerlink" href="#id20" title="Link to this heading"></a></h4>
+<section id="id22">
+<h4>Parameters<a class="headerlink" href="#id22" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>i<span class="classifier">int | np.ndarray, optional, default: the radial speed is calculated for every index</span></dt><dd><p>The temporal index(s) from which calculate the radial speed</p>
 </dd>
 </dl>
 </section>
-<section id="id21">
-<h4>Returns<a class="headerlink" href="#id21" title="Link to this heading"></a></h4>
+<section id="id23">
+<h4>Returns<a class="headerlink" href="#id23" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>The mass flux</p>
 </dd>
@@ -664,8 +702,8 @@ The radii are linearly spaced between a_min and a_max with IT_s points</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.momentum_conservation">
 <span class="sig-name descname"><span class="pre">momentum_conservation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.momentum_conservation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.momentum_conservation" title="Link to this definition"></a></dt>
 <dd><p>Calculate the momentum conservation in the whole system</p>
-<section id="id22">
-<h4>Returns<a class="headerlink" href="#id22" title="Link to this heading"></a></h4>
+<section id="id24">
+<h4>Returns<a class="headerlink" href="#id24" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>An array fo size self.diag[“time”], equal to zero only if the mass is conserved</p>
 </dd>
@@ -677,15 +715,15 @@ The radii are linearly spaced between a_min and a_max with IT_s points</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.radial_speed">
 <span class="sig-name descname"><span class="pre">radial_speed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9223372036854775807</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.radial_speed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.radial_speed" title="Link to this definition"></a></dt>
 <dd><p>The radial speed for the temporal index(s) i of tps/f</p>
-<section id="id23">
-<h4>Parameters<a class="headerlink" href="#id23" title="Link to this heading"></a></h4>
+<section id="id25">
+<h4>Parameters<a class="headerlink" href="#id25" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>i<span class="classifier">int | np.ndarray, optional, default: the radial speed is calculated for every index</span></dt><dd><p>The temporal index(s) from which calculate the radial speed</p>
 </dd>
 </dl>
 </section>
-<section id="id24">
-<h4>Returns<a class="headerlink" href="#id24" title="Link to this heading"></a></h4>
+<section id="id26">
+<h4>Returns<a class="headerlink" href="#id26" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>The radial speed</p>
 </dd>
@@ -694,11 +732,32 @@ The radii are linearly spaced between a_min and a_max with IT_s points</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="diffenix.systems.Sol.radmc_setup">
+<span class="sig-name descname"><span class="pre">radmc_setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.radmc_setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.radmc_setup" title="Link to this definition"></a></dt>
+<dd><p>Generate the configuration file for radmc3d for the surface density at time self.tps[i]</p>
+<section id="id27">
+<h4>Parameters<a class="headerlink" href="#id27" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>i: int</dt><dd><p>The index at which the surface density is plotted</p>
+</dd>
+<dt>directory<span class="classifier">str, default=self.directory+’/’+i</span></dt><dd><p>The directory where the configuration are stored</p>
+</dd>
+<dt>size_grid<span class="classifier">int, default=128</span></dt><dd><p>THe size of the spatial grid (the water surface density is interpolated on it)</p>
+</dd>
+</dl>
+</section>
+<section id="id28">
+<h4>Returns<a class="headerlink" href="#id28" title="Link to this heading"></a></h4>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="diffenix.systems.Sol.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.save" title="Link to this definition"></a></dt>
 <dd><p>Save the object in the compressed format .npz</p>
-<section id="id25">
-<h4>Parameters<a class="headerlink" href="#id25" title="Link to this heading"></a></h4>
+<section id="id29">
+<h4>Parameters<a class="headerlink" href="#id29" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>filename<span class="classifier">str, optional, default=self.filename</span></dt><dd><p>The name of the .npz file</p>
 </dd>
@@ -708,8 +767,8 @@ to the file and directory will be ignored</p>
 </dd>
 </dl>
 </section>
-<section id="id26">
-<h4>Returns<a class="headerlink" href="#id26" title="Link to this heading"></a></h4>
+<section id="id30">
+<h4>Returns<a class="headerlink" href="#id30" title="Link to this heading"></a></h4>
 <p>None</p>
 </section>
 </dd></dl>
@@ -718,15 +777,15 @@ to the file and directory will be ignored</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.sigma">
 <span class="sig-name descname"><span class="pre">sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9223372036854775807</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.sigma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.sigma" title="Link to this definition"></a></dt>
 <dd><p>Return surface density</p>
-<section id="id27">
-<h4>Parameters<a class="headerlink" href="#id27" title="Link to this heading"></a></h4>
+<section id="id31">
+<h4>Parameters<a class="headerlink" href="#id31" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>i<span class="classifier">int, optional</span></dt><dd><p>The index at wich calculate sigma</p>
 </dd>
 </dl>
 </section>
-<section id="id28">
-<h4>Returns<a class="headerlink" href="#id28" title="Link to this heading"></a></h4>
+<section id="id32">
+<h4>Returns<a class="headerlink" href="#id32" title="Link to this heading"></a></h4>
 <p>np.float64 | np.ndarray</p>
 </section>
 </dd></dl>
@@ -735,15 +794,15 @@ to the file and directory will be ignored</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.split_y">
 <span class="sig-name descname"><span class="pre">split_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.split_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.split_y" title="Link to this definition"></a></dt>
 <dd><p>Split y the argument of the time integration system in n lists, n the number of chemical elements</p>
-<section id="id29">
-<h4>Parameters<a class="headerlink" href="#id29" title="Link to this heading"></a></h4>
+<section id="id33">
+<h4>Parameters<a class="headerlink" href="#id33" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>y<span class="classifier">np.ndarray</span></dt><dd><p>The array to be reshaped</p>
 </dd>
 </dl>
 </section>
-<section id="id30">
-<h4>Returns<a class="headerlink" href="#id30" title="Link to this heading"></a></h4>
+<section id="id34">
+<h4>Returns<a class="headerlink" href="#id34" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>masses_fractions(y)</p>
 </dd>
@@ -757,8 +816,8 @@ to the file and directory will be ignored</p>
 <dd><p>Time integration of surface density and mass fraction until tf
 The surface density is integrated first
 Steps of 0.3 Myr are made to save the result</p>
-<section id="id31">
-<h4>Parameters<a class="headerlink" href="#id31" title="Link to this heading"></a></h4>
+<section id="id35">
+<h4>Parameters<a class="headerlink" href="#id35" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>tf<span class="classifier">np.float64</span></dt><dd><p>The final integration time</p>
 </dd>
@@ -773,8 +832,8 @@ Steps of 0.3 Myr are made to save the result</p>
 </dd>
 </dl>
 </section>
-<section id="id32">
-<h4>Returns<a class="headerlink" href="#id32" title="Link to this heading"></a></h4>
+<section id="id36">
+<h4>Returns<a class="headerlink" href="#id36" title="Link to this heading"></a></h4>
 <p>None</p>
 </section>
 </dd></dl>
@@ -783,8 +842,8 @@ Steps of 0.3 Myr are made to save the result</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.total_mass">
 <span class="sig-name descname"><span class="pre">total_mass</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.total_mass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.total_mass" title="Link to this definition"></a></dt>
 <dd><p>Calculate the total mass as a function of time</p>
-<section id="id33">
-<h4>Returns<a class="headerlink" href="#id33" title="Link to this heading"></a></h4>
+<section id="id37">
+<h4>Returns<a class="headerlink" href="#id37" title="Link to this heading"></a></h4>
 </section>
 </dd></dl>
 
@@ -792,15 +851,15 @@ Steps of 0.3 Myr are made to save the result</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.turbulent_speed">
 <span class="sig-name descname"><span class="pre">turbulent_speed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">9223372036854775807</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.turbulent_speed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.turbulent_speed" title="Link to this definition"></a></dt>
 <dd><p>The turbulent speed for the temporal index(s) i of mass_fractions</p>
-<section id="id34">
-<h4>Parameters<a class="headerlink" href="#id34" title="Link to this heading"></a></h4>
+<section id="id38">
+<h4>Parameters<a class="headerlink" href="#id38" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>i<span class="classifier">int | np.ndarray, optional, default:the turbulence speed is calculated for every index</span></dt><dd><p>The temporal index(s) from which calculate the radial speed</p>
 </dd>
 </dl>
 </section>
-<section id="id35">
-<h4>Returns<a class="headerlink" href="#id35" title="Link to this heading"></a></h4>
+<section id="id39">
+<h4>Returns<a class="headerlink" href="#id39" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>The turbulent speeds</p>
 </dd>
@@ -812,8 +871,8 @@ Steps of 0.3 Myr are made to save the result</p>
 <dt class="sig sig-object py" id="diffenix.systems.Sol.update_constantes">
 <span class="sig-name descname"><span class="pre">update_constantes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.update_constantes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.update_constantes" title="Link to this definition"></a></dt>
 <dd><p>Update all the constants needed for the integration</p>
-<section id="id36">
-<h4>Parameters<a class="headerlink" href="#id36" title="Link to this heading"></a></h4>
+<section id="id40">
+<h4>Parameters<a class="headerlink" href="#id40" title="Link to this heading"></a></h4>
 <dl>
 <dt>dic: dict</dt><dd><dl>
 <dt>A dictionary with all the constantes :</dt><dd><ul class="simple">
@@ -940,8 +999,8 @@ Steps of 0.3 Myr are made to save the result</p>
 </dd>
 </dl>
 </section>
-<section id="id37">
-<h4>Returns<a class="headerlink" href="#id37" title="Link to this heading"></a></h4>
+<section id="id41">
+<h4>Returns<a class="headerlink" href="#id41" title="Link to this heading"></a></h4>
 <p>None</p>
 </section>
 </dd></dl>
@@ -951,15 +1010,15 @@ Steps of 0.3 Myr are made to save the result</p>
 <span class="sig-name descname"><span class="pre">y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#Sol.y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.Sol.y" title="Link to this definition"></a></dt>
 <dd><p>Return the masses fractions flatten into a one dimensional array for a given time (argument
 of the time integration system)</p>
-<section id="id38">
-<h4>Parameters<a class="headerlink" href="#id38" title="Link to this heading"></a></h4>
+<section id="id42">
+<h4>Parameters<a class="headerlink" href="#id42" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>i<span class="classifier">int</span></dt><dd><p>The index to which return the mass fraction</p>
 </dd>
 </dl>
 </section>
-<section id="id39">
-<h4>Returns<a class="headerlink" href="#id39" title="Link to this heading"></a></h4>
+<section id="id43">
+<h4>Returns<a class="headerlink" href="#id43" title="Link to this heading"></a></h4>
 </section>
 </dd></dl>
 
@@ -967,10 +1026,10 @@ of the time integration system)</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="diffenix.systems.T">
-<span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">T</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#T"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.T" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">T</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(332942.6342051505)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#T"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.T" title="Link to this definition"></a></dt>
 <dd><p>Calculate and return the temperature at radius r</p>
-<section id="id40">
-<h4>Parameters<a class="headerlink" href="#id40" title="Link to this heading"></a></h4>
+<section id="id44">
+<h4>Parameters<a class="headerlink" href="#id44" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>r<span class="classifier">np.ndarray</span></dt><dd><p>radius</p>
 </dd>
@@ -978,8 +1037,8 @@ of the time integration system)</p>
 </dd>
 </dl>
 </section>
-<section id="id41">
-<h4>Returns<a class="headerlink" href="#id41" title="Link to this heading"></a></h4>
+<section id="id45">
+<h4>Returns<a class="headerlink" href="#id45" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray | np.float</dt><dd><p>The temperature</p>
 </dd>
@@ -991,8 +1050,8 @@ of the time integration system)</p>
 <dt class="sig sig-object py" id="diffenix.systems.T0">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">T0</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(2.6499999999999995)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(332942.6342051505)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#T0"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.T0" title="Link to this definition"></a></dt>
 <dd><p>Calculate and return the temperature at a0</p>
-<section id="id42">
-<h4>Parameters<a class="headerlink" href="#id42" title="Link to this heading"></a></h4>
+<section id="id46">
+<h4>Parameters<a class="headerlink" href="#id46" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>t<span class="classifier">np.ndarray</span></dt><dd><p>The current time</p>
 </dd>
@@ -1002,8 +1061,8 @@ of the time integration system)</p>
 </dd>
 </dl>
 </section>
-<section id="id43">
-<h4>Returns<a class="headerlink" href="#id43" title="Link to this heading"></a></h4>
+<section id="id47">
+<h4>Returns<a class="headerlink" href="#id47" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray | np.float</dt><dd><p>The temperature</p>
 </dd>
@@ -1015,8 +1074,8 @@ of the time integration system)</p>
 <dt class="sig sig-object py" id="diffenix.systems.boundary_conditions">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">boundary_conditions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#boundary_conditions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.boundary_conditions" title="Link to this definition"></a></dt>
 <dd><p>Define the inner and outer boundary conditions for the surface density</p>
-<section id="id44">
-<h4>Parameters<a class="headerlink" href="#id44" title="Link to this heading"></a></h4>
+<section id="id48">
+<h4>Parameters<a class="headerlink" href="#id48" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>ys<span class="classifier">np.ndarray</span></dt><dd><p>log of surface density</p>
 </dd>
@@ -1026,8 +1085,8 @@ of the time integration system)</p>
 </dd>
 </dl>
 </section>
-<section id="id45">
-<h4>Returns<a class="headerlink" href="#id45" title="Link to this heading"></a></h4>
+<section id="id49">
+<h4>Returns<a class="headerlink" href="#id49" title="Link to this heading"></a></h4>
 <p>np.ndarray</p>
 </section>
 </dd></dl>
@@ -1036,8 +1095,8 @@ of the time integration system)</p>
 <dt class="sig sig-object py" id="diffenix.systems.boundary_conditions_mf">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">boundary_conditions_mf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#boundary_conditions_mf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.boundary_conditions_mf" title="Link to this definition"></a></dt>
 <dd><p>Define the inner and outer boundary conditions for the mass fractions</p>
-<section id="id46">
-<h4>Parameters<a class="headerlink" href="#id46" title="Link to this heading"></a></h4>
+<section id="id50">
+<h4>Parameters<a class="headerlink" href="#id50" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>ys<span class="classifier">np.ndarray</span></dt><dd><p>Mass fractions</p>
 </dd>
@@ -1047,8 +1106,8 @@ of the time integration system)</p>
 </dd>
 </dl>
 </section>
-<section id="id47">
-<h4>Returns<a class="headerlink" href="#id47" title="Link to this heading"></a></h4>
+<section id="id51">
+<h4>Returns<a class="headerlink" href="#id51" title="Link to this heading"></a></h4>
 <p>np.ndarray</p>
 </section>
 </dd></dl>
@@ -1057,8 +1116,8 @@ of the time integration system)</p>
 <dt class="sig sig-object py" id="diffenix.systems.mass_flux">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">mass_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#mass_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.mass_flux" title="Link to this definition"></a></dt>
 <dd><p>Calculate the total mass flux for a given sigma, sol and m_out</p>
-<section id="id48">
-<h4>Parameters<a class="headerlink" href="#id48" title="Link to this heading"></a></h4>
+<section id="id52">
+<h4>Parameters<a class="headerlink" href="#id52" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>sol<span class="classifier">Sol</span></dt><dd><p>Associated Sol</p>
 </dd>
@@ -1068,8 +1127,8 @@ of the time integration system)</p>
 </dd>
 </dl>
 </section>
-<section id="id49">
-<h4>Returns<a class="headerlink" href="#id49" title="Link to this heading"></a></h4>
+<section id="id53">
+<h4>Returns<a class="headerlink" href="#id53" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>the radial speed</p>
 </dd>
@@ -1082,8 +1141,8 @@ of the time integration system)</p>
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">mass_frac_dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#mass_frac_dot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.mass_frac_dot" title="Link to this definition"></a></dt>
 <dd><p>Calculate the gas generation and destruction rate relatively to each species,
 The accretion onto planet is not expected to have any influence onto the mass fraction</p>
-<section id="id50">
-<h4>Parameters<a class="headerlink" href="#id50" title="Link to this heading"></a></h4>
+<section id="id54">
+<h4>Parameters<a class="headerlink" href="#id54" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>t<span class="classifier">np.float64</span></dt><dd><p>the current time</p>
 </dd>
@@ -1093,8 +1152,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 </dd>
 </dl>
 </section>
-<section id="id51">
-<h4>Returns<a class="headerlink" href="#id51" title="Link to this heading"></a></h4>
+<section id="id55">
+<h4>Returns<a class="headerlink" href="#id55" title="Link to this heading"></a></h4>
 <p>np.ndarray</p>
 </section>
 </dd></dl>
@@ -1103,8 +1162,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 <dt class="sig sig-object py" id="diffenix.systems.mass_steady_state">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">mass_steady_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mdot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#mass_steady_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.mass_steady_state" title="Link to this definition"></a></dt>
 <dd><p>Return the mass of a steady state disc where gas is produced at radius a0 with a mass generation rate mdot</p>
-<section id="id52">
-<h4>Parameters<a class="headerlink" href="#id52" title="Link to this heading"></a></h4>
+<section id="id56">
+<h4>Parameters<a class="headerlink" href="#id56" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>sol<span class="classifier">Sol</span></dt><dd><p>The associated Sol</p>
 </dd>
@@ -1116,8 +1175,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 </dd>
 </dl>
 </section>
-<section id="id53">
-<h4>Returns<a class="headerlink" href="#id53" title="Link to this heading"></a></h4>
+<section id="id57">
+<h4>Returns<a class="headerlink" href="#id57" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>the surface density of the steady state</p>
 </dd>
@@ -1129,15 +1188,15 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 <dt class="sig sig-object py" id="diffenix.systems.merge_y">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">merge_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#merge_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.merge_y" title="Link to this definition"></a></dt>
 <dd><p>Do the inverse operation of split_y</p>
-<section id="id54">
-<h4>Parameters<a class="headerlink" href="#id54" title="Link to this heading"></a></h4>
+<section id="id58">
+<h4>Parameters<a class="headerlink" href="#id58" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>y<span class="classifier">np.ndarray</span></dt><dd><p>The array to be reshaped</p>
 </dd>
 </dl>
 </section>
-<section id="id55">
-<h4>Returns<a class="headerlink" href="#id55" title="Link to this heading"></a></h4>
+<section id="id59">
+<h4>Returns<a class="headerlink" href="#id59" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>The new array</p>
 </dd>
@@ -1154,8 +1213,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 <dt class="sig sig-object py" id="diffenix.systems.radial_speed">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">radial_speed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#radial_speed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.radial_speed" title="Link to this definition"></a></dt>
 <dd><p>Calculate the radial speed for a given sigma, sol and m_out</p>
-<section id="id56">
-<h4>Parameters<a class="headerlink" href="#id56" title="Link to this heading"></a></h4>
+<section id="id60">
+<h4>Parameters<a class="headerlink" href="#id60" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>sol<span class="classifier">Sol</span></dt><dd><p>Associated Sol</p>
 </dd>
@@ -1165,8 +1224,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 </dd>
 </dl>
 </section>
-<section id="id57">
-<h4>Returns<a class="headerlink" href="#id57" title="Link to this heading"></a></h4>
+<section id="id61">
+<h4>Returns<a class="headerlink" href="#id61" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>the radial speed</p>
 </dd>
@@ -1178,8 +1237,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 <dt class="sig sig-object py" id="diffenix.systems.sigma_dot">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">sigma_dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#sigma_dot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.sigma_dot" title="Link to this definition"></a></dt>
 <dd><p>Calculate the gas generation and destruction rate</p>
-<section id="id58">
-<h4>Parameters<a class="headerlink" href="#id58" title="Link to this heading"></a></h4>
+<section id="id62">
+<h4>Parameters<a class="headerlink" href="#id62" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>t<span class="classifier">np.float64</span></dt><dd><p>the current time</p>
 </dd>
@@ -1191,8 +1250,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 </dd>
 </dl>
 </section>
-<section id="id59">
-<h4>Returns<a class="headerlink" href="#id59" title="Link to this heading"></a></h4>
+<section id="id63">
+<h4>Returns<a class="headerlink" href="#id63" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>sigma_dot</p>
 </dd>
@@ -1204,8 +1263,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 <dt class="sig sig-object py" id="diffenix.systems.split_y">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">split_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">len_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#split_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.split_y" title="Link to this definition"></a></dt>
 <dd><p>Split y the argument of the time integration system in n lists, n the number of chemical elements</p>
-<section id="id60">
-<h4>Parameters<a class="headerlink" href="#id60" title="Link to this heading"></a></h4>
+<section id="id64">
+<h4>Parameters<a class="headerlink" href="#id64" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>y<span class="classifier">np.ndarray</span></dt><dd><p>The array to be reshaped</p>
 </dd>
@@ -1215,8 +1274,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 </dd>
 </dl>
 </section>
-<section id="id61">
-<h4>Returns<a class="headerlink" href="#id61" title="Link to this heading"></a></h4>
+<section id="id65">
+<h4>Returns<a class="headerlink" href="#id65" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>masses_fractions(y)</p>
 </dd>
@@ -1228,8 +1287,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 <dt class="sig sig-object py" id="diffenix.systems.steady_state">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">steady_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mdot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mtot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/diffenix/systems.html#steady_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.steady_state" title="Link to this definition"></a></dt>
 <dd><p>Return the log of steady state for a given mdot</p>
-<section id="id62">
-<h4>Parameters<a class="headerlink" href="#id62" title="Link to this heading"></a></h4>
+<section id="id66">
+<h4>Parameters<a class="headerlink" href="#id66" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>sol<span class="classifier">Sol</span></dt><dd><p>The associated Sol</p>
 </dd>
@@ -1243,8 +1302,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 </dd>
 </dl>
 </section>
-<section id="id63">
-<h4>Returns<a class="headerlink" href="#id63" title="Link to this heading"></a></h4>
+<section id="id67">
+<h4>Returns<a class="headerlink" href="#id67" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>the surface density of the steady state</p>
 </dd>
@@ -1257,8 +1316,8 @@ The accretion onto planet is not expected to have any influence onto the mass fr
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">system_mass_fraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#system_mass_fraction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.system_mass_fraction" title="Link to this definition"></a></dt>
 <dd><p>Define the system to integrate in time to get the evolution of mass fractions,
 the spatial differentiation is made here to estimate the spatial derivatives</p>
-<section id="id64">
-<h4>Parameters<a class="headerlink" href="#id64" title="Link to this heading"></a></h4>
+<section id="id68">
+<h4>Parameters<a class="headerlink" href="#id68" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>t<span class="classifier">np.float64</span></dt><dd><p>The current time</p>
 </dd>
@@ -1270,8 +1329,8 @@ the spatial differentiation is made here to estimate the spatial derivatives</p>
 </dd>
 </dl>
 </section>
-<section id="id65">
-<h4>Returns<a class="headerlink" href="#id65" title="Link to this heading"></a></h4>
+<section id="id69">
+<h4>Returns<a class="headerlink" href="#id69" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>d(log(sigma)/dt</p>
 </dd>
@@ -1284,8 +1343,8 @@ the spatial differentiation is made here to estimate the spatial derivatives</p>
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">system_sigma_tot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#system_sigma_tot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.system_sigma_tot" title="Link to this definition"></a></dt>
 <dd><p>Define the system to integrate in time to get the evolution of surface density.
 The spatial differentiation is made here to estimate the spatial derivatives</p>
-<section id="id66">
-<h4>Parameters<a class="headerlink" href="#id66" title="Link to this heading"></a></h4>
+<section id="id70">
+<h4>Parameters<a class="headerlink" href="#id70" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>t<span class="classifier">np.float64</span></dt><dd><p>The current time</p>
 </dd>
@@ -1297,8 +1356,8 @@ The spatial differentiation is made here to estimate the spatial derivatives</p>
 </dd>
 </dl>
 </section>
-<section id="id67">
-<h4>Returns<a class="headerlink" href="#id67" title="Link to this heading"></a></h4>
+<section id="id71">
+<h4>Returns<a class="headerlink" href="#id71" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>d(log(sigma)/dt</p>
 </dd>
@@ -1310,8 +1369,8 @@ The spatial differentiation is made here to estimate the spatial derivatives</p>
 <dt class="sig sig-object py" id="diffenix.systems.turbulent_speed">
 <span class="sig-prename descclassname"><span class="pre">diffenix.systems.</span></span><span class="sig-name descname"><span class="pre">turbulent_speed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#diffenix.systems.Sol" title="diffenix.systems.Sol"><span class="pre">Sol</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/systems.html#turbulent_speed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.systems.turbulent_speed" title="Link to this definition"></a></dt>
 <dd><p>Calculate the turbulent speed for a given sigma, sol and m_out</p>
-<section id="id68">
-<h4>Parameters<a class="headerlink" href="#id68" title="Link to this heading"></a></h4>
+<section id="id72">
+<h4>Parameters<a class="headerlink" href="#id72" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>y<span class="classifier">np.ndarray</span></dt><dd><p>mass fractions at time t</p>
 </dd>
@@ -1321,8 +1380,8 @@ The spatial differentiation is made here to estimate the spatial derivatives</p>
 </dd>
 </dl>
 </section>
-<section id="id69">
-<h4>Returns<a class="headerlink" href="#id69" title="Link to this heading"></a></h4>
+<section id="id73">
+<h4>Returns<a class="headerlink" href="#id73" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>the radial speed</p>
 </dd>
@@ -1352,6 +1411,53 @@ and incremented in the function (mutable object)</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.SolrhoBelt.graph_image_surface_density">
+<span class="sig-name descname"><span class="pre">graph_image_surface_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(1.0000000000000003e-10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'inferno'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs_ax</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graphique</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#SolrhoBelt.graph_image_surface_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.SolrhoBelt.graph_image_surface_density" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Build a Graphique that represant the evolution of surface density generation rate</dt><dd><p>as function of time and radius</p>
+</dd>
+</dl>
+<section id="id74">
+<h4>Parameters<a class="headerlink" href="#id74" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>vmin<span class="classifier">np.float64 | str , optional, {“auto”, np.loat64}, default = 1e-10 * Mearth / Myr</span></dt><dd><p>The minimum value of surface density to represant in the result (below it will be considered as saturated)
+If “auto”, the minimal value will be the minimal value of the surface density represanted</p>
+</dd>
+<dt>vmax<span class="classifier">np.float64 | str, optional, {“auto”, np.loat64},</span></dt><dd><p>The maximum value of surface density to represant in the result (above it will be considered as saturated)
+Default, v_max is not considered like for “auto” where the maximal value will be the maximal value of the surface density represanted</p>
+</dd>
+<dt>size_time<span class="classifier">int, optional, default=1000</span></dt><dd><p>The image’s size for the time coordinate (x-axis)</p>
+</dd>
+<dt>size_radius<span class="classifier">int, optional, default=1000</span></dt><dd><p>The image’s size for the radius coordinate (y-axis)</p>
+</dd>
+<dt>cmap<span class="classifier">str, optional, default = “inferno”</span></dt><dd><p>The colormap used for the image</p>
+</dd>
+<dt>nb_levels<span class="classifier">int, optional, default=10</span></dt><dd><dl class="simple">
+<dt>The number of levels in the image</dt><dd><p>The number of levels to plot in addition to the image</p>
+</dd>
+</dl>
+</dd>
+<dt>color_min<span class="classifier">str | tuple, optional</span></dt><dd><p>The color associated with the minimum value for a <cite>default</cite> cmap</p>
+</dd>
+<dt>color_max<span class="classifier">str | tuple, optional</span></dt><dd><p>The color associated with the maximum value for a <cite>default</cite> cmap</p>
+</dd>
+<dt>plot_label_levels<span class="classifier">bool, optional, default=False</span></dt><dd><p>To plot (or not) labels for the contours (if True, labels are only plot every two levels)</p>
+</dd>
+<dt>show<span class="classifier">bool, optional, default = True</span></dt><dd><p>Whether to show the image</p>
+</dd>
+<dt>save<span class="classifier">bool, optional, default = False</span></dt><dd><p>Whether to save the image (if True, both the Graphique and the png image will be saved)</p>
+</dd>
+<dt>directory<span class="classifier">str, optional</span></dt><dd><p>The directory to save the Graphique, default=self.directory</p>
+</dd>
+</dl>
+</section>
+<section id="id75">
+<h4>Returns<a class="headerlink" href="#id75" title="Link to this heading"></a></h4>
+<p>g.Graphique</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.SolrhoBelt.return_kwargsN">
 <span class="sig-name descname"><span class="pre">return_kwargsN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#SolrhoBelt.return_kwargsN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.SolrhoBelt.return_kwargsN" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -1367,8 +1473,8 @@ and incremented in the function (mutable object)</p>
 <dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.mbelt_coll">
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">mbelt_coll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(6.684587122268445e-20)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(2.673834848907378e-05)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(2.1123295306368286e-09)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(3.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(1.8333333333333333)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(1.67)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(0.075)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(3.9999999999999996)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">As</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(222498.51379990004)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(-0.1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(0.5)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(0.01)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(332942.6342051505)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_ast</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(1401463855786.2883)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'lm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">st_est</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#mbelt_coll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.mbelt_coll" title="Link to this definition"></a></dt>
 <dd><p>Estimate the masse of a collisional belt as function of time (formula 38 of Löhne et al. 2008)</p>
-<section id="id70">
-<h4>Parameters<a class="headerlink" href="#id70" title="Link to this heading"></a></h4>
+<section id="id76">
+<h4>Parameters<a class="headerlink" href="#id76" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>t<span class="classifier">np.float64</span></dt><dd><p>The time</p>
 </dd>
@@ -1410,8 +1516,8 @@ and incremented in the function (mutable object)</p>
 </dd>
 </dl>
 </section>
-<section id="id71">
-<h4>Returns<a class="headerlink" href="#id71" title="Link to this heading"></a></h4>
+<section id="id77">
+<h4>Returns<a class="headerlink" href="#id77" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.float64 | np.ndarray</dt><dd><p>mbelt</p>
 </dd>
@@ -1429,8 +1535,8 @@ and incremented in the function (mutable object)</p>
 <dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.mdot_s">
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">mdot_s</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">It_d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#mdot_s"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.mdot_s" title="Link to this definition"></a></dt>
 <dd><p>Compute the gas mass generation rate for a given bodie at differents radius</p>
-<section id="id72">
-<h4>Parameters<a class="headerlink" href="#id72" title="Link to this heading"></a></h4>
+<section id="id78">
+<h4>Parameters<a class="headerlink" href="#id78" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>s: np.float64</dt><dd><p>The size of the considered bodie</p>
 </dd>
@@ -1444,8 +1550,8 @@ and incremented in the function (mutable object)</p>
 </dd>
 </dl>
 </section>
-<section id="id73">
-<h4>Returns<a class="headerlink" href="#id73" title="Link to this heading"></a></h4>
+<section id="id79">
+<h4>Returns<a class="headerlink" href="#id79" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>the gas mass generation rate as function of time and radius</p>
 </dd>
@@ -1457,8 +1563,8 @@ and incremented in the function (mutable object)</p>
 <dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.mdot_s_l">
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">mdot_s_l</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#mdot_s_l"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.mdot_s_l" title="Link to this definition"></a></dt>
 <dd><p>Compute the gas mass generation for a given bodie</p>
-<section id="id74">
-<h4>Parameters<a class="headerlink" href="#id74" title="Link to this heading"></a></h4>
+<section id="id80">
+<h4>Parameters<a class="headerlink" href="#id80" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>rd<span class="classifier">np.ndarray</span></dt><dd><p>The radial coordinates inside the asteroid / KBO</p>
 </dd>
@@ -1470,10 +1576,68 @@ and incremented in the function (mutable object)</p>
 </dd>
 </dl>
 </section>
-<section id="id75">
-<h4>Returns<a class="headerlink" href="#id75" title="Link to this heading"></a></h4>
+<section id="id81">
+<h4>Returns<a class="headerlink" href="#id81" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>the gas mass generation rate as function of time</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.mdot_s_surf">
+<span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">mdot_s_surf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">It_d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#mdot_s_surf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.mdot_s_surf" title="Link to this definition"></a></dt>
+<dd><p>Compute the gas mass generation rate for a given bodies at differents radius if
+the gas sublimate only at its surface</p>
+<section id="id82">
+<h4>Parameters<a class="headerlink" href="#id82" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>s: np.float64</dt><dd><p>The size of the considered bodie</p>
+</dd>
+<dt>t: np.ndarray</dt><dd><p>The time at which evaluate the gas mass generation rate</p>
+</dd>
+<dt>r: np.ndarray</dt><dd><p>The distances from the central star at which evaluate the gas mass generation rate</p>
+</dd>
+<dt>consts<span class="classifier">dict</span></dt><dd><p>The dictionary of constants</p>
+</dd>
+<dt>It_d<span class="classifier">int</span></dt><dd><p>The number of iterations</p>
+</dd>
+</dl>
+</section>
+<section id="id83">
+<h4>Returns<a class="headerlink" href="#id83" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>np.ndarray</dt><dd><p>the gas mass generation rate as function of time and radius</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.mdot_s_vol">
+<span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">mdot_s_vol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">It_d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#mdot_s_vol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.mdot_s_vol" title="Link to this definition"></a></dt>
+<dd><p>Compute the gas mass generation rate for a given bodies at differents radius if
+the gas sublimate in the whole volume neglecting thermal diffusion</p>
+<section id="id84">
+<h4>Parameters<a class="headerlink" href="#id84" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>s: np.float64</dt><dd><p>The size of the considered bodie</p>
+</dd>
+<dt>t: np.ndarray</dt><dd><p>The time at which evaluate the gas mass generation rate</p>
+</dd>
+<dt>r: np.ndarray</dt><dd><p>The distances from the central star at which evaluate the gas mass generation rate</p>
+</dd>
+<dt>consts<span class="classifier">dict</span></dt><dd><p>The dictionary of constants</p>
+</dd>
+<dt>It_d<span class="classifier">int</span></dt><dd><p>The number of iterations</p>
+</dd>
+</dl>
+</section>
+<section id="id85">
+<h4>Returns<a class="headerlink" href="#id85" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>np.ndarray</dt><dd><p>the gas mass generation rate as function of time and radius</p>
 </dd>
 </dl>
 </section>
@@ -1488,8 +1652,8 @@ and incremented in the function (mutable object)</p>
 <dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.number_density">
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">number_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qh</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ql</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Mtot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(1.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">np.float64(1.0)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#number_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.number_density" title="Link to this definition"></a></dt>
 <dd><p>Return the number density of asteroid of size a</p>
-<section id="id76">
-<h4>Parameters<a class="headerlink" href="#id76" title="Link to this heading"></a></h4>
+<section id="id86">
+<h4>Parameters<a class="headerlink" href="#id86" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>a<span class="classifier">np.float64 | np.ndarray</span></dt><dd><p>The diameter(s) of asteroids</p>
 </dd>
@@ -1518,8 +1682,8 @@ in a belt = sigma*number_density(1.) with sigma the surface density</p>
 </dd>
 </dl>
 </section>
-<section id="id77">
-<h4>Returns<a class="headerlink" href="#id77" title="Link to this heading"></a></h4>
+<section id="id87">
+<h4>Returns<a class="headerlink" href="#id87" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.float64 | np.ndarray</dt><dd><p>The number density of asteroids for diameter(s) a</p>
 </dd>
@@ -1531,8 +1695,8 @@ in a belt = sigma*number_density(1.) with sigma the surface density</p>
 <dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.sig_dot_full_diff">
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">sig_dot_full_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">const</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargsN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">It_d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#sig_dot_full_diff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.sig_dot_full_diff" title="Link to this definition"></a></dt>
 <dd><p>Compute the gas surface density generation rate for a belt discribed into the const dictionary</p>
-<section id="id78">
-<h4>Parameters<a class="headerlink" href="#id78" title="Link to this heading"></a></h4>
+<section id="id88">
+<h4>Parameters<a class="headerlink" href="#id88" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>tps<span class="classifier">np.ndarray</span></dt><dd><p>The time at which evaluate the result</p>
 </dd>
@@ -1546,8 +1710,60 @@ in a belt = sigma*number_density(1.) with sigma the surface density</p>
 </dd>
 </dl>
 </section>
-<section id="id79">
-<h4>Returns<a class="headerlink" href="#id79" title="Link to this heading"></a></h4>
+<section id="id89">
+<h4>Returns<a class="headerlink" href="#id89" title="Link to this heading"></a></h4>
+<p>np.ndarray</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.sig_dot_sub_surf">
+<span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">sig_dot_sub_surf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">const</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargsN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">It_d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#sig_dot_sub_surf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.sig_dot_sub_surf" title="Link to this definition"></a></dt>
+<dd><p>Compute the gas surface density generation rate for a belt discribed into the const dictionary
+if the sublimation append only at the surface of asteroids</p>
+<section id="id90">
+<h4>Parameters<a class="headerlink" href="#id90" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>tps<span class="classifier">np.ndarray</span></dt><dd><p>The time at which evaluate the result</p>
+</dd>
+<dt>r<span class="classifier">np.ndarray</span></dt><dd><p>The distance to the central star at which evaluate the solution</p>
+</dd>
+<dt>const<span class="classifier">dict</span></dt><dd><p>The dictionary of constants</p>
+</dd>
+<dt>kwargsN<span class="classifier">dict</span></dt><dd><p>The dictionary that defined the size distribution</p>
+</dd>
+<dt>It_d<span class="classifier">int</span></dt><dd><p>The number of depth steps for thermal diffusion integration</p>
+</dd>
+</dl>
+</section>
+<section id="id91">
+<h4>Returns<a class="headerlink" href="#id91" title="Link to this heading"></a></h4>
+<p>np.ndarray</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.sig_dot_sub_vol">
+<span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">sig_dot_sub_vol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">const</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargsN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">It_d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#sig_dot_sub_vol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.sig_dot_sub_vol" title="Link to this definition"></a></dt>
+<dd><p>Compute the gas surface density generation rate for a belt discribed into the const dictionary
+if the sublimation append only at the surface of asteroids</p>
+<section id="id92">
+<h4>Parameters<a class="headerlink" href="#id92" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>tps<span class="classifier">np.ndarray</span></dt><dd><p>The time at which evaluate the result</p>
+</dd>
+<dt>r<span class="classifier">np.ndarray</span></dt><dd><p>The distance to the central star at which evaluate the solution</p>
+</dd>
+<dt>const<span class="classifier">dict</span></dt><dd><p>The dictionary of constants</p>
+</dd>
+<dt>kwargsN<span class="classifier">dict</span></dt><dd><p>The dictionary that defined the size distribution</p>
+</dd>
+<dt>It_d<span class="classifier">int</span></dt><dd><p>The number of depth steps for thermal diffusion integration</p>
+</dd>
+</dl>
+</section>
+<section id="id93">
+<h4>Returns<a class="headerlink" href="#id93" title="Link to this heading"></a></h4>
 <p>np.ndarray</p>
 </section>
 </dd></dl>
@@ -1557,8 +1773,8 @@ in a belt = sigma*number_density(1.) with sigma the surface density</p>
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">sigma_dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Mbelt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tinit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_ice</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_refr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_ice</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Abelt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Its</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Phi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Its_p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Itt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargsN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#sigma_dot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.sigma_dot" title="Link to this definition"></a></dt>
 <dd><p>Estimate the surface density mass generation rate for asteroids of diameters d at the distance r of the central star
 and of diameter d in a belt of mass Mbelt during the time times_loc</p>
-<section id="id80">
-<h4>Parameters<a class="headerlink" href="#id80" title="Link to this heading"></a></h4>
+<section id="id94">
+<h4>Parameters<a class="headerlink" href="#id94" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>Mbelt<span class="classifier">np.float64</span></dt><dd><p>The total belt’s mass</p>
 </dd>
@@ -1605,8 +1821,8 @@ and of diameter d in a belt of mass Mbelt during the time times_loc</p>
 </dl>
 <p>kwargs : dict</p>
 </section>
-<section id="id81">
-<h4>Returns<a class="headerlink" href="#id81" title="Link to this heading"></a></h4>
+<section id="id95">
+<h4>Returns<a class="headerlink" href="#id95" title="Link to this heading"></a></h4>
 <p>np.ndarray</p>
 </section>
 </dd></dl>
@@ -1616,8 +1832,8 @@ and of diameter d in a belt of mass Mbelt during the time times_loc</p>
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">sigmap_rho</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t:</span> <span class="pre">~numpy.float64</span> <span class="pre">|</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rr:</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pp:</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consts:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp:</span> <span class="pre">~diffenix.solve_asteroid_belt.Compteur</span> <span class="pre">=</span> <span class="pre">&lt;diffenix.solve_asteroid_belt.Compteur</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#sigmap_rho"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.sigmap_rho" title="Link to this definition"></a></dt>
 <dd><p>Calculate and return the gas generation rate at depth p, radius r and time t.
 This doesn’t take into acompte the limited amonth of material</p>
-<section id="id82">
-<h4>Parameters<a class="headerlink" href="#id82" title="Link to this heading"></a></h4>
+<section id="id96">
+<h4>Parameters<a class="headerlink" href="#id96" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>t<span class="classifier">np.ndarray | np.float64</span></dt><dd><p>The current time</p>
 </dd>
@@ -1631,8 +1847,8 @@ This doesn’t take into acompte the limited amonth of material</p>
 </dd>
 </dl>
 </section>
-<section id="id83">
-<h4>Returns<a class="headerlink" href="#id83" title="Link to this heading"></a></h4>
+<section id="id97">
+<h4>Returns<a class="headerlink" href="#id97" title="Link to this heading"></a></h4>
 <p>np.ndarray | np.float64</p>
 </section>
 </dd></dl>
@@ -1641,8 +1857,8 @@ This doesn’t take into acompte the limited amonth of material</p>
 <dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.tau_diff">
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">tau_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#tau_diff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.tau_diff" title="Link to this definition"></a></dt>
 <dd><p>Calculate the diffusion timescale at time t and depth p</p>
-<section id="id84">
-<h4>Parameters<a class="headerlink" href="#id84" title="Link to this heading"></a></h4>
+<section id="id98">
+<h4>Parameters<a class="headerlink" href="#id98" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>p: np.ndarray</dt><dd><p>The depth at which the gas is realised</p>
 </dd>
@@ -1654,8 +1870,8 @@ This doesn’t take into acompte the limited amonth of material</p>
 </dd>
 </dl>
 </section>
-<section id="id85">
-<h4>Returns<a class="headerlink" href="#id85" title="Link to this heading"></a></h4>
+<section id="id99">
+<h4>Returns<a class="headerlink" href="#id99" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>The time needed for the gas to go at the surface</p>
 </dd>
@@ -1667,8 +1883,8 @@ This doesn’t take into acompte the limited amonth of material</p>
 <dt class="sig sig-object py" id="diffenix.solve_asteroid_belt.temp_belt">
 <span class="sig-prename descclassname"><span class="pre">diffenix.solve_asteroid_belt.</span></span><span class="sig-name descname"><span class="pre">temp_belt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></span><a class="reference internal" href="_modules/diffenix/solve_asteroid_belt.html#temp_belt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.solve_asteroid_belt.temp_belt" title="Link to this definition"></a></dt>
 <dd><p>Calculate and return the temperature at radius r and time t</p>
-<section id="id86">
-<h4>Parameters<a class="headerlink" href="#id86" title="Link to this heading"></a></h4>
+<section id="id100">
+<h4>Parameters<a class="headerlink" href="#id100" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>r<span class="classifier">np.ndarray | np.float64</span></dt><dd><p>radius</p>
 </dd>
@@ -1678,8 +1894,8 @@ This doesn’t take into acompte the limited amonth of material</p>
 </dd>
 </dl>
 </section>
-<section id="id87">
-<h4>Returns<a class="headerlink" href="#id87" title="Link to this heading"></a></h4>
+<section id="id101">
+<h4>Returns<a class="headerlink" href="#id101" title="Link to this heading"></a></h4>
 <p>np.ndarray | np.float64</p>
 </section>
 </dd></dl>
@@ -1690,8 +1906,8 @@ This doesn’t take into acompte the limited amonth of material</p>
 <dd><p>Compute the thermal diffusion equation into a bodi of radius d as a function of time assuming the bodi to be
 at the distance a_0 from the central star. To get the temperatures at others location r, one must multiplie the
 result by (r / a0) ** (-1/2)</p>
-<section id="id88">
-<h4>Parameters<a class="headerlink" href="#id88" title="Link to this heading"></a></h4>
+<section id="id102">
+<h4>Parameters<a class="headerlink" href="#id102" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>d<span class="classifier">np.float64</span></dt><dd><p>The size of the bodi</p>
 </dd>
@@ -1703,8 +1919,8 @@ result by (r / a0) ** (-1/2)</p>
 </dd>
 </dl>
 </section>
-<section id="id89">
-<h4>Returns<a class="headerlink" href="#id89" title="Link to this heading"></a></h4>
+<section id="id103">
+<h4>Returns<a class="headerlink" href="#id103" title="Link to this heading"></a></h4>
 <p>np.ndarray</p>
 </section>
 </dd></dl>
@@ -1744,8 +1960,8 @@ result by (r / a0) ** (-1/2)</p>
 <span class="sig-prename descclassname"><span class="pre">diffenix.numericals_methods.</span></span><span class="sig-name descname"><span class="pre">gradient_weno5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float64</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/diffenix/numericals_methods.html#gradient_weno5"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.numericals_methods.gradient_weno5" title="Link to this definition"></a></dt>
 <dd><p>Compute the spatial derivative of y following the WENO discretization scheme, robust to discontinuity,
 along a specified axis.</p>
-<section id="id90">
-<h4>Parameters<a class="headerlink" href="#id90" title="Link to this heading"></a></h4>
+<section id="id104">
+<h4>Parameters<a class="headerlink" href="#id104" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>y<span class="classifier">np.ndarray</span></dt><dd><p>The array to be derived</p>
 </dd>
@@ -1755,10 +1971,32 @@ along a specified axis.</p>
 </dd>
 </dl>
 </section>
-<section id="id91">
-<h4>Returns<a class="headerlink" href="#id91" title="Link to this heading"></a></h4>
+<section id="id105">
+<h4>Returns<a class="headerlink" href="#id105" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>np.ndarray</dt><dd><p>The order 1 spatial derivative of y at each point along the specified axis</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="diffenix.numericals_methods.grid_refine_inner_edge">
+<span class="sig-prename descclassname"><span class="pre">diffenix.numericals_methods.</span></span><span class="sig-name descname"><span class="pre">grid_refine_inner_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_orig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nlev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nspan</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/diffenix/numericals_methods.html#grid_refine_inner_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.numericals_methods.grid_refine_inner_edge" title="Link to this definition"></a></dt>
+<dd><p>A simple grid refinement function</p>
+<section id="id106">
+<h4>Parameters<a class="headerlink" href="#id106" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>x_orig: np.ndarray[np.float64]</dt><dd><p>The origi,al grid to be refined</p>
+</dd>
+</dl>
+<p>nlev: int
+nspan: int</p>
+</section>
+<section id="id107">
+<h4>Returns<a class="headerlink" href="#id107" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>np.ndarray[np.float64]</dt><dd><p>The refined grid</p>
 </dd>
 </dl>
 </section>
@@ -1768,8 +2006,8 @@ along a specified axis.</p>
 <dt class="sig sig-object py" id="diffenix.numericals_methods.linear_interpolation">
 <span class="sig-prename descclassname"><span class="pre">diffenix.numericals_methods.</span></span><span class="sig-name descname"><span class="pre">linear_interpolation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float64</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/diffenix/numericals_methods.html#linear_interpolation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.numericals_methods.linear_interpolation" title="Link to this definition"></a></dt>
 <dd><p>Linear interpolation</p>
-<section id="id92">
-<h4>Parameters<a class="headerlink" href="#id92" title="Link to this heading"></a></h4>
+<section id="id108">
+<h4>Parameters<a class="headerlink" href="#id108" title="Link to this heading"></a></h4>
 <dl class="simple">
 <dt>x<span class="classifier">np.float64 | np.ndarray[np.float64]</span></dt><dd><p>The variable</p>
 </dd>
@@ -1777,8 +2015,8 @@ along a specified axis.</p>
 </dd>
 </dl>
 </section>
-<section id="id93">
-<h4>Returns<a class="headerlink" href="#id93" title="Link to this heading"></a></h4>
+<section id="id109">
+<h4>Returns<a class="headerlink" href="#id109" title="Link to this heading"></a></h4>
 <p>A function that returns the interpolated value</p>
 </section>
 </dd></dl>
@@ -1866,7 +2104,7 @@ along a specified axis.</p>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="diffenix.Constantes.IT_s">
-<span class="sig-prename descclassname"><span class="pre">diffenix.Constantes.</span></span><span class="sig-name descname"><span class="pre">IT_s</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000</span></em><a class="headerlink" href="#diffenix.Constantes.IT_s" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">diffenix.Constantes.</span></span><span class="sig-name descname"><span class="pre">IT_s</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">700</span></em><a class="headerlink" href="#diffenix.Constantes.IT_s" title="Link to this definition"></a></dt>
 <dd><p>Spatials steps</p>
 </dd></dl>
 
@@ -1952,15 +2190,15 @@ along a specified axis.</p>
 <dt class="sig sig-object py" id="diffenix.Constantes.chargement_constantes">
 <span class="sig-prename descclassname"><span class="pre">diffenix.Constantes.</span></span><span class="sig-name descname"><span class="pre">chargement_constantes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">consts_filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/diffenix/Constantes.html#chargement_constantes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.Constantes.chargement_constantes" title="Link to this definition"></a></dt>
 <dd><p>Load all the constantes in const_filename</p>
-<section id="id94">
-<h3>Parameters<a class="headerlink" href="#id94" title="Link to this heading"></a></h3>
+<section id="id110">
+<h3>Parameters<a class="headerlink" href="#id110" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>consts_filename<span class="classifier">str</span></dt><dd><p>path to the .npz file containing all the constantes</p>
 </dd>
 </dl>
 </section>
-<section id="id95">
-<h3>Returns<a class="headerlink" href="#id95" title="Link to this heading"></a></h3>
+<section id="id111">
+<h3>Returns<a class="headerlink" href="#id111" title="Link to this heading"></a></h3>
 </section>
 </dd></dl>
 
@@ -1968,8 +2206,8 @@ along a specified axis.</p>
 <dt class="sig sig-object py" id="diffenix.Constantes.constantes">
 <span class="sig-prename descclassname"><span class="pre">diffenix.Constantes.</span></span><span class="sig-name descname"><span class="pre">constantes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float64</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/diffenix/Constantes.html#constantes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.Constantes.constantes" title="Link to this definition"></a></dt>
 <dd><p>All the constants</p>
-<section id="id96">
-<h3>Returns<a class="headerlink" href="#id96" title="Link to this heading"></a></h3>
+<section id="id112">
+<h3>Returns<a class="headerlink" href="#id112" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>dict</dt><dd><dl class="simple">
 <dt>A dictionary with all the constants :</dt><dd><ul class="simple">
@@ -2135,8 +2373,8 @@ along a specified axis.</p>
 <dt class="sig sig-object py" id="diffenix.Constantes.update_constantes">
 <span class="sig-prename descclassname"><span class="pre">diffenix.Constantes.</span></span><span class="sig-name descname"><span class="pre">update_constantes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/diffenix/Constantes.html#update_constantes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#diffenix.Constantes.update_constantes" title="Link to this definition"></a></dt>
 <dd><p>Update all constates from a dictionary</p>
-<section id="id97">
-<h3>Parameters<a class="headerlink" href="#id97" title="Link to this heading"></a></h3>
+<section id="id113">
+<h3>Parameters<a class="headerlink" href="#id113" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>dic<span class="classifier">dict, optional, default=None</span></dt><dd><dl class="simple">
 <dt>A dictionary with all the constants :</dt><dd><ul class="simple">
@@ -2229,8 +2467,8 @@ along a specified axis.</p>
 </dd>
 </dl>
 </section>
-<section id="id98">
-<h3>Returns<a class="headerlink" href="#id98" title="Link to this heading"></a></h3>
+<section id="id114">
+<h3>Returns<a class="headerlink" href="#id114" title="Link to this heading"></a></h3>
 <p>None</p>
 </section>
 </dd></dl>
@@ -2256,7 +2494,7 @@ along a specified axis.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="The_model.html" class="btn btn-neutral float-left" title="The model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="The_model.html" class="btn btn-neutral float-left" title="The Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
