@@ -6,7 +6,7 @@ from setuptools.command.install import install
 setup(
     name='diffenix',
     packages=find_packages(include=['diffenix']),
-    version='0.0.0.1',
+    version='0.0.0.2',
     install_requires=[],
     description='A library to model the gas evolution in debris discs',
     author='Paul Huet',
