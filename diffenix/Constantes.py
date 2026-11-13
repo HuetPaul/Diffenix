@@ -94,6 +94,9 @@ Msun: np.float64 = np.double((1.9884 * 1e30) * C_M)  # 1.9891*10**30 kg Sun's ma
 Rsun: np.float64 = np.double(1.392684e9 / 2. * C_L)  # Present-day sun's radius
 Lsun: np.float64 = np.double(3.826e26 * C_Lum)  # 3.826 10^26 W Sun's luminosity (present day)
 
+# parsec
+pc: np.float64 = np.double(648000) * au / Pi
+
 # Default central star properties
 Ms: np.float64 = Msun
 Ts: np.float64 = np.double(5500.)  # 5500 K Surface temperature of the central star

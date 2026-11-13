@@ -210,11 +210,14 @@ def restart(number: int | str, tf: np.float64 = 0.1 * Gyr, save_time_step : np.f
                        / (sol.mu.mean() * np.sqrt(G * sol.Ms)))
     dtmax: np.float64 = min(np.min((sol.r[1:] - sol.r[:-1]) * (sol.r[1:] - sol.r[:-1])
                             / (nu0 * ((((sol.r[1:] + sol.r[:-1]) / 2) / sol.a0) ** (3 / 2 + sol.pls_temp)))),
-                            60. * yr)
+                            1 * yr)
     # The maximum timestep to avoid instability in numerical integration
 
     print("Minimum number of temporal steps:", int(tf / dtmax), "dtmax=", dtmax / (C_t * 3600 * 24 * 365.25), "y")
-    t0: np.float64 = sol.tps_mf[-1]
+    if not integrate_only_surface_density:
+        t0: np.float64 = sol.tps_mf[-1]
+    else:
+        t0: np.float64 = sol.tps[-1]
 
     gc.enable()
     if tf < 0 and t0 < 1e3 * Myr:
@@ -231,7 +234,7 @@ def restart(number: int | str, tf: np.float64 = 0.1 * Gyr, save_time_step : np.f
             gc.collect()
             sol.time_integration(tfi, dtmax=dtmax, integrate_only_surface_density=integrate_only_surface_density)
             gc.collect()
-    if sol.tps_mf[-1] < tf:
+    if sol.tps_mf[-1] < 100 * Myr:
         infos["status"] = "done"
     else:
         infos["status"] = "integreted"

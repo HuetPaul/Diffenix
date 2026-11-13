@@ -5,6 +5,7 @@ import shutil
 
 import numpy as np
 import phenigraph as g
+from phenigraph import Graphique
 from scipy.integrate import trapezoid, cumulative_trapezoid, solve_ivp
 from scipy.interpolate import interp1d, make_smoothing_spline, RegularGridInterpolator
 from scipy.signal import medfilt2d, savgol_filter
@@ -14,11 +15,45 @@ from diffenix.solve_asteroid_belt import SolrhoBelt
 
 from diffenix.numericals_methods import gradient, gradient2, grid_refine_inner_edge
 
-import radmc3dPy.image as radmc_im
-import radmc3dPy.analyze as radmc_a
+# import radmc3dPy.image as radmc_im
+# import radmc3dPy.analyze as radmc_a
+from scipy.linalg import null_space
+from scipy.linalg import solve
+# from pythonradex import radiative_transfer, helpers
 
 # noinspection PyUnresolvedReferences,PyTypeChecker
+source = dict()
 
+
+def init_source(molecule: str, width_v=None):
+    global source
+
+    if isinstance(width_v, np.ndarray):
+        width_v = width_v.tolist()[0]
+
+    print("width v =", width_v)
+    if molecule not in source.keys():
+        if width_v is None:
+            width_v = 40e3
+        source[molecule] = radiative_transfer.Source(datafilepath=data_radmc + "/molecule_" + molecule + ".inp",
+                                                     geometry="static slab", line_profile_type="Gaussian",
+                                                     width_v=width_v,
+                                                     treat_line_overlap=False, warn_negative_tau=False)
+        source[molecule + "_width_v"] = width_v
+        # source[molecule] = radiative_transfer.Source(datafilepath=data_radmc + "/molecule_" + molecule + ".inp",
+        #                                geometry="LVG slab", line_profile_type="rectangular", treat_line_overlap=False, width_v=width_v)
+        # width_v = width_v
+    elif width_v is not None and source[molecule + "_width_v"] != width_v:
+        source.update({molecule: radiative_transfer.Source(datafilepath=data_radmc + "/molecule_" + molecule + ".inp",
+                                                           geometry="static slab", line_profile_type="Gaussian",
+                                                           width_v=width_v,
+                                                           treat_line_overlap=False, warn_negative_tau=False)})
+        source.update({molecule + "_width_v": width_v})
+        # source[molecule] = radiative_transfer.Source(datafilepath=data_radmc + "/molecule_" + molecule + ".inp",
+        #                                geometry="LVG slab", line_profile_type="rectangular", treat_line_overlap=False, width_v=width_v)
+
+
+# Pyradex
 def merge_y(y: np.ndarray) -> np.ndarray:
     """
     Do the inverse operation of split_y
@@ -38,20 +73,19 @@ def merge_y(y: np.ndarray) -> np.ndarray:
 
 
 def new_space_grid(old_grid: np.ndarray[np.float64], last_masse_frac: np.ndarray[np.float64]) -> np.ndarray[np.float64]:
-
-    if np.any(abs(1-last_masse_frac.sum(axis=0)) > 1e-8):
-        idx: np.ndarray = np.argwhere(abs(1-last_masse_frac.sum(axis=0)) > 1e-8)[:, 0]
+    if np.any(abs(1 - last_masse_frac.sum(axis=0)) > 1e-8):
+        idx: np.ndarray = np.argwhere(abs(1 - last_masse_frac.sum(axis=0)) > 1e-8)[:, 0]
         res: list[np.float64] = []
         for i in range(len(idx)):
             if idx[i] > 0:
                 if i == 0:
                     res.extend(list(old_grid[:idx[i]]))
                 else:
-                    res.extend(list(old_grid[idx[i-1]:idx[i]]))
+                    res.extend(list(old_grid[idx[i - 1]:idx[i]]))
                 if abs(1 - last_masse_frac[:, i].sum(axis=0)) < 1e-6:
-                    res.append(old_grid[idx[i] -1] + (old_grid[idx[i]] - old_grid[idx[i] -1]) / 2.)
+                    res.append(old_grid[idx[i] - 1] + (old_grid[idx[i]] - old_grid[idx[i] - 1]) / 2.)
                 else:
-                    res.extend(list(np.linspace(old_grid[idx[i] -1], old_grid[idx[i]], 3)[1:-1]))
+                    res.extend(list(np.linspace(old_grid[idx[i] - 1], old_grid[idx[i]], 3)[1:-1]))
         if idx[-1] < len(old_grid) - 1:
             res.extend(list(old_grid[idx[-1]:]))
         return np.array(res)
@@ -83,8 +117,570 @@ def split_y(y: np.ndarray, len_radius: int, nb_species: int) -> np.ndarray:
                           " radius list for this Sol", len(y), len_radius * nb_species)
     return y.reshape((nb_species, len_radius))
 
-mdot_st: np.float64 =(1e-20 * Mearth / Myr)
+
+mdot_st: np.float64 = (1e-20 * Mearth / Myr)
+
+
 # mdot_st: np.float64 = m_dot
+
+# for radmc
+
+def read_lamda(filename, verbose: bool = True):
+    f = open(filename, "r")
+    f.readline()  # ! MOLECULE
+    if verbose:
+        print("reading : ", f.readline())  # name of the molecule + reference
+    else:
+        f.readline()
+    f.readline()  # ! Molecular weight
+    mw = np.float64(f.readline()[:-1])
+    f.readline()  # ! NUMBER OF ENERGY LEVELS
+    nlevels = int(f.readline()[:-1])
+    f.readline()  # Header
+    tab_E = np.zeros((nlevels, 3))
+    for i in range(1, nlevels + 1):
+        # print(i)
+        fi = f.readline()
+        i0 = fi.find(str(i))
+        tab_E[i - 1, 0] = i
+        i0 = i0 + fi[i0:].find(" ")
+        is0 = 0
+        while is0 == 0 and i0 < len(fi):
+            i0 += 1
+            is0 = fi[i0:].find(" ")
+        if i0 == len(fi):
+            print("Warning : ", fi)
+        tab_E[i - 1, 1] = np.float64(fi[i0:i0 + is0])  # E
+        i0 = i0 + is0
+        is0 = fi[i0:].find(" ")
+        while is0 == 0 and i0 < len(fi):
+            i0 += 1
+            is0 = fi[i0:].find(" ")
+        if i0 == len(fi):
+            print("Warning : ", fi)
+        tab_E[i - 1, 2] = np.float64(fi[i0:i0 + is0])
+    r = f.readline()  # ! NUMBER OF RADIATIVE TRANSITIONS
+    if "!" not in r:
+        raise UserWarning("The number of energy level dosn't mach in the file : ", r, nlevels)
+    ntrens = int(f.readline()[:-1])
+    f.readline()  # header
+    tab_trens = np.zeros((ntrens, 6))
+    for i in range(1, ntrens + 1):
+        t = f.readline()[:-1].split(" ")
+        tp = t.pop()
+        while len(tp) == 0:
+            tp = t.pop()
+        tab_trens[i - 1, 5] = np.float64(tp)  # E_up [K]
+        tp = t.pop()
+        while len(tp) == 0:
+            tp = t.pop()
+        tab_trens[i - 1, 4] = np.float64(tp)  # freq [GHz]
+        tp = t.pop()
+        while len(tp) == 0:
+            tp = t.pop()
+        tab_trens[i - 1, 3] = np.float64(tp)  # A_ul[s**-1] Einstein number
+        tp = t.pop()
+        while len(tp) == 0:
+            tp = t.pop()
+        tab_trens[i - 1, 2] = np.int64(tp)  # Low level energy level index
+        tp = t.pop()
+        while len(tp) == 0:
+            tp = t.pop()
+        tab_trens[i - 1, 1] = np.int64(tp)  # High level energy level index
+        tab_trens[i - 1, 0] = i
+    r = f.readline()  # ! NUMBER OF COLLISION PARTNERS
+    if "!" not in r:
+        raise UserWarning("The number of energy transitions doesn't mach in the file", r)
+    f.readline()  # number, we only read the first one (assumed to be h2)
+    f.readline()  # ! COLLISION PARTNER
+    if verbose:
+        print("Collision partner : ", f.readline())
+    else:
+        f.readline()
+    f.readline()  # NUMBER OF COLLISIONAL TRANSITIONS
+    n_col_trens: int = int(f.readline()[:-1])
+    f.readline()  # NUMBER OF COLLISION TEMPERATURES
+    n_temp_col: int = int(f.readline()[:-1])
+    f.readline()  # COLLISION TEMPERATURES
+    temps_cols = np.array(f.readline()[:-1].split(sep=" "))
+    temps_cols = np.float64(temps_cols[temps_cols != ""])  # collision temperature
+    if len(temps_cols) != n_temp_col:
+        raise UserWarning("Error reading the collisions tempratures")
+    f.readline()  # header
+    tab_col_trens = np.zeros((n_col_trens, n_temp_col + 3))
+    for i in range(n_col_trens):
+        r = r = np.array(f.readline()[:-1].split(" "))
+        tab_col_trens[i] = np.float64(np.float64(r[r != ""]))
+    # r = f.readline() #
+    # if len(r) > 0 :
+    #     raise UserWarning("The number of energy transitions doesn't mach in the file", r)
+    f.close()
+    return mw, tab_E, tab_trens, temps_cols, tab_col_trens
+
+
+def get_pop(molecule: str, n_col_partner: np.float64, Tcin: np.float64,
+            Lstar: np.float64, Rstar: np.float64, a: np.float64, Tdust: np.float64 = zero,
+            verbose: bool = True, files=None):
+    Tcin = max(Tcin, 200)
+    filename: str = data_radmc + "/molecule_" + molecule + ".inp"
+    Tstar: np.float64 = (Lstar / (4. * Pi * Rstar * Rstar * sigma)) ** (1 / 4)
+
+    # print("Tstar=", Tstar)
+    def Jtilde(nu: np.float64 | np.ndarray[[np.float64]]) -> np.float64 | np.float64:
+        # print(h * nu / (kb * Tstar), h * nu, (kb * Tstar))
+        # return ((Rstar * Rstar / (2. * a * a)) / (np.exp(h * nu / (kb * Tstar)) - 1)
+        #        + (1. / 2.) / (np.exp(h * nu / (kb * Tdust)) - 1))
+        return ((Rstar * Rstar / (2. * a * a)) / (np.exp(h * nu / (kb * Tstar)) - 1))
+
+    if files is None:
+        mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=filename)
+        # conversion to code units
+        tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+        tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+        tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from GHz to code unit
+        tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+    else:
+        mw, tab_E, tab_trens, temps_cols, tab_col_trens = files
+    # print(h * tab_trens[:, 4] / (kb * Tstar))
+    if np.any(temps_cols <= Tcin):
+        idx_temp_min = np.argwhere(temps_cols <= Tcin)[
+            0, 0]  # index in the collision temperature array of the closest lowest temperature to Tcin
+    else:
+        idx_temp_min = -1
+    A = np.zeros((tab_E.shape[0], tab_E.shape[0]), dtype=np.float64)
+    if verbose:
+        print("Building A")
+    for level in tab_E[:, 0]:
+        level = int(level)
+        # collisions
+
+        # Energy levels below levels
+        if np.any(tab_col_trens[:, 1] == level):
+            idxl = np.argwhere(tab_col_trens[:, 1] == level)[:, 0]  # l < i, energy levels below level
+            # Diagonal terms
+            levels_low: np.ndarray[np.int64] = np.int64(tab_col_trens[idxl, 2])
+            if idx_temp_min >= 0:
+                A[level - 1, level - 1] -= (n_col_partner
+                                            * (tab_col_trens[idxl, idx_temp_min]
+                                               * (Tcin - temps_cols[idx_temp_min])
+                                               / (temps_cols[idx_temp_min + 1] - temps_cols[idx_temp_min])
+                                               + tab_col_trens[idxl, idx_temp_min + 1]
+                                               * (temps_cols[idx_temp_min + 1] - Tcin)
+                                               / (temps_cols[idx_temp_min + 1] - temps_cols[idx_temp_min])).sum()
+                                            )  # linear interpolation for the temperature
+            else:
+                A[level - 1, level - 1] -= (n_col_partner * (tab_col_trens[idxl, 0]).sum()
+                                            )  # linear interpolation for the temperature
+
+            # Non diagonals terms
+            if idx_temp_min >= 0:
+                A[level - 1,
+                  levels_low - 1] += ((tab_E[level - 1, 2]
+                                       / tab_E[levels_low - 1, 2])
+                                      * n_col_partner
+                                      * (tab_col_trens[idxl, idx_temp_min]
+                                         * (Tcin - temps_cols[idx_temp_min])
+                                         / (temps_cols[idx_temp_min + 1] - temps_cols[idx_temp_min])
+                                         + tab_col_trens[idxl, idx_temp_min + 1]
+                                         * (temps_cols[idx_temp_min + 1] - Tcin)
+                                         / (temps_cols[idx_temp_min + 1] - temps_cols[idx_temp_min]))
+                                      * np.exp(- abs(tab_E[level - 1, 1]
+                                                     - tab_E[levels_low - 1, 1])
+                                               / (kb * Tcin)))
+            else:
+                A[level - 1,
+                  levels_low - 1] += ((tab_E[level - 1, 2]
+                                       / tab_E[levels_low - 1, 2])
+                                      * n_col_partner
+                                      * tab_col_trens[idxl, 0]
+                                      * np.exp(- abs(tab_E[level - 1, 1]
+                                                     - tab_E[levels_low - 1, 1])
+                                               / (kb * Tcin)))
+
+        # Energy levels above levels
+        if np.any(tab_col_trens[:, 2] == level):
+            idxu = np.argwhere(tab_col_trens[:, 2] == level)[:, 0]  # l < i, energy levels below level
+            levels_up: np.ndarray[np.int64] = np.int64(tab_col_trens[idxu, 1])
+            # Diagonal terms
+            if idx_temp_min >= 0:
+                A[level - 1, level - 1] -= (n_col_partner
+                                            * ((tab_E[levels_up - 1, 2] / tab_E[level - 1, 2])
+                                               * (tab_col_trens[idxu, idx_temp_min]
+                                                  * (Tcin - temps_cols[idx_temp_min])
+                                                  / (temps_cols[idx_temp_min + 1] - temps_cols[idx_temp_min])
+                                                  + tab_col_trens[idxu, idx_temp_min + 1]
+                                                  * (temps_cols[idx_temp_min + 1] - Tcin)
+                                                  / (temps_cols[idx_temp_min + 1] - temps_cols[idx_temp_min]))
+                                               * np.exp(- abs(tab_E[levels_up - 1, 1]
+                                                              - tab_E[level - 1, 1])
+                                                        / (kb * Tcin))
+                                               ).sum()
+                                            )  # linear interpolation for the temperature
+            else:
+                A[level - 1, level - 1] -= (n_col_partner
+                                            * ((tab_E[levels_up - 1, 2] / tab_E[level - 1, 2])
+                                               * tab_col_trens[idxu, 0]
+                                               * np.exp(- abs(tab_E[levels_up - 1, 1]
+                                                              - tab_E[level - 1, 1])
+                                                        / (kb * Tcin))
+                                               ).sum()
+                                            )  # linear interpolation for the temperature
+            # Non diagonals terms
+            if idx_temp_min >= 0:
+                A[level - 1, levels_up - 1] += (n_col_partner
+                                                * (tab_col_trens[idxu, idx_temp_min]
+                                                   * (Tcin - temps_cols[idx_temp_min])
+                                                   / (temps_cols[idx_temp_min + 1] - temps_cols[idx_temp_min])
+                                                   + tab_col_trens[idxu, idx_temp_min + 1]
+                                                   * (temps_cols[idx_temp_min + 1] - Tcin)
+                                                   / (temps_cols[idx_temp_min + 1] - temps_cols[idx_temp_min])))
+            else:
+                A[level - 1, levels_up - 1] += (n_col_partner
+                                                * (tab_col_trens[idxu, 0]))
+        # Radiative transitions :
+        # Energy levels below levels
+        if np.any(tab_trens[:, 1] == level):
+            idxl = np.argwhere(tab_trens[:, 1] == level)[:, 0]  # l < i, energy levels below level
+            levels_low: np.ndarray[np.int64] = np.int64(tab_col_trens[idxl, 2])
+            # Diagonal terms
+            A[level - 1, level - 1] -= (tab_trens[idxl, 3] * (1 + Jtilde(tab_trens[idxl, 4]))).sum()
+            # Non diagonals terms
+            A[level - 1, levels_low - 1] += ((tab_E[level - 1, 2]
+                                              / tab_E[levels_low - 1, 2])
+                                             * tab_trens[idxl, 3]
+                                             * Jtilde(tab_trens[idxl, 4]))
+        # Energy levels above level
+        if np.any(tab_trens[:, 2] == level):
+            idxu = np.argwhere(tab_trens[:, 2] == level)[:, 0]  # u > i, energy levels above level
+            levels_up: np.ndarray[np.int64] = np.int64(tab_trens[idxu, 1])
+            # Diagonal terms
+            A[level - 1, level - 1] -= ((tab_E[levels_up - 1, 2]
+                                         / tab_E[level - 1, 2])
+                                        * (tab_trens[idxu, 3] * (1 + Jtilde(tab_trens[idxu, 4])))).sum()
+            # Non diagonals terms
+            A[level - 1, levels_up - 1] += tab_trens[idxu, 3] * (Jtilde(tab_trens[idxu, 4]) + 1.)
+    # print("det A", np.linalg.det(A / np.max(A)))
+    A[0, :] = 1
+    # maxA = np.max(A)
+    # A /= maxA
+    if verbose:
+        print("Solving the system ")
+    Y: np.ndarray[np.float64] = np.zeros(tab_E.shape[0])
+    Y[0] = 1
+    X: np.ndarray[np.float64] = solve(A, Y)
+    # print("test sum ", X.sum(), A @ X)
+    return X / X.sum()
+
+
+def get_pop_radex(molecule: str, n_emmiter: np.float64, n_col_partner: np.float64, Tcin: np.float64,
+                  Lstar: np.float64, Rstar: np.float64, a: np.float64, verbose: bool = True,
+                  files: list = None, tau_dust: np.float64 = 1e-3):
+    ext_background = lambda nu: (helpers.B_nu(nu=nu,
+                                              T=(Lstar / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+                                 * (Rstar ** 2) / (a ** 2))
+    collider_densities = {"H2": n_col_partner * (C_L * C_L * C_L)}
+    init_source(molecule)
+    print("colliser densities : ", n_col_partner * (C_L * C_L * C_L) * 1e-6, " [cm**-3] N=", n_emmiter * C_L * C_L)
+    source[molecule].update_parameters(
+        N=n_emmiter * C_L * C_L,
+        Tkin=np.max([Tcin, 200]),
+        collider_densities=collider_densities,
+        ext_background=ext_background,
+        T_dust=Tcin,
+        tau_dust=tau_dust,
+    )
+    source[molecule].solve_radiative_transfer()
+    return source[molecule].level_pop
+
+
+def get_popLTE(molecule: str, n_col_partner: np.float64, Tcin: np.float64,
+               Lstar: np.float64, Rstar: np.float64, a: np.float64, verbose: bool = True,
+               files: list = None):
+    filename: str = data_radmc + "/molecule_" + molecule + ".inp"
+    if files is None:
+        mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=filename)
+        # conversion to code units
+        tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+        tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+        tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from GHz to code unit
+        tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+    else:
+        mw, tab_E, tab_trens, temps_cols, tab_col_trens = files
+    # conversion to code units
+    tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+    Z = (tab_E[:, 2] * np.exp(-tab_E[:, 1] / (kb * Tcin))).sum()
+    return tab_E[:, 2] * np.exp(-tab_E[:, 1] / (kb * Tcin)) / Z
+
+
+def find_transition(lambda_mu_m: np.float64, radex: bool = False, para_ortho: str = "p"):
+    if para_ortho == "p":
+        if radex:
+            mw, tab_E, tab_trens = read_lamda(data_radmc + '/molecule_ph2oradex.inp')
+        else:
+            mw, tab_E, tab_trens = read_lamda(data_radmc + '/molecule_ph2olamda.inp')
+    elif para_ortho == "o":
+        if radex:
+            mw, tab_E, tab_trens = read_lamda(data_radmc + '/molecule_oh2oradex.inp')
+        else:
+            mw, tab_E, tab_trens = read_lamda(data_radmc + '/molecule_oh2olamda.inp')
+    else:
+        raise UserWarning("""The parameter para_ortho can only be equal to "p" or "o" not""", para_ortho)
+    i_trens = np.argmin(abs(lambda_mu_m - (((c / (C_L / C_t)) / (tab_trens[:, 4] * 1e9)) * 1e6)))
+    return tab_trens[i_trens, 0], abs(
+        lambda_mu_m - (((c / (C_L / C_t)) / (tab_trens[i_trens, 4] * 1e9)) * 1e6)) / lambda_mu_m
+
+
+def read_hitran(file=data_radmc + "/h2o.out", lambda_min_nm=1) -> np.ndarray[np.float64]:
+    """
+    Read the hitran source file and return the coresponding array
+
+    Parameters
+    ----------
+    file: str, default="h2o.out
+        the name of the hotran file to read
+
+    lambda_min_nm: np.float64, default=1
+        The minimum wevelength in micrometer to read in the data (if negatif all wavelength are considered)
+
+    Returns
+    -------
+    np.ndarray[np.float64]
+        [id_t, freq, a, e_low, gp, gpp, v1_u, v2_u, v3_u, J_u, ka_u, kc_u,
+                    v1_d, v2_d, v3_d, J_d, ka_d, kc_d]
+        with the frequency in cm^-1... a the Einstein number in s^-1, e_low the enrgy of the lower level in cm^-1...
+        (v1, v2, v3, J, ka, kc))_u or _d are the quantum numbers associated respectively with the upper and lower level
+
+    """
+    fich = open(file, "r")
+    fich.readline()  # header...
+
+    tab = []
+
+    s = fich.readline()
+    compt = 0
+
+    while len(s) > 0:
+        # format I5, 1X, I2, 1X, I1, 1X, I12, 1X, F12.6, 1X, E10.3, 1X, F10.4, 1X, I5, 1X, I5, 1X, A256, 1X, A256
+        # global_id, molec_id, iso_id, trens_id, nu(frequency), a (einstein number), elower (lower level nergy), gp (upper state degeneracy), gpp (lower level degeneracy), upper state quantum number, lowerstate quantum number
+
+        # remouving the three initials numbers that identifie the molecule
+        s = s[s.find(",") + 1:]
+        s = s[s.find(",") + 1:]
+        s = s[s.find(",") + 1:]
+
+        # trensition id
+        id_t = int(s[:s.find(",")])
+        s = s[s.find(",") + 1:]
+
+        # frequency
+        freq = np.float64(s[:s.find(",")])
+        s = s[s.find(",") + 1:]
+
+        # Einstein number
+        a = np.float64(s[:s.find(",")])
+        s = s[s.find(",") + 1:]
+
+        # Lower level energy
+        e_low = np.float64(s[:s.find(",")])
+        s = s[s.find(",") + 1:]
+
+        # gp upper state degeneracy
+        gp = int(s[:s.find(",")])
+        s = s[s.find(",") + 1:]
+
+        # gpp lower state degeneracy
+        gpp = int(s[:s.find(",")])
+        s = s[s.find(",") + 1:]
+
+        # print(compt," index=", id_t)
+        compt += 1
+
+        # upper state quantums numbers
+        s = s[s.find(";") + 1:]
+        v1_u = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        v2_u = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        v3_u = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        J_u = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        ka_u = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        kc_u = int(s[s.find("=") + 1:s.find(",")])
+
+        # lower state quantums numbers
+        s = s[s.find(";") + 1:]
+        v1_d = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        v2_d = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        v3_d = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        J_d = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        ka_d = int(s[s.find("=") + 1:s.find(";")])
+        s = s[s.find(";") + 1:]
+        kc_d = int(s[s.find("=") + 1:s.find("\n")])
+        tab.append([id_t, freq, a, e_low, gp, gpp,
+                    v1_u, v2_u, v3_u, J_u, ka_u, kc_u,
+                    v1_d, v2_d, v3_d, J_d, ka_d, kc_d])
+
+        s = fich.readline()
+    tab = np.array(tab)
+    if lambda_min_nm > 0:
+        tab = tab[(1e-2 / tab[:, 1]) * 1e6 > lambda_min_nm]
+    fich.close()
+    return tab
+
+
+def find_transition_lambda(lambda_mm: np.float64, file=data_radmc + "/h2o.out", lambda_min_nm=1) -> tuple[np.float64]:
+    """
+    Find the line in the hitran database file corresponding to the trensition with the closest wavelength to lambda_nm
+
+    Parameters
+    ----------
+    lambda_mm: np.float64
+        the transition wavelength in micrometer
+
+    file: str, default="h2o.out
+        the name of the hotran file to read
+
+    lambda_min_nm: np.float64, default=1
+        THe minimum wavelength to read in the data (if negatif all wavelength are considered)
+
+    Returns
+    -------
+    tuple[np.float64]
+        (J_u, ka_u, kc_u, J_d, ka_d, kc_d, level)
+
+    """
+    if lambda_mm < lambda_min_nm:
+        raise UserWarning("find transition : you are looking for a transition with a shorter wavelength than the "
+                          "shortest saved wavelength.")
+    w: np.ndarray[np.float64] = read_hitran(file=file, lambda_min_nm=lambda_min_nm)
+    i_trens = np.argmin(abs(lambda_mm - (1e-2 / w[:, 1]) * 1e6))
+    print("relative error with the transition : ", abs(lambda_mm - (1e-2 / w[i_trens, 1]) * 1e6) / lambda_mm)
+    j_u, ka_u, kc_u = w[i_trens, 9:12]
+    j_d, ka_d, kc_d = w[i_trens, 15:]
+
+    # finding the good trensition
+    idx_trens = \
+        np.argwhere(
+            (w[:, 9] == j_u) * (w[:, 10] == ka_u) * (w[:, 11] == kc_u) * (w[:, 15] == j_d) * (w[:, 16] == ka_d) * (
+                    w[:, 17] == kc_d))[:, 0]
+
+    if len(idx_trens) == 1 or idx_trens[0] == i_trens:
+        return j_u, ka_u, kc_u, j_d, ka_d, kc_d, 0
+    else:
+        return j_u, ka_u, kc_u, j_d, ka_d, kc_d, np.argwhere(idx_trens == i_trens)[0, 0]
+
+
+def find_transition_freq(freq_GHz: np.float64, file=data_radmc + "/h2o.out", lambda_min_nm=1) -> tuple[np.float64]:
+    """
+    Find the line in the hitran database file corresponding to the trensition with the closest frequency to freq
+
+    Parameters
+    ----------
+    freq_GHz: np.float64
+        the transition frequency in GHz
+
+    file: str, default="h2o.out
+        the name of the hitran file to read
+
+    lambda_min_nm: np.float64, default=1
+        THe minimum wavelength to read in the data (if negatif all wavelength are considered)
+
+    Returns
+    -------
+    tuple[np.float64]
+        (J_u, ka_u, kc_u, J_d, ka_d, kc_d, level)
+
+    """
+    if (299792458 / (freq_GHz * 1e9)) * 1e6 < lambda_min_nm:
+        raise UserWarning("find transition : yuu are looking for a transition with a shorter wavelength than the "
+                          "shortest saved wavelength.")
+    w: np.ndarray[np.float64] = read_hitran(file=file, lambda_min_nm=lambda_min_nm)
+    i_trens = np.argmin(abs(freq_GHz * 1e9 - 299792458 * 1e2 * w[:, 1]))
+    print("relative error with the transition : ",
+          abs(abs(freq_GHz * 1e9 - 299792458 * 1e2 * w[i_trens, 1])) / (freq_GHz * 1e9))
+    j_u, ka_u, kc_u = w[i_trens, 9:12]
+    j_d, ka_d, kc_d = w[i_trens, 15:]
+
+    # finding the good trensition
+    idx_trens = \
+        np.argwhere(
+            (w[:, 9] == j_u) * (w[:, 10] == ka_u) * (w[:, 11] == kc_u) * (w[:, 15] == j_d) * (w[:, 16] == ka_d) * (
+                    w[:, 17] == kc_d))[:, 0]
+
+    if len(idx_trens) == 1 or idx_trens[0] == i_trens:
+        return j_u, ka_u, kc_u, j_d, ka_d, kc_d, 0
+    else:
+        return j_u, ka_u, kc_u, j_d, ka_d, kc_d, np.argwhere(idx_trens == i_trens)[0, 0]
+
+
+def id_level(j_u: int, ka_u: int, kc_u: int, j_d: int, ka_d: int, kc_d: int, level: int = 0) -> int:
+    """
+    Return the line number associated with the rovibrational transition defined by the quantums numbers
+
+    Parameters
+    ----------
+    j_u: int
+        upper state J
+    ka_u: int
+        upper state Ka
+    kc_u: int
+        upper state Kc
+    j_d: int
+        lower state J
+    ka_d: int
+        lower state Ka
+    kc_d: int
+        lower state Kc
+    level: int, default=0
+        The energy level associalted with this trensition (can be higer than one)
+
+    Returns
+    -------
+    int
+    the line number (to be used in the radmc image comande
+    """
+    w: np.ndarray[np.float64] = read_hitran(file=data_radmc + "/h2o.out", lambda_min_nm=1)
+    return np.argwhere(
+        (w[:, 9] == j_u) * (w[:, 10] == ka_u) * (w[:, 11] == kc_u) * (w[:, 15] == j_d) * (w[:, 16] == ka_d) * (
+                w[:, 17] == kc_d))[level, 0] + 1
+
+
+def level(j_u: int, ka_u: int, kc_u: int, j_d: int, ka_d: int, kc_d: int, level: int = 0) -> tuple[np.float64]:
+    """
+    Return the wavelength (in nm) and frequency in GHz) associated with the rovibrational transition defined by the quantums numbers
+
+    Parameters
+    ----------
+    j_u: int
+        upper state J
+    ka_u: int
+        upper state Ka
+    kc_u: int
+        upper state Kc
+    j_d: int
+        lower state J
+    ka_d: int
+        lower state Ka
+    kc_d: int
+        lower state Kc
+    level: int, default=0
+        The energy level associalted with this trensition (can be higer than one)
+
+    Returns
+    -------
+    tuple[np.float64
+        (the wavelength in micrometer, the frequency in GHz)
+
+    """
+    idl = id_level(j_u=j_u, ka_u=ka_u, kc_u=kc_u, j_d=j_d, ka_d=ka_d, kc_d=kc_d, level=level)
+    w: np.ndarray[np.float64] = read_hitran(file=data_radmc + "/h2o.out", lambda_min_nm=1)
+    return (1e-2 / w[idl - 1, 1]) * 1e6, (299792458 / (1e-2 / w[idl - 1, 1])) * 1e-9
 
 
 class Sol:
@@ -245,7 +841,7 @@ class Sol:
             minit_asts: np.float64 = mass_steady_state(sol=self, mdot=self.sol_ast_params["mdot_st_init"],
                                                        a0=self.sol_ast_params["a0"], mu=np.double(18. * 1e-3 * C_M))
             minit_kuips: np.float64 = mass_steady_state(sol=self, mdot=self.sol_kuip_params["mdot_st_init"],
-                                                       a0=self.sol_kuip_params["a0"], mu=np.double(28. * 1e-3 * C_M))
+                                                        a0=self.sol_kuip_params["a0"], mu=np.double(28. * 1e-3 * C_M))
             minit: np.float64 = self.mH_init
             if self.sol_ast_params["sublimation_model"] != "none":
                 minit += minit_asts
@@ -271,7 +867,7 @@ class Sol:
                 mu.extend([np.double(28. * 1e-3 * C_M), np.double(12. * 1e-3 * C_M)]
                           )  # molar mass
                 nom_mu.extend(["CO", "C"])
-                if not "O" in nom_mu: # Only if there is no water in the system
+                if not "O" in nom_mu:  # Only if there is no water in the system
                     mu.append(np.double(16. * 1e-3 * C_M))
                     nom_mu.append("O")
                     self.idx_mu_kuip = np.append(self.idx_mu_kuip, len(mu) - 1)
@@ -304,15 +900,15 @@ class Sol:
                                  np.double(12.) * 1e-3 * C_M,
                                  np.double(16.) * 1e-3 * C_M,
                                  np.double(18.) * 1e-3 * C_M,
-                                 np.double(1.) * 1e-3 * C_M,])
+                                 np.double(1.) * 1e-3 * C_M, ])
                 noms_mus0 = np.array(["CO", "C", "O", "H2O", "H"])
                 mass_fracs0 = np.array([(minit_kuips / minit) * 0.5,
                                         (minit_kuips / minit) * 0.5 * 12. / 28.,
                                         (minit_asts / minit) * 0.5 * 16. / 18.
-                                           + (minit_kuips / minit) * 0.5 * 16. / 28.,
+                                        + (minit_kuips / minit) * 0.5 * 16. / 28.,
                                         (minit_asts / minit) * 0.5,
                                         (minit_asts / minit) * 0.5 * 2. / 18.
-                                           + self.mH_init / minit])
+                                        + self.mH_init / minit])
                 self.a0 = (self.sol_ast_params["a0"] + self.sol_kuip_params["a0"]) / 2.
             elif mus0 is None:
                 mus0 = np.array([1e-3 * C_M])
@@ -326,11 +922,16 @@ class Sol:
             self.mu: np.ndarray[np.float64] = np.array(mu, dtype=np.float64)
             self.nom_mu: np.ndarray[str] = np.array(nom_mu, dtype=str)
             self.diag: dict[str, list[np.ndarray]] = dict(time=[], total_momentum=[], total_mass=[],
-                                                          phi=[], mdot=[], phi_L=[], Ldot=[])
+                                                          phi=[], phi_out=[], mdot=[], phi_L=[], Ldot=[])
             self.flux_planets: list[np.ndarray] = [
             ]  # mass fluxes at ip+self.dip and ip-self.dip for each planet for each time
 
-            self.flux_radmc: list[np.ndarray[np.float64]] = [] # Luminosity flux fo 3 differents wavelenghth integrated for the whole disc.
+            self.flux_radmc_jykms: list[np.ndarray[
+                np.float64]] = []  # Luminosity flux for differents wavelenghth integrated for the whole disc. in Jy.km/s
+            self.flux_radmc: list[np.ndarray[
+                np.float64]] = []  # Luminosity flux for differents wavelenghth integrated for the whole disc. In W.m^-2
+            self.id_flux: list[int] = []  # the energy level cprresponding to the trensition
+
             # Initialisation
             self.initialization(mus0=mus0, mass_fracs0=mass_fracs0, nom_mus0=noms_mus0)
             self.interp_f = None
@@ -366,7 +967,7 @@ class Sol:
             self.tps = list(dic["tps"] * C_t / dic["C_t"])
             self.tps_mf = list(dic["tps_mf"] * C_t / dic["C_t"])
             self.f = (list(dic["f"] * (C_M * (C_L ** np.float64(dic["pls_temp"])))
-                      / (dic["C_M"] * (dic["C_L"] ** np.float64(dic["pls_temp"])))))
+                           / (dic["C_M"] * (dic["C_L"] ** np.float64(dic["pls_temp"])))))
             self.mass_fractions = list(dic["mass_fractions"])
             self.flux_planets = list(dic["flux_planets"] * (C_M / C_t) / (dic["C_M"] / dic["C_t"]))
             self.idxa = np.array(dic["idxa"])
@@ -382,7 +983,7 @@ class Sol:
                             self.diag[k[5:]] = [list(liste) for liste in dic[k]]
             if len(self.diag) == 0:
                 self.diag: dict[str, list[np.ndarray]] = dict(time=[], total_momentum=[], total_mass=[],
-                                                              phi=[], mdot=[], phi_L=[], Ldot=[])
+                                                              phi=[], phi_out=[], mdot=[], phi_L=[], Ldot=[])
             self.idx_mu_ast = np.array(dic["idx_mu_ast"], dtype=int)
             self.idx_mu_kuip = np.array(dic["idx_mu_kuip"], dtype=int)
             if "a_planets" in dic.keys():
@@ -413,13 +1014,19 @@ class Sol:
                 self.sol_kuip = SolrhoBelt(kwargs_N=self.sol_kuip_kwargs_N, sig_dots=dic["sol_kuip_sig_dots"],
                                            tps=dic["sol_kuip_tps"], radius=self.r[self.idxk], **self.sol_kuip_params)
             else:
-                self.sol_kuip = SolrhoBelt(kwargs_N=self.sol_kuip_kwargs_N, radius=self.r[self.idxk], **self.sol_kuip_params)
+                self.sol_kuip = SolrhoBelt(kwargs_N=self.sol_kuip_kwargs_N, radius=self.r[self.idxk],
+                                           **self.sol_kuip_params)
 
-            if "flux_radmc" in dic.keys():
+            if "flux_radmc_jykms" in dic.keys():
+                self.flux_radmc_jykms = list(dic["flux_radmc_jykms"])
                 self.flux_radmc = list(dic["flux_radmc"])
+                self.id_flux = list(dic["id_flux"])
             else:
+                self.flux_radmc_jykms: list[np.ndarray[
+                    np.float64]] = []  # Luminosity flux for differents wavelenghth integrated for the whole disc. in Jy.km/s
                 self.flux_radmc: list[np.ndarray[
-                    np.float64]] = []  # Luminosity flux fo 3 differents wavelenghth integrated for the whole disc.
+                    np.float64]] = []  # Luminosity flux for differents wavelenghth integrated for the whole disc. In W.m^-2
+                self.id_flux: list[int] = []  # the energy level cprresponding to the trensition
 
         # Since the equations of mass fractions and surface density are uncoupled, we use an interpolation
         # function to get the surface density at each time (radii are the same for both)
@@ -433,7 +1040,7 @@ class Sol:
                     return np.array([linear_interp(t) for t in t_new])
 
                 i = np.argmin(np.abs(t_new - np.array(self.tps)))
-                if i == 0 or (i < len(self.tps) - 1 and t_new > self.tps[i]) :
+                if i == 0 or (i < len(self.tps) - 1 and t_new > self.tps[i]):
                     t1 = self.tps[i]
                     t2 = self.tps[i + 1]
                     alpha = (t_new - t1) / (t2 - t1)
@@ -455,8 +1062,6 @@ class Sol:
         # sigmasd: np.ndarray = np.array([sigmad0 * ((self.r[self.idxa] / self.a0) ** (-3. / 2.)) for t in tps])
         #
         # self.interpsigdot = Akima1DInterpolator(tps - yr, 0.1 * sigmasd)
-
-
 
     def radial_speed(self, i: int | np.ndarray = ii_max) -> np.ndarray:
         """
@@ -637,7 +1242,7 @@ class Sol:
                 "T0": self.T0, "pls_temp": self.pls_temp,
                 "alpha": self.alpha, "gamma": self.gamma,
                 "stellar_radiations": self.stellar_radiations, "interstellar_radiations": self.interstellar_radiations,
-                "AB_mdot_st_init" : self.sol_ast_params["mdot_st_init"],
+                "AB_mdot_st_init": self.sol_ast_params["mdot_st_init"],
                 "AB_Mbelt": self.sol_ast_params["Mbelt"], "AB_Abelt": self.sol_ast_params["A_ast"],
                 "AB_a0": self.sol_ast_params["a0"],
                 "AB_delta_r": self.sol_ast_params["delta_a"], "AB_K": self.sol_ast_params["K"],
@@ -655,7 +1260,7 @@ class Sol:
                 "AB_As": self.sol_ast_params["As"], "AB_bs": self.sol_ast_params["bs"],
                 "AB_bg": self.sol_ast_params["bg"],
                 "AB_t0_diss": self.sol_ast_params["t0_diss"], "AB_t1_diss": self.sol_ast_params["t1_diss"],
-                "KB_mdot_st_init" : self.sol_kuip_params["mdot_st_init"],
+                "KB_mdot_st_init": self.sol_kuip_params["mdot_st_init"],
                 "KB_Mbelt": self.sol_kuip_params["Mbelt"], "KB_Abelt": self.sol_kuip_params["A_ast"],
                 "KB_a0": self.sol_kuip_params["a0"],
                 "KB_delta_r": self.sol_kuip_params["delta_a"], "KB_K": self.sol_kuip_params["K"],
@@ -869,7 +1474,7 @@ class Sol:
                                      amin=np.double(dic["AB_SD_amin"]) * C_t / self.C_t,
                                      qh=np.double(dic["AB_SD_qh"]), qm=np.double(dic["AB_SD_qm"]),
                                      ql=np.double(dic["AB_SD_ql"]),
-                                     rho=(np.double(dic["AB_rho_ice"])  / dic["AB_f_ice"]
+                                     rho=(np.double(dic["AB_rho_ice"]) / dic["AB_f_ice"]
                                           ) * C_rho / self.C_rho)
 
         m_init_kuip = zero
@@ -934,9 +1539,16 @@ class Sol:
         """
         self.x = np.linspace(np.sqrt(self.a_in), np.sqrt(self.a_out), self.IT_s)
         self.r = self.x * self.x
-
+        if "m_init" in self.sol_ast_params.keys() and self.sol_ast_params["m_init"] != 0 and self.sol_ast_params[
+            "mdot_st_init"] == 0:
+            self.sol_ast_params["mdot_st_init"] = mdot_steady_state(self, self.sol_ast.m_init, self.sol_ast.a0, 18 * mp)
+        if "m_init" in self.sol_kuip_params.keys() and self.sol_kuip_params["m_init"] != 0 and self.sol_kuip_params[
+            "mdot_st_init"] == 0:
+            self.sol_kuip_params["mdot_st_init"] = mdot_steady_state(self, self.sol_kuip.m_init, self.sol_kuip.a0,
+                                                                     18 * mp)
         f0: np.ndarray = (steady_state(sol=self, mdot=self.sol_ast_params["mdot_st_init"], a0=self.sol_ast_params["a0"])
-                          + steady_state(sol=self, mdot=self.sol_kuip_params["mdot_st_init"], a0=self.sol_kuip_params["a0"])
+                          + steady_state(sol=self, mdot=self.sol_kuip_params["mdot_st_init"],
+                                         a0=self.sol_kuip_params["a0"])
                           + steady_state(sol=self, mtot=self.mH_init, a0=self.a0))
         xs0: np.ndarray = np.zeros((len(self.mu), len(self.r)))
         if len(mass_fracs0.shape) == 1 and len(mass_fracs0) == len(mus0):
@@ -987,8 +1599,8 @@ class Sol:
         self.sol_ast_params.update(self.sol_ast.const())
         if self.sol_ast.sublimation_model == "thermal_full":
             sigma_init = (self.sol_ast.m_init / (4. * Pi * self.sol_ast.a0 * self.sol_ast.a0
-                                  * (np.sqrt(1. + self.sol_ast.delta_a / self.sol_ast.a0)
-                                     - np.sqrt(1. - self.sol_ast.delta_a / self.sol_ast.a0)))
+                                                 * (np.sqrt(1. + self.sol_ast.delta_a / self.sol_ast.a0)
+                                                    - np.sqrt(1. - self.sol_ast.delta_a / self.sol_ast.a0)))
                           * ((self.sol_ast.r / self.sol_ast.a0) ** (-3. / 2.)))
             # self.mass_fractions[-1][:, self.idxa] = np.maximum(self.mass_fractions[-1][:, self.idxa]
             #                                                    - sigma_init / (self.f[0][self.idxa] * (len(self.mu) - 1)),
@@ -1023,6 +1635,17 @@ class Sol:
             return np.array(self.f) * (self.r ** (-2 - self.pls_temp))
         else:
             return np.array(self.f[i]) * (self.r ** (-2 - self.pls_temp))
+
+    def Hz(self, i: int = ii_max, t: np.float64 = None) -> np.float64 | np.ndarray[np.float64]:
+        if type(i) is int and i == ii.max and t is None:
+            return np.sqrt(Rgp * np.array([T(r=self.r, t=t + self.t0, Ms=self.Ms) for t in self.tps])
+                           * (self.r ** 3) / (np.mean(self.mu) * G * self.Ms))
+        elif t is not None:
+            return np.sqrt(Rgp * T(r=self.r, t=t + self.t0, Ms=self.Ms)
+                           * (self.r ** 3) / (np.mean(self.mu) * G * self.Ms))
+        else:
+            return np.sqrt(Rgp * T(r=self.r, t=self.tps[i] + self.t0, Ms=self.Ms)
+                           * (self.r ** 3) / (np.mean(self.mu) * G * self.Ms))
 
     def interp_sigma(self, t: np.float64) -> np.float64 | np.ndarray[np.float64]:
         """
@@ -1103,36 +1726,47 @@ class Sol:
             ips.append(np.argwhere(self.r >= r_planet)[0, 0])
         ips = np.array(ips)
         for i in range(0, len(y)):
-            y[i] = boundary_conditions(y[i], self)
-            self.diag["time"].append(tps[i])
-            self.diag["total_mass"].append(trapezoid(2. * Pi * self.r[2:-2] * y[i][2:-2] * (self.r[2:-2] ** (-2. - self.pls_temp)),
-                                                     x=self.r[2:-2]))
-            self.diag["total_momentum"].append(trapezoid(4. * Pi * np.sqrt(G * self.Ms) * (self.x[2:-2] ** (- 2. * self.pls_temp)) * y[i][2:-2],
-                                                     x=self.x[2:-2]))
-            phi = mass_flux(self, y[i], tps[i])[2:-2]
-            self.diag["Ldot"].append(trapezoid(4 * Pi * np.sqrt(G * self.Ms) * self.r[2:-2] * self.r[2:-2]
-                                               * sigma_dot(t=tps[i], ys=y[i], phi=phi, sol=self)[2:-2], x=self.x[2:-2]))
-            self.diag["mdot"].append(trapezoid(2 * Pi * self.r[2:-2]
-                                               * sigma_dot(t=tps[i], ys=y[i], phi=phi, sol=self)[2:-2], x=self.r[2:-2]))
-            self.diag['phi'].append(- phi[0] + phi[-1])
-            nu0: np.float64 = (Rgp * T0(tps[i], self.a0, self.Ms) * self.alpha * (self.a0 ** (3 / 2))
-                               / (self.mu.mean() * np.sqrt(G * self.Ms)))
-            D: np.float64 = (3 * nu0 / (4. * (self.a0 ** (3 / 2 + self.pls_temp))))
+            if i % max(1, step // 100) == 0:
+                y[i] = boundary_conditions(y[i], self)
+                self.diag["time"].append(tps[i])
+                self.diag["total_mass"].append(
+                    trapezoid(2. * Pi * self.r[2:-2] * y[i][2:-2] * (self.r[2:-2] ** (-2. - self.pls_temp)),
+                              x=self.r[2:-2]))
+                self.diag["total_momentum"].append(
+                    trapezoid(4. * Pi * np.sqrt(G * self.Ms) * (self.x[2:-2] ** (- 2. * self.pls_temp)) * y[i][2:-2],
+                              x=self.x[2:-2]))
+                phi = mass_flux(self, y[i], tps[i])[2:-2]
+                self.diag["Ldot"].append(trapezoid(4 * Pi * np.sqrt(G * self.Ms) * self.r[2:-2] * self.r[2:-2]
+                                                   * sigma_dot(t=tps[i], ys=y[i], phi=phi, sol=self)[2:-2],
+                                                   x=self.x[2:-2]))
+                self.diag["mdot"].append(trapezoid(2 * Pi * self.r[2:-2]
+                                                   * sigma_dot(t=tps[i], ys=y[i], phi=phi, sol=self)[2:-2],
+                                                   x=self.r[2:-2]))
+                self.diag['phi'].append(- phi[0] + phi[-1])
+                if "phi_out" in self.diag.keys():
+                    self.diag['phi_out'].append(phi[-1])
+                nu0: np.float64 = (Rgp * T0(tps[i], self.a0, self.Ms) * self.alpha * (self.a0 ** (3 / 2))
+                                   / (self.mu.mean() * np.sqrt(G * self.Ms)))
+                D: np.float64 = (3 * nu0 / (4. * (self.a0 ** (3 / 2 + self.pls_temp))))
 
-            self.diag['phi_L'].append(- 4. * Pi * D * np.sqrt(G * self.Ms) * (
-                    self.x[0] ** (1 + pls_temp) * (y[i][1] - y[i][0]) / (self.x[1] - self.x[0])
-            - self.x[-1] ** (1 + pls_temp) * (y[i][-1] - y[i][-2]) / (self.x[-1] - self.x[-2]))
-            )
-            if len(ips) > 0:
-                self.flux_planets.append(
-                    np.array([phi[ips - 2 + dip], phi[ips - 2 - dip]]))
+                self.diag['phi_L'].append(- 4. * Pi * D * np.sqrt(G * self.Ms) * (
+                        self.x[0] ** (1 + pls_temp) * (y[i][1] - y[i][0]) / (self.x[1] - self.x[0])
+                        - self.x[-1] ** (1 + pls_temp) * (y[i][-1] - y[i][-2]) / (self.x[-1] - self.x[-2]))
+                                          )
+                if len(ips) > 0:
+                    self.flux_planets.append(
+                        np.array([phi[ips - 2 + dip], phi[ips - 2 - dip]]))
 
-            if i % step == 0:
+                if i % step == 0:
+                    self.tps.append(tps[i])
+                    self.f.append(y[i])
+            elif i % step == 0:
+                y[i] = boundary_conditions(y[i], self)
                 self.tps.append(tps[i])
                 self.f.append(y[i])
 
-    def get_final_mass_fractions(self, y: np.ndarray, tps: np.float64, step: int = 1, x: np.float64 = None
-                                 ) -> np.ndarray:
+    def get_final_mass_fractions(self, y: np.ndarray, tps: np.float64, step: int = 1,
+                                 x: np.float64 = None) -> np.ndarray:
         """
 
         Transform the result get by solve_ivp for the integration of the mass fractions
@@ -1235,7 +1869,7 @@ class Sol:
             nu0: np.float64 = (Rgp * T0(self.t0, self.a0, self.Ms) * self.alpha * (self.a0 ** (3 / 2))
                                / (self.mu.mean() * np.sqrt(G * self.Ms)))
             dtmax: np.float64 = min((self.r[1] - self.r[0]) * (self.r[1] - self.r[0])
-                                    / (nu0 * ((self.r / self.a0) ** (3/2 + self.pls_temp))),
+                                    / (nu0 * ((self.r / self.a0) ** (3 / 2 + self.pls_temp))),
                                     60. * yr)
         if self.tps[-1] < tf:
             print("\n Integration surfaces density \n")
@@ -1243,7 +1877,7 @@ class Sol:
             sol_ivp = solve_ivp(system_sigma_tot, t_span=[self.tps[-1], tf],
                                 y0=self.f[-1],
                                 max_step=dtmax, method=self.method, args=[self],
-                                rtol=self.rtol, atol=self.atol, first_step = dtmax * 1e-6)
+                                rtol=self.rtol, atol=self.atol, first_step=dtmax * 1e-6)
             try:
                 if len(sol_ivp.t) > 2:
                     step: int = max(len(sol_ivp.t) // 150, 1)
@@ -1301,57 +1935,17 @@ class Sol:
                                         max_step=dtmax_mf, method=self.method, args=[self],
                                         rtol=self.rtol, atol=self.atol)
 
-                results.append(sol_ivp.y)
-                tps.append(sol_ivp.t)
+                # results.append(sol_ivp.y)
+                # tps.append(sol_ivp.t)
                 ti = sol_ivp.t[-1]
-                if tfi < tf and compt < max(2, int(tf / tfi)+1):
+                step: int = max(len(sol_ivp.t) // 150, 1)
+                self.get_final_mass_fractions(sol_ivp.y.T[0:], tps=sol_ivp.t[0:], step=step)
+                self.save()
+                if tfi < tf and compt < max(2, int(tf / tfi) + 1):
                     dtmax_mf = max(dtmax_mf, yr)
-                    tfi: np.float64 = min(tf, tps[-1][-1] + dtmax_mf * 1e5)
+                    tfi: np.float64 = min(tf, self.tps[-1] + dtmax_mf * 1e5)
                 else:
                     tfi += 2 * tf
-            try:
-                if len(results[-1]) > 2:
-                    for (y, t) in zip(results, tps):
-                        step: int = max(len(t) // 150, 1)
-                        self.get_final_mass_fractions(y.T[0:], tps=t[0:], step=step)
-                        print("t=", t[-1] / yr, tps[-1] / yr)
-                    if build_graphs:
-                        self.graph_surface_density(times=np.geomspace(yr, self.tps_mf[-1], 10), idx=None,
-                                                   species=ii_max,
-                                                   plot_mean_volumique_density=False, include_last_index=False,
-                                                   plot_sigma_crit=False, name_planets=None, show=False, save=True,
-                                                   directory=self.directory, lw=2.)
-                        if len(self.a_planets) > 0:
-                            self.graphs_accretion(name_planets=None, show=False, directory=self.directory,
-                                                  save=False, times=np.geomspace(yr, self.tps_mf[-1], 10),
-                                                  absolute=False, include_last_index=False)
-                    self.save()
-                else:
-                    print(tps[-1])
-                    if build_graphs:
-                        self.graph_surface_density(times=np.geomspace(yr, self.tps_mf[-1], 10), idx=None,
-                                                   species=ii_max,
-                                                   plot_mean_volumique_density=False, include_last_index=False,
-                                                   plot_sigma_crit=False, name_planets=None, show=False, save=True,
-                                                   directory=self.directory, lw=2.)
-                        if len(self.a_planets) > 0:
-                            self.graphs_accretion(name_planets=None, show=False, directory=self.directory,
-                                                  save=False, times=np.geomspace(yr, self.tps_mf[-1], 10),
-                                                  absolute=False, include_last_index=False)
-                    self.save()
-                    raise RuntimeError("Convergence issue", sol_ivp.message)
-            except KeyboardInterrupt:
-                if build_graphs:
-                    self.graph_surface_density(times=np.geomspace(yr, self.tps_mf[-1], 10), idx=None, species=ii_max,
-                                               plot_mean_volumique_density=False, include_last_index=False,
-                                               plot_sigma_crit=False, name_planets=None, show=False, save=True,
-                                               directory=self.directory, lw=2.)
-                    if len(self.a_planets) > 0:
-                        self.graphs_accretion(name_planets=None, show=False, directory=self.directory,
-                                              save=False, times=np.geomspace(yr, self.tps_mf[-1], 10),
-                                              absolute=False, include_last_index=False)
-                self.save()
-                raise UserWarning("Keyboard interrupt")
 
     def save(self, filename: str = "", directory: str = "./") -> None:
         """
@@ -1387,7 +1981,8 @@ class Sol:
         if os.path.exists("self.directory" + "/" + self.name):
             tab = np.load("self.directory" + "/" + self.name)
             if tab["tps"] >= self.tps or tab["tps_mf"] >= self.tps_mf:
-                raise UserWarning("The solution has already been integrated by another process, the Sol cannot be saved")
+                raise UserWarning(
+                    "The solution has already been integrated by another process, the Sol cannot be saved")
             tab.close()
 
         dic: dict = self.constantes()
@@ -1426,6 +2021,8 @@ class Sol:
         dic["a_planets"] = self.a_planets
         dic["m_planets"] = self.m_planets
         dic["flux_radmc"] = self.flux_radmc
+        dic["flux_radmc_jykms"] = self.flux_radmc_jykms
+        dic["id_flux"] = self.id_flux
         np.savez_compressed(self.directory + "/" + self.name, **dic)
 
     def add_planets_to_graph(self, graph: g.Graphique, name_planets: list | np.ndarray = None,
@@ -1484,17 +2081,17 @@ class Sol:
         colors_planets: list[str] = [g.C1, g.C2, g.C6, g.C5, g.C3, g.C4]
         colors_p: list[str] = []
         mdots: list = abs(np.array(self.flux_planets)[::max(len(self.flux_planets) // 1000, 1), 1]
-                                - np.array(self.flux_planets)[::max(len(self.flux_planets) // 1000, 1), 0])
+                          - np.array(self.flux_planets)[::max(len(self.flux_planets) // 1000, 1), 0])
         ips = []
         for r_planet in self.a_planets:
             ips.append(np.argwhere(self.r >= r_planet)[0, 0])
         ips = np.array(ips)
         mdots = []
         for i in range(len(self.tps)):
-            flux=self.mass_flux(i)
+            flux = self.mass_flux(i)
             mdots_i = []
             for ip in ips:
-                mdots_i.append(abs(flux[ip+self.dip]-flux[ip-self.dip]))
+                mdots_i.append(abs(flux[ip + self.dip] - flux[ip - self.dip]))
             mdots.append(np.array(mdots_i))
         mdots = np.array(mdots)
         for i in range(len(self.a_planets)):
@@ -1505,7 +2102,7 @@ class Sol:
 
         if name_planets is not None and len(name_planets) == len(self.m_planets):
             gr1: g.Graphique = g.loglog(time, mdots.T, linestyle="-",
-                                       label=name_planets, color=colors_p, show=False)
+                                        label=name_planets, color=colors_p, show=False)
         else:
             gr1: g.Graphique = g.loglog(time, mdots.T, linestyle="-", color=colors_p, show=False)
         gr1.config_ax(xlabel="Time [Myr]", ylabel="Accretion rate [M$_\oplus$. Myr$^{-1}$]",
@@ -1546,7 +2143,7 @@ class Sol:
                               plot_mean_volumique_density: bool = False,
                               include_last_index: bool = False,
                               plot_sigma_crit: bool = True, name_planets: np.ndarray[str] | list[str] = None,
-                              show: bool  = True, save: bool = False, directory: str = None,
+                              show: bool = True, save: bool = False, directory: str = None,
                               lw: np.float64 = 2.,
                               **args_ax
                               ) -> g.Graphique:
@@ -1643,7 +2240,7 @@ class Sol:
         gr.config_ax(facecolor=(180 / 255, 180 / 255, 200 / 255, 0.1))
         gr.config_spines(spine=["top", "right"], visible=False)  # Remouving the top and right limit of the plot
         gr.config_spines(spine=["bottom", "left"],
-                            lw=2)  # Setting the lineweight of the remaing borders of the figure to 2
+                         lw=2)  # Setting the lineweight of the remaing borders of the figure to 2
         gr.config_ticks(width=2, length=6)  # Setting the ticks width and length
         gr.config_fig(facecolor=g.Ctrensp)  # Setting a trensparent background for the rest of the figure
 
@@ -1812,13 +2409,14 @@ class Sol:
 
     def graph_image_surface_density(self, species: int | np.ndarray | list[int] = ii_max,
                                     plot_sigma_crit: bool = True,
-                                    vmin: np.float64 | str = 1e-10 * Mearth / Myr, vmax: np.float64 | str= None,
+                                    vmin: np.float64 | str = 1e-10 * Mearth / Myr, vmax: np.float64 | str = None,
                                     size_time: int = 500, size_radius: int = 1000,
                                     color_sigma_crit_h2o: str | tuple = "w",
                                     color_sigma_crit_co: str | tuple = "g",
                                     cmap: str = "inferno", nb_levels: int = 10,
                                     color_min: str | tuple = None, color_max: str | tuple = None,
-                                    plot_planets: bool = True, planets_names: list[str] = None,
+                                    plot_planets: bool = False, plot_belt: bool = True,
+                                    planets_names: list[str] = None,
                                     show: bool = True, save: bool = False, directory: str = None,
                                     plot_label_levels: bool = True,
                                     **kwargs_ax
@@ -1882,14 +2480,14 @@ class Sol:
             print(f"Graphique.graph_image_surface_density : the specie number {species} cannot be reffered to any"
                   f" specie of this solution. The total surface density will be represanted")
 
-        if isinstance(vmin, str) and vmin !="auto":
+        if isinstance(vmin, str) and vmin != "auto":
             raise UserWarning(f"The vmin={vmin} is not a valid value for this simulation")
         elif isinstance(vmin, str):
             vmin = -inf
 
         if vmax is None:
             vmax = np.inf
-        if isinstance(vmax, str) and vmax !="auto":
+        if isinstance(vmax, str) and vmax != "auto":
             raise UserWarning(f"The vmax={vmax} is not a valid value for this simulation")
         elif isinstance(vmax, str):
             vmax = -inf
@@ -1907,13 +2505,13 @@ class Sol:
             sigma_crit_h2o: np.float64 = np.double(1. / ((Na / (18 * 1e-2 * C_M)) * cross_section_h2o))
 
         if ((isinstance(species, int) and (species > len(self.nom_mu) or species < 0))
-            or (isinstance(species, str) and species == "all")):
+                or (isinstance(species, str) and species == "all")):
             tps = np.geomspace(np.min(np.array(self.tps)[np.array(self.tps) > 0]), np.max(self.tps), size_time)
             if np.max(self.interp_sigma(tps)[:,
-                                      ::max(len(self.r) // size_radius, 1)].T) < vmin:
+            ::max(len(self.r) // size_radius, 1)].T) < vmin:
                 vmin = -inf
             gr: g.Graphique = g.image(self.interp_sigma(tps)[:,
-                                      ::max(len(self.r) // size_radius, 1)].T,
+            ::max(len(self.r) // size_radius, 1)].T,
                                       tps / Myr,
                                       np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
                                       cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
@@ -1972,14 +2570,14 @@ class Sol:
                 species = np.argwhere(self.nom_mu == species)[0, 0]
             idx = np.arange(0, len(self.tps_mf), max(len(self.tps_mf) // size_time, 1))
             if np.max(self.interp_sigma(np.array(self.tps_mf)[idx]
-                                                        )[:, ::max(len(self.r) // size_radius, 1)].T
-                                      * np.array(self.mass_fractions)[idx, species,
-                                      ::max(len(self.r) // size_radius,1)].T) < vmin:
+                                        )[:, ::max(len(self.r) // size_radius, 1)].T
+                      * np.array(self.mass_fractions)[idx, species,
+            ::max(len(self.r) // size_radius, 1)].T) < vmin:
                 vmin = - inf
             gr: g.Graphique = g.image(self.interp_sigma(np.array(self.tps_mf)[idx]
                                                         )[:, ::max(len(self.r) // size_radius, 1)].T
                                       * np.array(self.mass_fractions)[idx, species,
-                                      ::max(len(self.r) // size_radius,1)].T,
+            ::max(len(self.r) // size_radius, 1)].T,
                                       np.array(self.tps_mf)[idx] / Myr,
                                       np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
                                       cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
@@ -2024,7 +2622,8 @@ class Sol:
                                    label=self.nom_mu[species] + " surface density [M$_\oplus$ . au$^{-2}]$")
 
             gr.config_ax(xlabel="Time [Myr]", ylabel="Distance to the central star [au] ",
-                         xscale="log", yscale="log", xlim=[self.tps_mf[1], self.tps_mf[-1]], ylim=[self.r[0], self.r[-1]])
+                         xscale="log", yscale="log", xlim=[self.tps_mf[1], self.tps_mf[-1]],
+                         ylim=[self.r[0], self.r[-1]])
 
             if vmax < np.inf and np.any(self.sigma() > vmax):
                 gr.config_colorbar(0, extend="max")
@@ -2050,6 +2649,27 @@ class Sol:
                     gr.text(gr.param_ax["xlim"][0], self.r[ip - self.dip] / au, planets_names[j],
                             horizontalalignment="left", verticalalignment="top", rotation="horizontal",
                             color="#929292")
+        if plot_belt:
+            if self.sol_ast.sublimation_model != "none":
+                ind: np.ndarray = np.array([[gr.param_ax["xlim"][0], self.r[self.idxa.min()] / au],
+                                            [gr.param_ax["xlim"][1], self.r[self.idxa.min()] / au],
+                                            [gr.param_ax["xlim"][1], self.r[self.idxa.max()] / au],
+                                            [gr.param_ax["xlim"][0], self.r[self.idxa.max()] / au]])
+
+                gr.polygon(ind=ind, facecolor="#929292", plot_borders=False)
+                gr.text(gr.param_ax["xlim"][0], self.r[self.idxa.min()] / au, "Asteroid belt",
+                        horizontalalignment="left", verticalalignment="top", rotation="horizontal",
+                        color="k")
+            if self.sol_kuip.sublimation_model != "none":
+                ind: np.ndarray = np.array([[gr.param_ax["xlim"][0], self.r[self.idxk.min()] / au],
+                                            [gr.param_ax["xlim"][1], self.r[self.idxk.min()] / au],
+                                            [gr.param_ax["xlim"][1], self.r[self.idxk.max()] / au],
+                                            [gr.param_ax["xlim"][0], self.r[self.idxk.min()] / au]])
+
+                gr.polygon(ind=ind, facecolor="#929292", plot_borders=False)
+                gr.text(gr.param_ax["xlim"][0], self.r[self.idxa.min()] / au, "Kuiper belt",
+                        horizontalalignment="left", verticalalignment="top", rotation="horizontal",
+                        color="#929292")
 
         if plot_label_levels:
             gr.config_labels_contours(levels=gr.levels[::2], fmt="%.0e")
@@ -2069,18 +2689,18 @@ class Sol:
         return gr
 
     def graph_image_radial_surface_density(self, species: int | np.ndarray | list[int] = ii_max,
-                                    plot_sigma_crit: bool = True,
-                                    vmin: np.float64 | str = 1e-10 * Mearth / Myr, vmax: np.float64 | str= None,
-                                    size_time: int = 500, size_radius: int = 1000,
-                                    color_sigma_crit_h2o: str | tuple = "w",
-                                    color_sigma_crit_co: str | tuple = "g",
-                                    cmap: str = "inferno", nb_levels: int = 10,
-                                    color_min: str | tuple = None, color_max: str | tuple = None,
-                                    plot_planets: bool = True, planets_names: list[str] = None,
-                                    show: bool = True, save: bool = False, directory: str = None,
-                                    plot_label_levels: bool = True,
-                                    **kwargs_ax
-                                    ) -> g.Graphique:
+                                           plot_sigma_crit: bool = True,
+                                           vmin: np.float64 | str = 1e-10 * Mearth / Myr, vmax: np.float64 | str = None,
+                                           size_time: int = 500, size_radius: int = 1000,
+                                           color_sigma_crit_h2o: str | tuple = "w",
+                                           color_sigma_crit_co: str | tuple = "g",
+                                           cmap: str = "inferno", nb_levels: int = 10,
+                                           color_min: str | tuple = None, color_max: str | tuple = None,
+                                           plot_planets: bool = True, planets_names: list[str] = None,
+                                           show: bool = True, save: bool = False, directory: str = None,
+                                           plot_label_levels: bool = True,
+                                           **kwargs_ax
+                                           ) -> g.Graphique:
         """
         Build a Graphique that represant the evolution of radial surface density as function of time and radius
 
@@ -2140,14 +2760,14 @@ class Sol:
             print(f"Graphique.graph_image_surface_density : the specie number {species} cannot be reffered to any"
                   f" specie of this solution. The total surface density will be represanted")
 
-        if isinstance(vmin, str) and vmin !="auto":
+        if isinstance(vmin, str) and vmin != "auto":
             raise UserWarning(f"The vmin={vmin} is not a valid value for this simulation")
         elif isinstance(vmin, str):
             vmin = -inf
 
         if vmax is None:
             vmax = np.inf
-        if isinstance(vmax, str) and vmax !="auto":
+        if isinstance(vmax, str) and vmax != "auto":
             raise UserWarning(f"The vmax={vmax} is not a valid value for this simulation")
         elif isinstance(vmax, str):
             vmax = -inf
@@ -2165,14 +2785,14 @@ class Sol:
             sigma_crit_h2o: np.float64 = np.double(1. / ((Na / (18 * 1e-2 * C_M)) * cross_section_h2o))
 
         if ((isinstance(species, int) and (species > len(self.nom_mu) or species < 0))
-            or (isinstance(species, str) and species == "all")):
+                or (isinstance(species, str) and species == "all")):
             print("species=full")
             tps = np.geomspace(np.min(np.array(self.tps)[np.array(self.tps) > 0]), np.max(self.tps), size_time)
             if np.max(sigma_rad(tps, self.interp_sigma(tps), self)[:,
-                                      ::max(len(self.r) // size_radius, 1)].T) < vmin:
+            ::max(len(self.r) // size_radius, 1)].T) < vmin:
                 vmin = - inf
             gr: g.Graphique = g.image(sigma_rad(tps, self.interp_sigma(tps), self)[:,
-                                      ::max(len(self.r) // size_radius, 1)].T,
+            ::max(len(self.r) // size_radius, 1)].T,
                                       tps / Myr,
                                       np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
                                       cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
@@ -2232,14 +2852,15 @@ class Sol:
             idx = np.arange(0, len(self.tps_mf), max(len(self.tps_mf) // size_time, 1))
             print("species=", species)
             if np.max(sigma_rad_w(np.array(self.tps_mf)[idx], np.array(self.mass_fractions)[idx], self)[:,
-                                      ::max(len(self.r) // size_radius, 1)].T) < vmin:
+            ::max(len(self.r) // size_radius, 1)].T) < vmin:
                 vmin = - inf
-            gr: g.Graphique = g.image(sigma_rad_w(np.array(self.tps_mf)[idx], np.array(self.mass_fractions)[idx], self)[:,
-                                      ::max(len(self.r) // size_radius, 1)].T,
-                                      np.array(self.tps_mf)[idx] / Myr,
-                                      np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
-                                      cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
-                                      color_min=color_min, color_max=color_max)
+            gr: g.Graphique = g.image(
+                sigma_rad_w(np.array(self.tps_mf)[idx], np.array(self.mass_fractions)[idx], self)[:,
+                ::max(len(self.r) // size_radius, 1)].T,
+                np.array(self.tps_mf)[idx] / Myr,
+                np.array(self.r)[::max(len(self.r) // size_radius, 1)] / au,
+                cmap=cmap, colorscale="log", show=False, vmin=vmin, vmax=vmax,
+                color_min=color_min, color_max=color_max)
 
             if vmin == -inf:
                 vmin = np.min(gr.array_image)
@@ -2280,7 +2901,8 @@ class Sol:
                                    label=self.nom_mu[species] + " surface density [M$_\oplus$ . au$^{-2}]$")
 
             gr.config_ax(xlabel="Time [Myr]", ylabel="Distance to the central star [au] ",
-                         xscale="log", yscale="log", xlim=[self.tps_mf[1], self.tps_mf[-1]], ylim=[self.r[0], self.r[-1]])
+                         xscale="log", yscale="log", xlim=[self.tps_mf[1], self.tps_mf[-1]],
+                         ylim=[self.r[0], self.r[-1]])
 
             if vmax < np.inf and np.any(self.sigma() > vmax):
                 gr.config_colorbar(0, extend="max")
@@ -2324,11 +2946,11 @@ class Sol:
             gr.save()
         return gr
 
-    def graphs(self, plot_planets=True, planets_names: list[str] = None,
+    def graphs(self, plot_planets=False, planets_names: list[str] = None,
                show: bool = True, save: bool = False, directory: str = None) -> list[g.Graphique]:
         print("graph accretion : ")
         res: list[g.Graphique] = self.graphs_accretion(name_planets=planets_names, show=show,
-                                                        save=save, directory=directory)
+                                                       save=save, directory=directory)
         if directory is None:
             directory = self.directory
         print("graph image sig_dot :")
@@ -2338,346 +2960,3663 @@ class Sol:
         res.append(self.graph_image_surface_density(plot_planets=plot_planets, planets_names=planets_names,
                                                     show=show, save=save, directory=directory))
         res.append(self.graph_image_radial_surface_density(plot_planets=plot_planets, planets_names=planets_names,
-                                                    show=show, save=save, directory=directory))
+                                                           show=show, save=save, directory=directory))
         for mu_plot in self.nom_mu:
             print("mu = ", mu_plot)
             res.append(self.graph_image_surface_density(species=mu_plot,
                                                         plot_planets=plot_planets, planets_names=planets_names,
                                                         show=show, save=save, directory=directory))
             res.append(self.graph_image_radial_surface_density(species=mu_plot,
-                                                            plot_planets=plot_planets, planets_names=planets_names,
-                                                            show=show, save=save, directory=directory))
+                                                               plot_planets=plot_planets, planets_names=planets_names,
+                                                               show=show, save=save, directory=directory))
         return res
 
-    def radmc_setup(self, i: int, directory: str = None, size_grid: int = 128) -> None:
-        """
-        Generate the configuration file for radmc3d for the surface density at time self.tps[i]
+    # def calcul_flux_anayticALMA(self, jykms: bool = True, dpc: np.float64 = 50,
+    #                             file_lines: str = data_radmc + "/h2o.out", lambda_min_nm: np.float64 = 1.):
+    #     lines: list[list[int]] = [[3, 1, 3, 2, 2, 0, 0],
+    #                               [5, 1, 5, 4, 2, 2, 1],
+    #                               [10, 2, 9, 9, 3, 6, 0]]
+    #     d: np.float64 = dpc * pc
+    #     w: np.ndarray = read_hitran(file=file_lines, lambda_min_nm=lambda_min_nm)
+    #
+    #     # Conversion in code units :
+    #     w[:, 1] *= 299792458 * 1e2 / C_t  # frequency
+    #     w[:, 2] /= C_t  # Einstein number A
+    #     w[:, 3] *= h * 299792458 * 1e2 / C_t  # Lower level energy
+    #
+    #     temp = T(r=self.sol_ast.a0, t=self.tps_mf, Ms=self.Ms)  # temperature at the middle of the belt for each times
+    #     # total gaseous water mass as function of time
+    #     mw = trapezoid(2. * Pi * self.r * np.array(self.mass_fractions)[:, 0] * self.interp_sigma(self.tps_mf), self.r)
+    #     Z = np.array([(w[:, 4] * np.exp(-w[:, 3] / (kb * T))).sum() for T in temp])  # Partition function
+    #     flux = []
+    #     C_flux_final0 = (C_t * C_L * C_L) / C_E
+    #
+    #     for li in lines:
+    #         idl = id_level(*li)
+    #         C_flux_final = C_flux_final0
+    #         if jykms:
+    #             C_flux_final *= (np.double(1e26)
+    #                              / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                                 * (w[idl - 1][1] * C_t)))
+    #         xj = w[idl - 1][4] * np.exp(
+    #             -(w[idl - 1][3] + h * w[idl - 1][1]) / (kb * temp)) / Z  # Fraction of electrons in the upper level
+    #         flux.append((xj * mw * h * w[idl - 1][1] * w[idl - 1][2] / (4. * Pi * 18 * mp * d * d)) * C_flux_final)
+    #         imax = np.argmax(flux[-1])
+    #         print("line=", li, "flux = ",
+    #               (xj * mw * h * w[idl - 1][1] * w[idl - 1][2] / (4. * Pi * 18 * mp * d * d))[imax] * C_flux_final0,
+    #               "xj=", xj[imax], "Enu=", h * w[idl - 1][1] / kb, " K Etop=", (w[idl - 1][3] + h * w[idl - 1][1]) / kb,
+    #               "K \n\n\n----------------------\n\n\n")
+    #     return flux
+    #
+    # def max_analytic_fluxALMA(self, jykms: bool = True, dpc: np.float64 = 50,
+    #                           file_lines: str = data_radmc + "/h2o.out", lambda_min_nm: np.float64 = 1.):
+    #     fluxs = self.calcul_flux_anayticALMA(jykms=jykms, dpc=dpc, file_lines=file_lines, lambda_min_nm=lambda_min_nm)
+    #     return [np.max(F) for F in fluxs]
+    #
+    # def calcul_optical_depthALMA(self, jykms: bool = True, dpc: np.float64 = 50,
+    #                              file_lines: str = data_radmc + "/h2o.out", lambda_min_nm: np.float64 = 1.):
+    #     lines: list[list[int]] = [[3, 1, 3, 2, 2, 0, 0],
+    #                               [5, 1, 5, 4, 2, 2, 1],
+    #                               [10, 2, 9, 9, 3, 6, 0]]
+    #     d: np.float64 = dpc * pc
+    #     w: np.ndarray = read_hitran(file=file_lines, lambda_min_nm=lambda_min_nm)
+    #
+    #     # Conversion in code units :
+    #     w[:, 1] *= 299792458 * 1e2 / C_t  # frequency
+    #     w[:, 2] /= C_t  # Einstein number A
+    #     w[:, 3] *= h * 299792458 * 1e2 / C_t  # Lower level energy
+    #
+    #     temp = T(r=self.sol_ast.a0, t=self.tps_mf, Ms=self.Ms)  # temperature at the middle of the belt for each times
+    #     Z = np.array([(w[:, 4] * np.exp(-w[:, 3] / (kb * T))).sum() for T in temp])  # Partition function
+    #     tau = []
+    #     max_N = np.max(np.array(self.mass_fractions)[:, 0] * self.interp_sigma(np.array(self.tps_mf)),
+    #                    axis=1) / (18. * mp)
+    #     Delta_v = 20 * 10 ** 3 * C_L / C_t  # max speed
+    #     for li in lines:
+    #         idl = id_level(*li)
+    #         delta_nu = w[idl - 1][1] * ((Delta_v / c) / (1. - Delta_v / c))
+    #         # print("delta_nu = ", delta_nu * C_t * 1e-9)
+    #         Blu: np.float64 = ((w[idl - 1][2] * c * c
+    #                             / (2. * h * w[idl - 1][1] * w[idl - 1][1] * w[idl - 1][1]))
+    #                            * w[idl - 1][5] / w[idl - 1][4])
+    #         Bul: np.float64 = ((w[idl - 1][2] * c * c
+    #                             / (2. * h * w[idl - 1][1] * w[idl - 1][1] * w[idl - 1][1])))
+    #         xup = w[idl - 1][5] * np.exp(
+    #             -(w[idl - 1][3] + h * w[idl - 1][1]) / (kb * temp)
+    #         ) / Z  # Fraction of electrons in the upper level
+    #         xdown = w[idl - 1][5] * np.exp(-(w[idl - 1][3])
+    #                                        / (kb * temp)) / Z  # Fraction of electrons in the lower level
+    #         tau.append(abs(h * w[idl - 1][1] * (xdown * Blu - xup * Bul) * max_N / (4 * Pi * delta_nu)))
+    #         print("tau=", tau[-1], "nu/deltanu = ", w[idl - 1][1] / delta_nu, "xup/dowm=", xup, xdown, "Blu, Bul", Blu,
+    #               Bul, "Etop,[K]", (w[idl - 1][3] + h * w[idl - 1][1]) / kb, (w[idl - 1][3]) / kb, (w[idl - 1][3]) / kb,
+    #               " Edown [K]", (w[idl - 1][3]) / kb)
+    #     return tau
+    #
+    # def max_odALMA(self, file_lines: str = data_radmc + "/h2o.out", lambda_min_nm: np.float64 = 1.):
+    #     od = self.calcul_optical_depthALMA(file_lines=file_lines, lambda_min_nm=lambda_min_nm)
+    #     return [np.max(tau) for tau in od]
+    #
+    # def calcul_flux_thin_JWST(self, jykms: bool = False, dpc: np.float64 = 50,
+    #                           molecule: str = "oh2olamda",
+    #                           n_temp_ech=-1, return_frequency: bool = False,
+    #                           tau_dust=1e-3, edge_on: bool = False,
+    #                           lambda_max_micron: np.float64 = 20, return_tau: bool = False,
+    #                           return_Tex: bool = False, lte: bool = False,
+    #                           tmin: np.float64 = 0.5 * Myr, radex: bool = True):
+    #     if radex:
+    #         init_source(molecule)
+    #     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+    #     d: np.float64 = dpc * dpc * pc * pc
+    #     Delta_v: np.float64 = 20 * 1e3 * C_L * C_L / C_t
+    #     mw0, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+    #     # conversion to code units
+    #     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+    #     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+    #     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+    #     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+    #
+    #     freq_min = c / (lambda_max_micron * 1e-6 * C_L)
+    #
+    #     # total gaseous water mass as function of time
+    #     if radex:
+    #         width_v = source[molecule + "_width_v"]
+    #     else:
+    #         width_v = 20e3 * C_M / C_t
+    #     v = np.linspace(-2 * width_v, 2 * width_v, 10)  # m/sflux = []
+    #     # Sview: np.float64 = Pi * (self.r.max() ** 2 - self.r.min() ** 2)
+    #     Sview: np.float64 = Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)
+    #     C_flux_final = 1.
+    #     if jykms:
+    #         C_flux_final *= (np.double(1e26)
+    #                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                             * (tab_trens[:, 4] * C_t)))
+    #     flux = []
+    #     tau = []
+    #     Tex = []
+    #     imin = np.argwhere(self.tps_mf > tmin)[0, 0]
+    #     Mw = trapezoid(2. * Pi * self.r
+    #                    * np.array(self.mass_fractions)[:, 0]
+    #                    * self.interp_sigma(self.tps_mf), self.r)
+    #     if n_temp_ech == 0:
+    #         imax = imin + np.argmax(Mw[imin:])
+    #         sig = self.interp_sigma(self.tps_mf[imax])
+    #         mw = Mw[imax]
+    #         Ncol = np.max(sig / (18 * mp * self.Hz(t=self.tps_mf[imax])))
+    #         if lte:
+    #             Ncol *= 1e50
+    #         t = self.tps_mf[imax]
+    #         Temp = T(r=self.sol_ast.a0, t=self.tps_mf[imax] + self.t0, Ms=self.Ms)
+    #         iwmax = np.argmax(self.mass_fractions[imax][0] * sig)
+    #         sig_w_max = self.mass_fractions[imax][0, iwmax] * sig[iwmax]
+    #
+    #         if np.any(self.mass_fractions[imax][0, :iwmax]
+    #                   * sig[:iwmax] < sig_w_max * 1e-3):
+    #             imin_w_in = np.argwhere(self.mass_fractions[imax][0, :iwmax]
+    #                                     * sig[:iwmax] < sig_w_max * 1e-3)[-1, 0]
+    #         else:
+    #             imin_w_in = 0
+    #         if np.any(self.mass_fractions[imax][0, iwmax:]
+    #                   * sig[iwmax:] < sig_w_max * 1e-3):
+    #             imin_w_out = (iwmax +
+    #                           np.argwhere(self.mass_fractions[imax][0, iwmax:]
+    #                                       * sig[iwmax:] < sig_w_max * 1e-3)[0, 0])
+    #         else:
+    #             imin_w_out = len(self.x) - 1
+    #         # gr=g.loglog(self.r, self.mass_fractions[::max(1, len(self.tps_mf) // n_temp_ech)][i][0] * sig, show=False)
+    #         # gr.line([self.r.min(), self.r.max()], [sig_w_max * 1e-10, sig_w_max * 1e-10], lw=2, color="k")
+    #         # gr.line([self.r[imin_w_out], self.r[imin_w_out]], [sig_w_max * 1e-1000, sig_w_max * 1e1], lw=2, color="r")
+    #         # gr.show()
+    #         # S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #         if edge_on:
+    #             S = 4 * trapezoid(self.Hz(t=t)[imin_w_in: imin_w_out], self.r[imin_w_in:imin_w_out])
+    #         else:
+    #             S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #         Nemit_surf = mw / (18 * mp * S)
+    #         print("t=", t, "S/Sbelt=", S / (Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)))
+    #         Rstar = interpRs(t + self.t0, self.Ms)
+    #         print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+    #         # if radex:
+    #         #     ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #         #                                               T=(interpLbol(t + self.t0, self.Ms)
+    #         #                                                  / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #         #                                  * (Rstar ** 2) / ((self.sol_ast.a0) ** 2))
+    #         #     collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+    #         #
+    #         #     source[molecule].update_parameters(
+    #         #         N=Nemit_surf * C_L * C_L,
+    #         #         Tkin=np.max([Temp, 200]),
+    #         #         collider_densities=collider_densities,
+    #         #         ext_background=ext_background,
+    #         #         T_dust=Temp,
+    #         #         tau_dust=tau_dust,
+    #         #     )
+    #         #     source[molecule].solve_radiative_transfer()
+    #         #     flux.append(source[molecule].frequency_integrated_emission(
+    #         #         output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)))
+    #         #     # freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #         #     # flux_loc = np.zeros_like(freqs)
+    #         #     # for i in range(len(flux_loc)):
+    #         #     #     nu = freqs[i] * (1 - v / 299792458)
+    #         #     #     flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #         #     #                             nu=nu, solid_angle= S / (dpc * dpc * pc * pc)), nu)
+    #         #     # flux.append(flux_loc)
+    #         #     if return_tau:
+    #         #         tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+    #         #     if return_Tex:
+    #         #         Tex.append(source[molecule].Tex)
+    #         # else:
+    #         if lte:
+    #             xj = get_popLTE(molecule=molecule, n_col_partner=Nemit_surf, Tcin=Temp,
+    #                             Lstar=interpLbol(t + self.t0, self.Ms),
+    #                             Rstar=interpRs(t + self.t0, self.Ms),
+    #                             a=self.sol_ast.a0, verbose=False,
+    #                             files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #         elif radex:
+    #             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #                                                       T=(interpLbol(t + self.t0, self.Ms)
+    #                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #                                          * (Rstar ** 2) / ((self.sol_ast.a0) ** 2))
+    #             collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+    #
+    #             source[molecule].update_parameters(
+    #                 N=Nemit_surf * C_L * C_L,
+    #                 Tkin=np.max([Temp, 200]),
+    #                 collider_densities=collider_densities,
+    #                 ext_background=ext_background,
+    #                 T_dust=Temp,
+    #                 tau_dust=tau_dust,
+    #             )
+    #             source[molecule].solve_radiative_transfer()
+    #             xj = source[molecule].level_pop
+    #         else:
+    #             xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+    #                          Lstar=interpLbol(t + self.t0, self.Ms),
+    #                          Rstar=interpRs(t + self.t0, self.Ms),
+    #                          a=self.sol_ast.a0, verbose=False, Tdust=Temp,
+    #                          files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #         flux.append(C_flux_final
+    #                     * mw * h * tab_trens[:, 3] * tab_trens[:, 4]
+    #                     * xj[np.int64(tab_trens[:, 1]) - 1]
+    #                     / (4. * Pi * (18. * mp) * d * d))
+    #         # freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #         # flux_loc = np.zeros_like(freqs)
+    #         # for i in range(len(flux_loc)):
+    #         #     nu = freqs[i] * (1 - v / 299792458)
+    #         #     flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #         #                             nu=nu, solid_angle= S / (dpc * dpc * pc * pc)), nu)
+    #         # flux.append(flux_loc)
+    #         if return_tau:
+    #             tau.append(np.zeros_like(flux[-1]))
+    #         if return_Tex:
+    #             Tex.append(np.zeros_like(flux[-1]))
+    #     else:
+    #         times = np.linspace(tmin, self.tps_mf[-1], n_temp_ech)
+    #         for t in times:
+    #             it: int = np.argwhere(self.tps_mf[-1] < t)[-1, 0]
+    #             sig = self.interp_sigma(self.tps_mf[it])
+    #             mw = Mw[it]
+    #             Ncol = np.max(sig / (18 * mp * self.Hz(t=self.tps_mf[it])))
+    #             t = self.tps_mf[it] + self.t0
+    #             if lte:
+    #                 Ncol *= 1e50
+    #             Temp = T(r=self.sol_ast.a0, t=self.tps_mf[it] + self.t0, Ms=self.Ms)
+    #             iwmax = np.argmax(self.mass_fractions[it][0] * sig)
+    #             sig_w_max = self.mass_fractions[it][0, iwmax] * sig[iwmax]
+    #
+    #             if np.any(self.mass_fractions[it][0, :iwmax]
+    #                       * sig[:iwmax] < sig_w_max * 1e-3):
+    #                 imin_w_in = np.argwhere(self.mass_fractions[it][0, :iwmax]
+    #                                         * sig[:iwmax] < sig_w_max * 1e-3)[-1, 0]
+    #             else:
+    #                 imin_w_in = 0
+    #             if np.any(self.mass_fractions[it][0, iwmax:]
+    #                       * sig[iwmax:] < sig_w_max * 1e-3):
+    #                 imin_w_out = (iwmax +
+    #                               np.argwhere(self.mass_fractions[it][0, iwmax:]
+    #                                           * sig[iwmax:] < sig_w_max * 1e-3)[0, 0])
+    #             else:
+    #                 imin_w_out = len(self.x) - 1
+    #             if edge_on:
+    #                 S = 4 * trapezoid(self.Hz(t=t)[imin_w_in: imin_w_out], self.r[imin_w_in:imin_w_out])
+    #             else:
+    #                 S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #             Nemit_surf = mw / (18 * mp * S)
+    #             print("t=", t, "S/Sbelt=", S / (Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)))
+    #             Rstar = interpRs(t + self.t0, self.Ms)
+    #             if radex:
+    #                 ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #                                                           T=(interpLbol(t + self.t0, self.Ms)
+    #                                                              / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #                                              * (Rstar ** 2) / ((self.sol_ast.a0) ** 2))
+    #                 collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+    #                 print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+    #
+    #                 source[molecule].update_parameters(
+    #                     N=Nemit_surf * C_L * C_L,
+    #                     Tkin=np.max([Temp, 200]),
+    #                     collider_densities=collider_densities,
+    #                     ext_background=ext_background,
+    #                     T_dust=Temp,
+    #                     tau_dust=tau_dust,
+    #                 )
+    #                 source[molecule].solve_radiative_transfer()
+    #                 flux.append(source[molecule].frequency_integrated_emission(
+    #                     output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)))
+    #                 # freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #                 # flux_loc = np.zeros_like(freqs)
+    #                 # for i in range(len(flux_loc)):
+    #                 #     nu = freqs[i] * (1 - v / 299792458)
+    #                 #     flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #                 #                             nu=nu, solid_angle= S / (dpc * dpc * pc * pc)), nu)
+    #                 # flux.append(flux_loc)
+    #                 if return_tau:
+    #                     tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+    #                 if return_Tex:
+    #                     Tex.append(source[molecule].Tex)
+    #             else:
+    #                 if lte:
+    #                     xj = get_popLTE(molecule=molecule, n_col_partner=Nemit_surf, Tcin=Temp,
+    #                                     Lstar=interpLbol(t + self.t0, self.Ms),
+    #                                     Rstar=interpRs(t + self.t0, self.Ms),
+    #                                     a=self.sol_ast.a0, verbose=False,
+    #                                     files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #                 else:
+    #                     xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+    #                                  Lstar=interpLbol(t + self.t0, self.Ms),
+    #                                  Rstar=interpRs(t + self.t0, self.Ms),
+    #                                  a=self.sol_ast.a0, verbose=False, Tdust=Temp,
+    #                                  files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #                 flux.append(C_flux_final
+    #                             * mw * h * tab_trens[:, 3] * tab_trens[:, 4]
+    #                             * xj[np.int64(tab_trens[:, 1]) - 1]
+    #                             / (4. * Pi * (18. * mp) * d * d))
+    #     if return_frequency:
+    #         freqs = tab_trens[:, 4] * C_t
+    #         if return_tau and return_Tex:
+    #             return freqs, np.array(flux) * C_flux_final, tau, Tex
+    #         elif return_tau:
+    #             return freqs, np.array(flux) * C_flux_final, tau
+    #         elif return_Tex:
+    #             return freqs, np.array(flux) * C_flux_final, Tex
+    #         else:
+    #             return freqs, np.array(flux) * C_flux_final
+    #     else:
+    #         if return_tau and return_Tex:
+    #             return np.array(flux) * C_flux_final, tau, Tex
+    #         elif return_tau:
+    #             return np.array(flux) * C_flux_final, tau
+    #         elif return_Tex:
+    #             return np.array(flux) * C_flux_final, Tex
+    #         else:
+    #             return np.array(flux) * C_flux_final
+    #
+    # def calcul_pop_thin_JWST(self, jykms: bool = False, dpc: np.float64 = 50,
+    #                          molecule: str = "oh2olamda",
+    #                          n_temp_ech=-1, return_levels: bool = False, lte: bool = False,
+    #                          radex: bool = False, tau_dust_radex: np.float64 = 1e-3):
+    #
+    #     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+    #     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+    #
+    #     # conversion to code units
+    #     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+    #     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+    #     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+    #     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+    #
+    #     d: np.float64 = dpc * pc
+    #     temp = T(r=self.sol_ast.a0, t=self.tps_mf + self.t0,
+    #              Ms=self.Ms)  # temperature at the middle of the belt for each times
+    #     # total gaseous water mass as function of time
+    #     if n_temp_ech == -1:
+    #         n_temp_ech = len(self.tps_mf)
+    #     sigmas = self.interp_sigma(self.tps_mf[::max(1, len(self.tps_mf) // n_temp_ech)])
+    #
+    #     mh = trapezoid(2. * Pi * self.r
+    #                    * np.array(self.mass_fractions)[::max(1, len(self.tps_mf) // n_temp_ech), 2]
+    #                    * sigmas, self.r)
+    #     mw = trapezoid(2. * Pi * self.r
+    #                    * np.array(self.mass_fractions)[::max(1, len(self.tps_mf) // n_temp_ech), 0]
+    #                    * sigmas, self.r)
+    #     idx_a = np.argwhere(self.r >= self.sol_ast.a0)[0, 0]
+    #     Sview: np.float64 = (mw
+    #                          / (np.array(self.mass_fractions)[::max(1, len(self.tps_mf) // n_temp_ech), 0, idx_a]
+    #                             * sigmas[:, idx_a]))
+    #     flux = []
+    #     # Sview: np.float64 = Pi * (self.r.max() ** 2 - self.r.min() ** 2)
+    #     # Sview: np.float64 = Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)
+    #     C_flux_final = 1.
+    #     if jykms:
+    #         C_flux_final *= (np.double(1e26)
+    #                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                             * (tab_trens[:, 4] * C_t)))
+    #     if n_temp_ech == -1:
+    #         n_temp_ech = len(self.tps_mf)
+    #     ncol_surf: np.ndarray = mh / (mp * Sview)
+    #     nemit_surf: np.ndarray = mw / (18. * mp * Sview)
+    #     ncol = np.max(sigmas / np.sqrt(kb * np.array([T(r=self.r, t=t + self.t0, Ms=self.Ms)
+    #                                                   for t in self.tps_mf[::max(1, len(self.tps_mf) // n_temp_ech)]])
+    #                                    / (18. * mp * G * Ms / (self.r ** 3))), 1) / (18. * mp)
+    #     # ncol: np.ndarray = ncol_surf / np.sqrt(kb * np.array([T(r=self.sol_ast.a0, t=t + self.t0, Ms=self.Ms)
+    #     #                                                       for t in
+    #     #                                                       self.tps_mf[::max(1, len(self.tps_mf) // n_temp_ech)]])
+    #     #                                        / (18. * mp * G * Ms / (self.sol_ast.a0 ** 3)))
+    #     pop = []
+    #     print("ncol=", ncol * C_L * C_L * C_L * 1e-6, "cm**-3")
+    #     C_flux_final = (C_t * C_L * C_L) / C_E
+    #     if jykms:
+    #         C_flux_final *= (np.double(1e26)
+    #                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                             * (tab_trens[:, 4] * C_t)))
+    #     if n_temp_ech == -1:
+    #         n_temp_ech = len(self.tps_mf)
+    #     for (Mw, Ncol, Temp, t, Ncol_surf, Nemit_surf) in zip(mw, ncol, temp,
+    #                                                           self.tps_mf[::max(1, len(self.tps_mf) // n_temp_ech)],
+    #                                                           ncol_surf, nemit_surf):
+    #         print("t=", t)
+    #         if radex:
+    #             xj = get_pop_radex(molecule=molecule, n_emmiter=Nemit_surf, n_col_partner=Ncol, Tcin=Temp,
+    #                                Lstar=interpLbol(t + self.t0, self.Ms),
+    #                                Rstar=interpRs(t + self.t0, self.Ms),
+    #                                a=self.sol_ast.a0, verbose=False, tau_dust=tau_dust_radex)
+    #         elif lte:
+    #             xj = get_popLTE(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+    #                             Lstar=interpLbol(t + self.t0, self.Ms),
+    #                             Rstar=interpRs(t + self.t0, self.Ms),
+    #                             a=self.sol_ast.a0, verbose=False,
+    #                             files=[mw, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #         else:
+    #             xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+    #                          Lstar=interpLbol(t + self.t0, self.Ms),
+    #                          Rstar=interpRs(t + self.t0, self.Ms),
+    #                          a=self.sol_ast.a0, verbose=False, Tdust=Temp,
+    #                          files=[mw, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #         pop.append(xj)
+    #     if return_levels:
+    #         return tab_E[:, 0], np.array(pop)
+    #     else:
+    #         return np.array(flux)
+    #
+    # def calcul_flux_thick_JWST(self, jykms: bool = False, dpc: np.float64 = 50,
+    #                            molecule: str = "oh2olamda",
+    #                            n_temp_ech=-1, return_frequency: bool = False,
+    #                            tau_dust=1e-3, edge_on: bool = False,
+    #                            lambda_max_micron: np.float64 = 20, return_tau: bool = False,
+    #                            return_Tex: bool = False, lte: bool = False,
+    #                            tmin: np.float64 = 0.5 * Myr, radex: bool = True):
+    #     if radex:
+    #         init_source(molecule)
+    #     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+    #     d: np.float64 = dpc * dpc * pc * pc
+    #     Delta_v: np.float64 = 20 * 1e-3 * C_L * C_L / C_t
+    #     mw0, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+    #     # conversion to code units
+    #     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+    #     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+    #     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+    #     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+    #
+    #     freq_min = c / (lambda_max_micron * 1e-6 * C_L)
+    #
+    #     # total gaseous water mass as function of time
+    #     if radex:
+    #         width_v = source[molecule + "_width_v"]
+    #     else:
+    #         width_v = 20e-3 * C_L / C_t
+    #     v = np.linspace(-2 * width_v, 2 * width_v, 10)  # m/sflux = []
+    #     # Sview: np.float64 = Pi * (self.r.max() ** 2 - self.r.min() ** 2)
+    #     Sview: np.float64 = Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)
+    #     C_flux_final = 1.
+    #     if jykms:
+    #         C_flux_final *= (np.double(1e26)
+    #                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                             * (tab_trens[:, 4] * C_t)))
+    #     flux = []
+    #     tau = []
+    #     Tex = []
+    #     imin = np.argwhere(self.tps_mf > tmin)[0, 0]
+    #     Mw = trapezoid(2. * Pi * self.r
+    #                    * np.array(self.mass_fractions)[:, 0]
+    #                    * self.interp_sigma(self.tps_mf), self.r)
+    #     if n_temp_ech == 0:
+    #         imax = imin + np.argmax(Mw[imin:])
+    #         sig = self.interp_sigma(self.tps_mf[imax])
+    #         mw = Mw[imax]
+    #         Ncol = np.max(sig / (18 * mp * self.Hz(t=self.tps_mf[imax])))
+    #         if lte:
+    #             Ncol *= 1e50
+    #         t = self.tps_mf[imax]
+    #         Temp = T(r=self.sol_ast.a0, t=self.tps_mf[imax] + self.t0, Ms=self.Ms)
+    #         iwmax = np.argmax(self.mass_fractions[imax][0] * sig)
+    #         sig_w_max = self.mass_fractions[imax][0, iwmax] * sig[iwmax]
+    #
+    #         if np.any(self.mass_fractions[imax][0, :iwmax]
+    #                   * sig[:iwmax] < sig_w_max * 1e-3):
+    #             imin_w_in = np.argwhere(self.mass_fractions[imax][0, :iwmax]
+    #                                     * sig[:iwmax] < sig_w_max * 1e-3)[-1, 0]
+    #         else:
+    #             imin_w_in = 0
+    #         if np.any(self.mass_fractions[imax][0, iwmax:]
+    #                   * sig[iwmax:] < sig_w_max * 1e-3):
+    #             imin_w_out = (iwmax +
+    #                           np.argwhere(self.mass_fractions[imax][0, iwmax:]
+    #                                       * sig[iwmax:] < sig_w_max * 1e-3)[0, 0])
+    #         else:
+    #             imin_w_out = len(self.x) - 1
+    #         if edge_on:
+    #             Sview = 4 * trapezoid(self.Hz(t=t)[imin_w_in: imin_w_out], self.r[imin_w_in:imin_w_out])
+    #         else:
+    #             Sview = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #         Nemit_surf = mw / (18 * mp * Sview)
+    #         print("t=", t, "S/Sbelt=", Sview / (Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)))
+    #         Rstar = interpRs(t + self.t0, self.Ms)
+    #
+    #         print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+    #
+    #         if lte:
+    #             xj = get_popLTE(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+    #                             Lstar=interpLbol(t + self.t0, self.Ms),
+    #                             Rstar=interpRs(t + self.t0, self.Ms),
+    #                             a=self.sol_ast.a0, verbose=False,
+    #                             files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #         elif radex:
+    #             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #                                                       T=(interpLbol(t + self.t0, self.Ms)
+    #                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #                                          * (Rstar ** 2) / ((self.sol_ast.a0) ** 2))
+    #             collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+    #
+    #             source[molecule].update_parameters(
+    #                 N=Nemit_surf * C_L * C_L,
+    #                 Tkin=np.max([Temp, 200]),
+    #                 collider_densities=collider_densities,
+    #                 ext_background=ext_background,
+    #                 T_dust=Temp,
+    #                 tau_dust=tau_dust,
+    #             )
+    #             source[molecule].solve_radiative_transfer()
+    #             xj = source[molecule].level_pop
+    #         else:
+    #             xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+    #                          Lstar=interpLbol(t + self.t0, self.Ms),
+    #                          Rstar=interpRs(t + self.t0, self.Ms),
+    #                          a=self.sol_ast.a0, verbose=False, Tdust=Temp,
+    #                          files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #         flux.append(C_flux_final
+    #                     * 2 * h * Sview
+    #                     * (tab_trens[:, 4] ** 4) * ((Delta_v / c) / (1. - Delta_v / c)
+    #                                                 * xj[np.int64(tab_trens[:, 1]) - 1]
+    #                                                 / (c * c * d * d
+    #                                                    * (tab_E[np.int64(tab_trens[:, 2]) - 1, 2]
+    #                                                       * xj[np.int64(tab_trens[:, 2]) - 1]
+    #                                                       / tab_E[np.int64(tab_trens[:, 1]) - 1, 2]
+    #                                                       - xj[np.int64(tab_trens[:, 1]) - 1]))))
+    #         if return_tau:
+    #             tau.append(np.zeros_like(flux[-1]))
+    #         if return_Tex:
+    #             Tex.append(np.zeros_like(flux[-1]))
+    #         # freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #         # flux_loc = np.zeros_like(freqs)
+    #         # for i in range(len(flux_loc)):
+    #         #     nu = freqs[i] * (1 - v / 299792458)
+    #         #     flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #         #                             nu=nu, solid_angle= S / (dpc * dpc * pc * pc)), nu)
+    #         # flux.append(flux_loc)
+    #     else:
+    #         times = np.linspace(tmin, self.tps_mf[-1], n_temp_ech)
+    #         for t in times:
+    #             it: int = np.argwhere(self.tps_mf[-1] < t)[-1, 0]
+    #             sig = self.interp_sigma(self.tps_mf[it])
+    #             mw = Mw[it]
+    #             Ncol = np.max(sig / (18 * mp * self.Hz(t=self.tps_mf[it])))
+    #             t = self.tps_mf[it] + self.t0
+    #             if lte:
+    #                 Ncol *= 1e50
+    #             Temp = T(r=self.sol_ast.a0, t=self.tps_mf[it] + self.t0, Ms=self.Ms)
+    #             iwmax = np.argmax(self.mass_fractions[it][0] * sig)
+    #             sig_w_max = self.mass_fractions[it][0, iwmax] * sig[iwmax]
+    #
+    #             if np.any(self.mass_fractions[it][0, :iwmax]
+    #                       * sig[:iwmax] < sig_w_max * 1e-3):
+    #                 imin_w_in = np.argwhere(self.mass_fractions[it][0, :iwmax]
+    #                                         * sig[:iwmax] < sig_w_max * 1e-3)[-1, 0]
+    #             else:
+    #                 imin_w_in = 0
+    #             if np.any(self.mass_fractions[it][0, iwmax:]
+    #                       * sig[iwmax:] < sig_w_max * 1e-3):
+    #                 imin_w_out = (iwmax +
+    #                               np.argwhere(self.mass_fractions[it][0, iwmax:]
+    #                                           * sig[iwmax:] < sig_w_max * 1e-3)[0, 0])
+    #             else:
+    #                 imin_w_out = len(self.x) - 1
+    #             if edge_on:
+    #                 S = 4 * trapezoid(self.Hz(t=t)[imin_w_in: imin_w_out], self.r[imin_w_in:imin_w_out])
+    #             else:
+    #                 S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #             Nemit_surf = mw / (18 * mp * S)
+    #             print("t=", t, "S/Sbelt=", S / (Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)))
+    #             Rstar = interpRs(t + self.t0, self.Ms)
+    #             if radex:
+    #                 ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #                                                           T=(interpLbol(t + self.t0, self.Ms)
+    #                                                              / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #                                              * (Rstar ** 2) / ((self.sol_ast.a0) ** 2))
+    #                 collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+    #                 print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+    #
+    #                 source[molecule].update_parameters(
+    #                     N=Nemit_surf * C_L * C_L,
+    #                     Tkin=np.max([Temp, 200]),
+    #                     collider_densities=collider_densities,
+    #                     ext_background=ext_background,
+    #                     T_dust=Temp,
+    #                     tau_dust=tau_dust,
+    #                 )
+    #                 source[molecule].solve_radiative_transfer()
+    #                 flux.append(source[molecule].frequency_integrated_emission(
+    #                     output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)))
+    #                 # freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #                 # flux_loc = np.zeros_like(freqs)
+    #                 # for i in range(len(flux_loc)):
+    #                 #     nu = freqs[i] * (1 - v / 299792458)
+    #                 #     flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #                 #                             nu=nu, solid_angle= S / (dpc * dpc * pc * pc)), nu)
+    #                 # flux.append(flux_loc)
+    #                 if return_tau:
+    #                     tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+    #                 if return_Tex:
+    #                     Tex.append(source[molecule].Tex)
+    #             else:
+    #                 if lte:
+    #                     xj = get_popLTE(molecule=molecule, n_col_partner=Nemit_surf, Tcin=Temp,
+    #                                     Lstar=interpLbol(t + self.t0, self.Ms),
+    #                                     Rstar=interpRs(t + self.t0, self.Ms),
+    #                                     a=self.sol_ast.a0, verbose=False,
+    #                                     files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #                 else:
+    #                     xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+    #                                  Lstar=interpLbol(t + self.t0, self.Ms),
+    #                                  Rstar=interpRs(t + self.t0, self.Ms),
+    #                                  a=self.sol_ast.a0, verbose=False, Tdust=Temp,
+    #                                  files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+    #                 flux.append(C_flux_final
+    #                             * 2 * h * Sview
+    #                             * (tab_trens[:, 4] ** 4) * ((Delta_v / c) / (1. - Delta_v / c)
+    #                                                         * xj[np.int64(tab_trens[:, 1]) - 1]
+    #                                                         / (c * c * d * d
+    #                                                            * (tab_E[np.int64(tab_trens[:, 2]) - 1, 2]
+    #                                                               * xj[np.int64(tab_trens[:, 2]) - 1]
+    #                                                               / tab_E[np.int64(tab_trens[:, 1]) - 1, 2]
+    #                                                               - xj[np.int64(tab_trens[:, 1]) - 1]))))
+    #     if return_frequency:
+    #         freqs = tab_trens[:, 4] * C_t
+    #         if return_tau and return_Tex:
+    #             return freqs, np.array(flux) * C_flux_final, tau, Tex
+    #         elif return_tau:
+    #             return freqs, np.array(flux) * C_flux_final, tau
+    #         elif return_Tex:
+    #             return freqs, np.array(flux) * C_flux_final, Tex
+    #         else:
+    #             return freqs, np.array(flux) * C_flux_final
+    #     else:
+    #         if return_tau and return_Tex:
+    #             return np.array(flux) * C_flux_final, tau, Tex
+    #         elif return_tau:
+    #             return np.array(flux) * C_flux_final, tau
+    #         elif return_Tex:
+    #             return np.array(flux) * C_flux_final, Tex
+    #         else:
+    #             return np.array(flux) * C_flux_final
+    #
+    # def calcul_flux_radex_JWST(self, jykms: bool = False, dpc: np.float64 = 50,
+    #                            molecule: str = "oh2olamda",
+    #                            n_ech=-1, return_frequency: bool = False,
+    #                            tau_dust=1e-3, edge_on: bool = False,
+    #                            lambda_max_micron: np.float64 = 20, return_tau: bool = False,
+    #                            return_Tex: bool = False, lte: bool = False, return_full: bool = False,
+    #                            tmin: np.float64 = 0.5 * Myr):
+    #     init_source(molecule,
+    #                 width_v=(np.sqrt(G * Ms / self.sol_ast.a0)) * C_t / C_L)
+    #     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+    #     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+    #     # conversion to code units
+    #     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+    #     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+    #     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+    #     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+    #
+    #     freq_min = c / (lambda_max_micron * 1e-6 * C_L)
+    #
+    #     # total gaseous water mass as function of time
+    #     width_v = source[molecule + "_width_v"]
+    #     v = np.linspace(-2 * width_v, 2 * width_v, 10)  # m/sflux = []
+    #     # Sview: np.float64 = Pi * (self.r.max() ** 2 - self.r.min() ** 2)
+    #     Sview: np.float64 = Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)
+    #     C_flux_final = 1.
+    #     if jykms:
+    #         C_flux_final *= (np.double(1e26)
+    #                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                             * (tab_trens[:, 4] * C_t)))
+    #     tau = []
+    #     Tex = []
+    #     flux = []
+    #     Tkin = []
+    #     Mws = []
+    #     times_calc = []
+    #     omega = []
+    #     imin = np.argwhere(self.tps_mf > tmin)[0, 0]
+    #     Mw = trapezoid(2. * Pi * self.r
+    #                    * np.array(self.mass_fractions)[:, 0]
+    #                    * self.interp_sigma(self.tps_mf), self.r)
+    #     if n_ech == 0:
+    #         imax = imin + np.argmax(Mw[imin:])
+    #         t: np.float64 = self.tps_mf[imax]
+    #         sig = self.interp_sigma(self.tps_mf[imax])
+    #         mw = Mw[imax]
+    #         print("mw=", mw)
+    #         Ncol = np.max(sig / (18 * mp * self.Hz(t=self.tps_mf[imax])))
+    #         if lte:
+    #             Ncol *= 1e50
+    #         Temp = T(r=self.sol_ast.a0, t=self.tps_mf[imax] + self.t0, Ms=self.Ms)
+    #         iwmax = np.argmax(self.mass_fractions[imax][0] * sig)
+    #         sig_w_max = self.mass_fractions[imax][0, iwmax] * sig[iwmax]
+    #
+    #         if np.any(self.mass_fractions[imax][0, :iwmax]
+    #                   * sig[:iwmax] < sig_w_max * 1e-3):
+    #             imin_w_in = np.argwhere(self.mass_fractions[imax][0, :iwmax]
+    #                                     * sig[:iwmax] < sig_w_max * 1e-3)[-1, 0]
+    #         else:
+    #             imin_w_in = 0
+    #         if np.any(self.mass_fractions[imax][0, iwmax:]
+    #                   * sig[iwmax:] < sig_w_max * 1e-3):
+    #             imin_w_out = (iwmax +
+    #                           np.argwhere(self.mass_fractions[imax][0, iwmax:]
+    #                                       * sig[iwmax:] < sig_w_max * 1e-3)[0, 0])
+    #         else:
+    #             imin_w_out = len(self.x) - 1
+    #         # gr=g.loglog(self.r, self.mass_fractions[::max(1, len(self.tps_mf) // n_ech)][i][0] * sig, show=False)
+    #         # gr.line([self.r.min(), self.r.max()], [sig_w_max * 1e-10, sig_w_max * 1e-10], lw=2, color="k")
+    #         # gr.line([self.r[imin_w_out], self.r[imin_w_out]], [sig_w_max * 1e-1000, sig_w_max * 1e1], lw=2, color="r")
+    #         # gr.show()
+    #         # S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #         if edge_on:
+    #             S = 4 * trapezoid(self.Hz(t=t)[imin_w_in: imin_w_out], self.r[imin_w_in:imin_w_out])
+    #         else:
+    #             S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #         Nemit_surf = mw / (18 * mp * S)
+    #         print("t=", t, "S/Sbelt=", S / (Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)))
+    #         Rstar = interpRs(t + self.t0, self.Ms)
+    #         ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #                                                   T=(interpLbol(t + self.t0, self.Ms)
+    #                                                      / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #                                      * (Rstar ** 2) / ((self.sol_ast.a0) ** 2)
+    #                                      + helpers.generate_CMB_background(z=0)(nu))
+    #         collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+    #         print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+    #
+    #         source[molecule].update_parameters(
+    #             N=Nemit_surf * C_L * C_L,
+    #             Tkin=np.max([Temp, 200]),
+    #             collider_densities=collider_densities,
+    #             ext_background=ext_background,
+    #             T_dust=Temp,
+    #             tau_dust=tau_dust,
+    #         )
+    #         source[molecule].solve_radiative_transfer()
+    #         # flux.append(source[molecule].frequency_integrated_emission(
+    #         #     output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)))
+    #         freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #         flux_loc = np.zeros_like(freqs)
+    #         for i in range(len(flux_loc)):
+    #             nu = freqs[i] * (1 - v / 299792458)
+    #             flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #                                                                nu=nu, solid_angle=S / (dpc * dpc * pc * pc)), nu)
+    #         flux.append(flux_loc)
+    #         if return_tau:
+    #             tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+    #         if return_Tex:
+    #             Tex.append(source[molecule].Tex / Temp)
+    #         if return_full:
+    #             Tkin.append(Temp)
+    #             print("mw=", mw)
+    #             Mws.append(mw)
+    #             times_calc.append(t)
+    #             omega.append(S / (dpc * dpc * pc * pc))
+    #
+    #     else:
+    #         times = np.linspace(tmin, self.tps_mf[-1], n_ech)
+    #         for t in times:
+    #             it: int = np.argwhere(self.tps_mf < t)[-1, 0]
+    #             sig = self.interp_sigma(self.tps_mf[it])
+    #             mw = Mw[it]
+    #             Ncol = np.max(sig / (18 * mp * self.Hz(t=self.tps_mf[it])))
+    #             if lte:
+    #                 Ncol *= 1e50
+    #             Temp = T(r=self.sol_ast.a0, t=self.tps_mf[it] + self.t0, Ms=self.Ms)
+    #             iwmax = np.argmax(self.mass_fractions[it][0] * sig)
+    #             sig_w_max = self.mass_fractions[it][0, iwmax] * sig[iwmax]
+    #
+    #             if np.any(self.mass_fractions[it][0, :iwmax]
+    #                       * sig[:iwmax] < sig_w_max * 1e-3):
+    #                 imin_w_in = np.argwhere(self.mass_fractions[it][0, :iwmax]
+    #                                         * sig[:iwmax] < sig_w_max * 1e-3)[-1, 0]
+    #             else:
+    #                 imin_w_in = 0
+    #             if np.any(self.mass_fractions[it][0, iwmax:]
+    #                       * sig[iwmax:] < sig_w_max * 1e-3):
+    #                 imin_w_out = (iwmax +
+    #                               np.argwhere(self.mass_fractions[it][0, iwmax:]
+    #                                           * sig[iwmax:] < sig_w_max * 1e-3)[0, 0])
+    #             else:
+    #                 imin_w_out = len(self.x) - 1
+    #             # gr=g.loglog(self.r, self.mass_fractions[::max(1, len(self.tps_mf) // n_ech)][i][0] * sig, show=False)
+    #             # gr.line([self.r.min(), self.r.max()], [sig_w_max * 1e-10, sig_w_max * 1e-10], lw=2, color="k")
+    #             # gr.line([self.r[imin_w_out], self.r[imin_w_out]], [sig_w_max * 1e-1000, sig_w_max * 1e1], lw=2, color="r")
+    #             # gr.show()
+    #             # S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #             if edge_on:
+    #                 S = 4 * trapezoid(self.Hz(t=t)[imin_w_in: imin_w_out], self.r[imin_w_in:imin_w_out])
+    #             else:
+    #                 S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #             Nemit_surf = mw / (18 * mp * S)
+    #             print("t=", t, "S/Sbelt=", S / (Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)))
+    #             Rstar = interpRs(t + self.t0, self.Ms)
+    #             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #                                                       T=(interpLbol(t + self.t0, self.Ms)
+    #                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #                                          * (Rstar ** 2) / ((self.sol_ast.a0) ** 2)
+    #                                          + helpers.generate_CMB_background(z=0)(nu))
+    #             collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+    #             print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+    #
+    #             source[molecule].update_parameters(
+    #                 N=Nemit_surf * C_L * C_L,
+    #                 Tkin=np.max([Temp, 200]),
+    #                 collider_densities=collider_densities,
+    #                 ext_background=ext_background,
+    #                 T_dust=Temp,
+    #                 tau_dust=tau_dust,
+    #             )
+    #             source[molecule].solve_radiative_transfer()
+    #             # flux.append(source[molecule].frequency_integrated_emission(
+    #             #     output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)))
+    #             freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #             flux_loc = np.zeros_like(freqs)
+    #             for i in range(len(flux_loc)):
+    #                 nu = freqs[i] * (1 - v / 299792458)
+    #                 flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #                                                                    nu=nu, solid_angle=S / (dpc * dpc * pc * pc)),
+    #                                          nu)
+    #             flux.append(flux_loc)
+    #             if return_tau:
+    #                 tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+    #             if return_Tex:
+    #                 Tex.append(source[molecule].Tex / Temp)
+    #             if return_full:
+    #                 Tkin.append(Temp)
+    #                 Mws.append(mw)
+    #                 times_calc.append(t)
+    #                 omega.append(S / (dpc * dpc * pc * pc))
+    #     if return_full:
+    #         freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #
+    #         return freqs, np.array(flux) * C_flux_final, tau, Tex, Tkin, times_calc, Mws, omega
+    #     elif return_frequency:
+    #         freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+    #         if return_tau and return_Tex:
+    #             return freqs, np.array(flux) * C_flux_final, tau, Tex
+    #         elif return_tau:
+    #             return freqs, np.array(flux) * C_flux_final, tau
+    #         elif return_Tex:
+    #             return freqs, np.array(flux) * C_flux_final, Tex
+    #         else:
+    #             return freqs, np.array(flux) * C_flux_final
+    #     else:
+    #         if return_tau and return_Tex:
+    #             return np.array(flux) * C_flux_final, tau, Tex
+    #         elif return_tau:
+    #             return np.array(flux) * C_flux_final, tau
+    #         elif return_Tex:
+    #             return np.array(flux) * C_flux_final, Tex
+    #         else:
+    #             return np.array(flux) * C_flux_final
+    #
+    # def calcul_flux_radex_ALMA(self, jykms: bool = True, dpc: np.float64 = 50,
+    #                            molecule: str = "oh2olamda",
+    #                            n_ech=-1, return_frequency: bool = False,
+    #                            tau_dust=1e-3, edge_on: bool = False, return_tau: bool = False,
+    #                            return_Tex: bool = False, lte: bool = False, return_full: bool = False,
+    #                            tmin: np.float64 = 0.5 * Myr):
+    #     init_source(molecule,
+    #                 width_v=(np.sqrt(G * Ms / self.sol_ast.a0)) * C_t / C_L)
+    #     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+    #     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+    #     # conversion to code units
+    #     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+    #     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+    #     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+    #     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+    #
+    #     # total gaseous water mass as function of time
+    #     width_v = source[molecule + "_width_v"]
+    #     v = np.linspace(-2 * width_v, 2 * width_v, 10)  # m/sflux = []
+    #     # Sview: np.float64 = Pi * (self.r.max() ** 2 - self.r.min() ** 2)
+    #     Sview: np.float64 = Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)
+    #     C_flux_final = 1.
+    #     if jykms:
+    #         C_flux_final *= (np.double(1e26)
+    #                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                             * (tab_trens[:, 4] * C_t)))
+    #     tau = []
+    #     Tex = []
+    #     flux = []
+    #     Tkin = []
+    #     Mws = []
+    #     times_calc = []
+    #     omega = []
+    #     imin = np.argwhere(self.tps_mf > tmin)[0, 0]
+    #     Mw = trapezoid(2. * Pi * self.r
+    #                    * np.array(self.mass_fractions)[:, 0]
+    #                    * self.interp_sigma(self.tps_mf), self.r)
+    #     if n_ech == 0:
+    #         imax = imin + np.argmax(Mw[imin:])
+    #         t: np.float64 = self.tps_mf[imax]
+    #         sig = self.interp_sigma(self.tps_mf[imax])
+    #         mw = Mw[imax]
+    #         print("mw=", mw)
+    #         Ncol = np.max(sig / (18 * mp * self.Hz(t=self.tps_mf[imax])))
+    #         if lte:
+    #             Ncol *= 1e50
+    #         Temp = T(r=self.sol_ast.a0, t=self.tps_mf[imax] + self.t0, Ms=self.Ms)
+    #         iwmax = np.argmax(self.mass_fractions[imax][0] * sig)
+    #         sig_w_max = self.mass_fractions[imax][0, iwmax] * sig[iwmax]
+    #
+    #         if np.any(self.mass_fractions[imax][0, :iwmax]
+    #                   * sig[:iwmax] < sig_w_max * 1e-3):
+    #             imin_w_in = np.argwhere(self.mass_fractions[imax][0, :iwmax]
+    #                                     * sig[:iwmax] < sig_w_max * 1e-3)[-1, 0]
+    #         else:
+    #             imin_w_in = 0
+    #         if np.any(self.mass_fractions[imax][0, iwmax:]
+    #                   * sig[iwmax:] < sig_w_max * 1e-3):
+    #             imin_w_out = (iwmax +
+    #                           np.argwhere(self.mass_fractions[imax][0, iwmax:]
+    #                                       * sig[iwmax:] < sig_w_max * 1e-3)[0, 0])
+    #         else:
+    #             imin_w_out = len(self.x) - 1
+    #         # gr=g.loglog(self.r, self.mass_fractions[::max(1, len(self.tps_mf) // n_ech)][i][0] * sig, show=False)
+    #         # gr.line([self.r.min(), self.r.max()], [sig_w_max * 1e-10, sig_w_max * 1e-10], lw=2, color="k")
+    #         # gr.line([self.r[imin_w_out], self.r[imin_w_out]], [sig_w_max * 1e-1000, sig_w_max * 1e1], lw=2, color="r")
+    #         # gr.show()
+    #         # S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #         if edge_on:
+    #             S = 4 * trapezoid(self.Hz(t=t)[imin_w_in: imin_w_out], self.r[imin_w_in:imin_w_out])
+    #         else:
+    #             S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #         Nemit_surf = mw / (18 * mp * S)
+    #         print("t=", t, "S/Sbelt=", S / (Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)))
+    #         Rstar = interpRs(t + self.t0, self.Ms)
+    #         ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #                                                   T=(interpLbol(t + self.t0, self.Ms)
+    #                                                      / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #                                      * (Rstar ** 2) / ((self.sol_ast.a0) ** 2)
+    #                                      + helpers.generate_CMB_background(z=0)(nu))
+    #         collider_densities = {"H": Ncol * (C_L * C_L * C_L)}
+    #         print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+    #
+    #         source[molecule].update_parameters(
+    #             N=Nemit_surf * C_L * C_L,
+    #             Tkin=np.max([Temp, 200]),
+    #             collider_densities=collider_densities,
+    #             ext_background=ext_background,
+    #             T_dust=Temp,
+    #             tau_dust=tau_dust,
+    #         )
+    #         source[molecule].solve_radiative_transfer()
+    #         # flux.append(source[molecule].frequency_integrated_emission(
+    #         #    output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)))
+    #
+    #         freqs = source[molecule].emitting_molecule.nu0
+    #         flux_loc = np.zeros_like(freqs)
+    #         for i in range(len(flux_loc)):
+    #             nu = freqs[i] * (1 - v / 299792458)
+    #             flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #                                                                nu=nu, solid_angle=S / (dpc * dpc * pc * pc)), nu)
+    #         flux.append(flux_loc)
+    #         if return_tau:
+    #             tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+    #         if return_Tex:
+    #             Tex.append(source[molecule].Tex / Temp)
+    #         if return_full:
+    #             Tkin.append(Temp)
+    #             Mws.append(mw)
+    #             print("mw=", mw)
+    #             times_calc.append(t)
+    #             omega.append(S / (dpc * dpc * pc * pc))
+    #
+    #     else:
+    #         times = np.linspace(tmin, self.tps_mf[-1], n_ech)
+    #         for t in times:
+    #             it: int = np.argwhere(self.tps_mf < t)[-1, 0]
+    #             sig = self.interp_sigma(self.tps_mf[it])
+    #             mw = Mw[it]
+    #             Ncol = np.max(sig / (18 * mp * self.Hz(t=self.tps_mf[it])))
+    #             if lte:
+    #                 Ncol *= 1e50
+    #             Temp = T(r=self.sol_ast.a0, t=self.tps_mf[it] + self.t0, Ms=self.Ms)
+    #             iwmax = np.argmax(self.mass_fractions[it][0] * sig)
+    #             sig_w_max = self.mass_fractions[it][0, iwmax] * sig[iwmax]
+    #
+    #             if np.any(self.mass_fractions[it][0, :iwmax]
+    #                       * sig[:iwmax] < sig_w_max * 1e-3):
+    #                 imin_w_in = np.argwhere(self.mass_fractions[it][0, :iwmax]
+    #                                         * sig[:iwmax] < sig_w_max * 1e-3)[-1, 0]
+    #             else:
+    #                 imin_w_in = 0
+    #             if np.any(self.mass_fractions[it][0, iwmax:]
+    #                       * sig[iwmax:] < sig_w_max * 1e-3):
+    #                 imin_w_out = (iwmax +
+    #                               np.argwhere(self.mass_fractions[it][0, iwmax:]
+    #                                           * sig[iwmax:] < sig_w_max * 1e-3)[0, 0])
+    #             else:
+    #                 imin_w_out = len(self.x) - 1
+    #             # gr=g.loglog(self.r, self.mass_fractions[::max(1, len(self.tps_mf) // n_ech)][i][0] * sig, show=False)
+    #             # gr.line([self.r.min(), self.r.max()], [sig_w_max * 1e-10, sig_w_max * 1e-10], lw=2, color="k")
+    #             # gr.line([self.r[imin_w_out], self.r[imin_w_out]], [sig_w_max * 1e-1000, sig_w_max * 1e1], lw=2, color="r")
+    #             # gr.show()
+    #             # S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #             if edge_on:
+    #                 S = 4 * trapezoid(self.Hz(t=t)[imin_w_in: imin_w_out], self.r[imin_w_in:imin_w_out])
+    #             else:
+    #                 S = 2. * Pi * (self.r[imin_w_out] ** 2 - self.r[imin_w_in] ** 2)
+    #             Nemit_surf = mw / (18 * mp * S)
+    #             print("t=", t, "S/Sbelt=", S / (Pi * (self.sol_ast.r.max() ** 2 - self.sol_ast.r.min() ** 2)))
+    #             Rstar = interpRs(t + self.t0, self.Ms)
+    #             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+    #                                                       T=(interpLbol(t + self.t0, self.Ms)
+    #                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+    #                                          * (Rstar ** 2) / ((self.sol_ast.a0) ** 2)
+    #                                          + helpers.generate_CMB_background(z=0)(nu))
+    #             collider_densities = {"H": Ncol * (C_L * C_L * C_L)}
+    #             print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+    #
+    #             source[molecule].update_parameters(
+    #                 N=Nemit_surf * C_L * C_L,
+    #                 Tkin=np.max([Temp, 200]),
+    #                 collider_densities=collider_densities,
+    #                 ext_background=ext_background,
+    #                 T_dust=Temp,
+    #                 tau_dust=tau_dust,
+    #             )
+    #             source[molecule].solve_radiative_transfer()
+    #             # flux.append(source[molecule].frequency_integrated_emission(
+    #             #    output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)))
+    #             freqs = source[molecule].emitting_molecule.nu0
+    #             flux_loc = np.zeros_like(freqs)
+    #             for i in range(len(flux_loc)):
+    #                 nu = freqs[i] * (1 - v / 299792458)
+    #                 flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+    #                                                                    nu=nu, solid_angle=S / (dpc * dpc * pc * pc)),
+    #                                          nu)
+    #             flux.append(flux_loc)
+    #             if return_tau:
+    #                 tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+    #             if return_Tex:
+    #                 Tex.append(source[molecule].Tex / Temp)
+    #             if return_full:
+    #                 Tkin.append(Temp)
+    #                 Mws.append(mw)
+    #                 times_calc.append(t)
+    #                 omega.append(S / (dpc * dpc * pc * pc))
+    #     if return_full:
+    #         freqs = tab_trens[:, 4] * C_t
+    #         return freqs, np.array(flux) * C_flux_final, tau, Tex, Tkin, times_calc, Mws, omega
+    #     elif return_frequency:
+    #         freqs = tab_trens[:, 4] * C_t
+    #         if return_tau and return_Tex:
+    #             return freqs, np.array(flux) * C_flux_final, tau, Tex
+    #         elif return_tau:
+    #             return freqs, np.array(flux) * C_flux_final, tau
+    #         elif return_Tex:
+    #             return freqs, np.array(flux) * C_flux_final, Tex
+    #         else:
+    #             return freqs, np.array(flux) * C_flux_final
+    #     else:
+    #         if return_tau and return_Tex:
+    #             return np.array(flux) * C_flux_final, tau, Tex
+    #         elif return_tau:
+    #             return np.array(flux) * C_flux_final, tau
+    #         elif return_Tex:
+    #             return np.array(flux) * C_flux_final, Tex
+    #         else:
+    #             return np.array(flux) * C_flux_final
+    #
+    # def radmc_setupJWST(self, i: int, directory: str = None, size_grid: int = 200) -> None:
+    #     """
+    #     Generate the configuration file for radmc3d for the surface density at time self.tps[i]
+    #
+    #     Parameters
+    #     ----------
+    #     i: int
+    #         The index at which the surface density is plotted
+    #     directory : str, default=self.directory+'/'+i
+    #         The directory where the configuration are stored
+    #     size_grid : int, default=128
+    #         THe size of the spatial grid (the water surface density is interpolated on it)
+    #
+    #     Returns
+    #     -------
+    #     None
+    #
+    #     """
+    #     if directory is not None:
+    #         if not os.path.exists(directory):
+    #             os.mkdir(directory)
+    #         doss: str = directory
+    #     else:
+    #         if not os.path.exists(self.directory + "/" + str(i)):
+    #             os.mkdir(self.directory + "/" + str(i))
+    #         doss: str = self.directory + "/" + str(i)
+    #
+    #     nphot: int = 100000  # Monte Carlo parameters
+    #     # !! WARNING !!
+    #     # Radmc need cgs units
+    #     # !! !!
+    #
+    #     # Grid parameters
+    #
+    #     nr: int = size_grid
+    #     nlev_rin: int = 12  # Grid refinement at the inner edge: nr of cycles
+    #     nspan_rin: int = 3  # Grid refinement at the inner edge: nr of cells each cycle
+    #     ntheta: int = 32
+    #     nphi: int = 1
+    #     rin: np.float64 = (self.r.min() / C_L) * 1e2
+    #     rout: np.float64 = (self.r.max() / C_L) * 1e2
+    #     thetaup: np.float64 = np.pi * 0.5 - 1.
+    #
+    #     # Disk parameters
+    #
+    #     pstar: np.ndarray[np.float64] = np.array([0., 0., 0.])
+    #
+    #     # Make the coordinates
+    #
+    #     # ri: np.ndarray[np.float64] = self.r[::max(1, len(self.r) // size_grid)]
+    #     ri: np.ndarray[np.float64] = np.geomspace(rin, rout, nr + 1)
+    #     # ri: np.ndarray[np.float64] = grid_refine_inner_edge(ri, nlev_rin, nspan_rin)  # Refinement at inner edge
+    #
+    #     thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+    #     phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+    #     rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+    #     nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+    #     thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+    #     phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+    #
+    #     # Make the grid
+    #
+    #     qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+    #     rr: np.ndarray[np.float64] = qq[0]
+    #     tt: np.ndarray[np.float64] = qq[1]
+    #     zr: np.ndarray[np.float64] = Pi / 2. - qq[1]
+    #
+    #     # Make the temperature model
+    #     temp: np.ndarray[np.float64] = T((rr * 1e-2) * C_L, t=self.tps_mf[i], Ms=self.Ms)
+    #
+    #     # Make the density model
+    #     # g.loglog(rr.flatten(), temp.flatten(), ".")
+    #     h_h2o: np.ndarray[np.float64] = np.sqrt(kb * temp * (rr * rr * rr * 1e-6 * C_L * C_L * C_L)
+    #                                             / (18. * mp * G * self.Ms)) * 1e2 / C_L
+    #     # g.loglog([self.r, rr.flatten()], [ self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]],  np.interp(rr, self.r, self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]]).flatten()], ".")
+    #     sigma_H2O: np.ndarray[np.float64] = np.interp(rr, self.r * 1e2 / C_L,
+    #                                                   self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][
+    #                                                       self.idx_mu_ast[0]]) * (C_L * C_L / C_M) * (1e3 / (1e4))
+    #     rhog_h2o: np.ndarray[np.float64] = (sigma_H2O / (np.sqrt(2. * np.pi) * h_h2o)
+    #                                         ) * np.exp(-zr * zr * rr * rr / (h_h2o * h_h2o * 2.))
+    #
+    #     # Make the velocity model
+    #
+    #     vr: np.ndarray[np.float64] = np.zeros_like(rr)
+    #     vtheta: np.ndarray[np.float64] = np.zeros_like(rr)
+    #     vphi: np.ndarray[np.float64] = np.sqrt(G * self.Ms / (rr * C_L * 1e-2)) * (C_t / C_L) * 1e2
+    #     vturb: np.ndarray[np.float64] = 0.001 * vphi
+    #
+    #     # Write the wavelength_micron.inp file
+    #
+    #     lam1 = 0.1e0
+    #     lam2 = 7.0e0
+    #     lam3 = 25.e0
+    #     lam4 = 1.0e4
+    #     n12 = 60
+    #     n23 = 200
+    #     n34 = 30
+    #     lam12 = np.logspace(np.log10(lam1), np.log10(lam2), n12, endpoint=False)
+    #     lam23 = np.logspace(np.log10(lam2), np.log10(lam3), n23, endpoint=False)
+    #     lam34 = np.logspace(np.log10(lam3), np.log10(lam4), n34, endpoint=True)
+    #     lam = np.concatenate([lam12, lam23, lam34])
+    #
+    #     nlam: int = lam.size
+    #
+    #     # Write the wavelength file
+    #
+    #     with open(doss + '/wavelength_micron.inp', 'w+') as f:
+    #         f.write('%d\n' % (nlam))
+    #         for value in lam:
+    #             f.write('%13.6e\n' % (value))
+    #
+    #     # NB All datas needs to be saved in cgs system....
+    #
+    #     # Write the stars.inp file
+    #
+    #     with open(doss + '/stars.inp', 'w+') as f:
+    #         f.write('2\n')
+    #         f.write('1 %d\n\n' % nlam)
+    #         f.write('%13.6e %13.6e %13.6e %13.6e %13.6e\n\n' % (interpRs(self.tps_mf[i] + self.t0, self.Ms) * 1e2 / C_L,
+    #                                                             self.Ms * 1e3 / C_M,
+    #                                                             pstar[0], pstar[1], pstar[2]))
+    #         for value in lam:
+    #             f.write('%13.6e\n' % value)
+    #         f.write('\n%13.6e\n' % (- ((interpLbol(self.tps_mf[i] + self.t0, self.Ms)
+    #                                     / (4. * Pi * (interpRs(self.tps_mf[i] + self.t0, self.Ms) ** 2) * sigma))) ** (
+    #                                               1. / 4.)))
+    #
+    #     # Write the grid file
+    #
+    #     with open(doss + '/amr_grid.inp', 'w+') as f:
+    #         f.write('1\n')  # iformat
+    #         f.write('0\n')  # AMR grid style  (0=regular grid, no AMR)
+    #         f.write('100\n')  # Coordinate system: spherical
+    #         f.write('0\n')  # gridinfo
+    #         f.write('1 1 0\n')  # Include r,theta coordinates
+    #         f.write('%d %d %d\n' % (nr, ntheta, 1))  # Size of grid
+    #         for value in ri:
+    #             f.write('%13.6e\n' % value)  # X coordinates (cell walls)
+    #         for value in thetai:
+    #             f.write('%13.6e\n' % value)  # Y coordinates (cell walls)
+    #         for value in phii:
+    #             f.write('%13.6e\n' % value)  # Z coordinates (cell walls)
+    #
+    #     # Write the density file
+    #
+    #     with open(doss + '/dust_density.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         f.write('1\n')  # Nr of dust species
+    #         data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #     # with open(doss + '/dust_density.inp', 'w+') as f:
+    #     #     f.write('1\n')  # Format number
+    #     #     f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #     #     f.write('0\n')  # Nr of dust species
+    #     #     # data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #     #     # data.tofile(f, sep='\n', format="%13.6e")
+    #     #     # f.write('\n')
+    #
+    #     # Dust opacity control file
+    #
+    #     with open(doss + '/dustopac.inp', 'w+') as f:
+    #         f.write('2               Format number of this file\n')
+    #         f.write('1               Nr of dust species\n')
+    #         f.write('============================================================================\n')
+    #         f.write('1               Way in which this dust species is read\n')
+    #         f.write('0               0=Thermal grain\n')
+    #         f.write('silicate        Extension of name of dustkappa_***.inp file\n')
+    #         f.write('----------------------------------------------------------------------------\n')
+    #
+    #     # with open(doss + '/dustopac.inp', 'w+') as f:
+    #     #     f.write('2               Format number of this file\n')
+    #     #     f.write('0               Nr of dust species\n')
+    #     #     f.write('============================================================================\n')
+    #     #     f.write('----------------------------------------------------------------------------\n')
+    #
+    #     # Write the molecule number density file.
+    #
+    #     mu_h2o = 18  # Mass of a H2O molecule in proton mass unity
+    #     nh2o = rhog_h2o / (mu_h2o * (mp * 1e3 / C_M))
+    #     print("test nh2o", nh2o.sum(), rhog_h2o.sum(), sigma_H2O.sum())
+    #     with open(doss + '/numberdens_ph2olamda.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         data = nh2o.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #     with open(doss + '/numberdens_oh2olamda.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         data = nh2o.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #
+    #     # Write the gas velocity field
+    #
+    #     with open(doss + '/gas_velocity.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         for iphi in range(nphi):
+    #             for itheta in range(ntheta):
+    #                 for ir in range(nr):
+    #                     f.write(
+    #                         '%13.6e %13.6e %13.6e\n' % (vr[ir, itheta, iphi],
+    #                                                     vtheta[ir, itheta, iphi],
+    #                                                     vphi[ir, itheta, iphi]))
+    #
+    #     # Write the temperature file
+    #
+    #     with open(doss + '/gas_temperature.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #
+    #     # Write the microturbulence file
+    #
+    #     with open(doss + '/microturbulence.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         data = vturb.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #
+    #     # Write the lines.inp control file
+    #
+    #     with open(doss + '/lines.inp', 'w') as f:
+    #         f.write('2\n')
+    #         f.write('2\n')
+    #         f.write('ph2olamda  leiden 0   0   0\n')
+    #         f.write('oh2olamda  leiden 0   0   0\n')
+    #
+    #     # Write the radmc3d.inp control file
+    #
+    #     with open(doss + '/radmc3d.inp', 'w+') as f:
+    #         f.write('nphot = %d\n' % nphot)
+    #         f.write('camera_incl_stars = 0\n')  # remove the central star flux
+    #         f.write('scattering_mode_max = 0\n')
+    #         f.write('iranfreqmode = 1\n')
+    #         # f.write('tgas_eq_tdust = 1\n')  # Use the dust temperature of dust species 1 as gas temperature
+    #
+    #     shutil.copyfile(data_radmc + "/molecule_ph2olamda.inp", doss + "/molecule_ph2olamda.inp")
+    #     shutil.copyfile(data_radmc + "/molecule_oh2olamda.inp", doss + "/molecule_oh2olamda.inp")
+    #     # shutil.copyfile(data_radmc + "/molecule_h2op.inp", doss + "/molecule_h2op.inp" )
+    #     # shutil.copyfile(data_radmc + "/partitionfunction_h2o.inp", doss + "/partitionfunction_h2o.inp" )
+    #     #shutil.copyfile(data_radmc + "/linelist_h2o.inp", doss + "/linelist_h2o.inp" )
+    #     shutil.copyfile(data_radmc + "/dustkappa_silicate.inp", doss + "/dustkappa_silicate.inp")
+    #
+    # def calc_flux_trans_radmcJWST(self, i: int, directory: str = None, size_grid: int = 200,
+    #                               incl: np.float64 = 0, phi: np.float64 = 59., dpc: np.float64 = 50,
+    #                               nb_trens: int = 1, id_molecule: int = 1,
+    #                               setup_radmc: bool = True) -> np.float64:
+    #     idx_i = -1
+    #     # if len(self.id_flux) > 0 and i in [t[0] for t in self.id_flux]:
+    #     #    idx_i = np.argwhere(np.array([t[0] for t in self.id_flux]) == i)[0, 0]
+    #
+    #     if directory is None:
+    #         if not os.path.exists(self.directory + "/" + str(i)):
+    #             os.mkdir(self.directory + "/" + str(i))
+    #         directory: str = self.directory + "/" + str(i)
+    #
+    #     if setup_radmc:
+    #         self.radmc_setupJWST(i=i, directory=directory, size_grid=size_grid)
+    #         thetaup: np.float64 = Pi * 0.5 - 1.
+    #         ntheta: int = 32
+    #         nphi: int = 1
+    #         ri: np.ndarray[np.float64] = np.geomspace(self.r.min(), self.r.max(), size_grid + 1) * 1e2 / C_L
+    #         thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+    #         phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+    #         rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+    #         nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+    #         thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+    #         phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+    #         # Make the grid
+    #         qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+    #         rr: np.ndarray[np.float64] = qq[0]
+    #         # Make the temperature model
+    #         temp: np.ndarray[np.float64] = T(r=rr * 1e-2 * C_L, t=self.tps_mf[i], Ms=self.Ms)
+    #         with open(directory + '/gas_temperature.inp', 'w+') as f:
+    #             f.write('1\n')  # Format number
+    #             f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #             data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #             data.tofile(f, sep='\n', format="%13.6e")
+    #             f.write('\n')
+    #
+    #     cwd: str = os.getcwd()
+    #     os.chdir(directory)
+    #     vkms: np.float64 = 0.
+    #     widthkms: np.float64 = 40.0
+    #     npix: np.float64 = 400
+    #     linenlam: np.float64 = 70
+    #     if setup_radmc:
+    #         os.system("radmc3d mctherm")
+    #
+    #     command = 'radmc3d image imolspec {} iline {} vkms {} widthkms {} incl {}  phi {}' \
+    #               ' npix {} linenlam {}'.format(id_molecule, nb_trens,
+    #                                             vkms, widthkms, incl, phi, npix, linenlam)
+    #     os.system(command)
+    #     im = radmc_im.readImage()
+    #     tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
+    #     print("shape : ", im.imageJyppix.shape, tab_vkms.shape)
+    #     # im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1)) #!!!!! A recalcluer
+    #     # im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+    #     flux_jy_km_s = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).sum() / (dpc * dpc)
+    #     flux_w_m2 = flux_jy_km_s / (np.double(1e26) / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                                                    * (np.mean(im.freq))))
+    #     os.chdir(cwd)
+    #     if idx_i < 0:
+    #         self.flux_radmc.append(np.array([i, flux_w_m2]))
+    #         self.flux_radmc_jykms.append(np.array([i, flux_jy_km_s]))
+    #         self.id_flux.append(np.array([id_molecule, nb_trens]))
+    #     else:
+    #         self.flux_radmc[idx_i] = np.append(self.flux_radmc[idx_i], flux_w_m2)
+    #         self.flux_radmc_jykms[idx_i] = np.append(self.flux_radmc_jykms[idx_i], flux_jy_km_s)
+    #         self.id_flux[idx_i] = np.append(self.id_flux[idx_i], nb_trens)
+    #
+    #     return self.flux_radmc[idx_i][-1], self.flux_radmc_jykms[idx_i][-1]
+    #
+    # def calc_single_flux_radmcJWST(self, i: int, directory: str = None,
+    #                                size_grid: int = 128, incl: np.float64 = 13, phi: np.float64 = 59.,
+    #                                lambda_min_micron=0.7, lambda_max_micron=27.9,
+    #                                freqs_radex: np.ndarray = None, flux_radex: np.ndarray = None
+    #                                ) -> list[np.ndarray]:
+    #     """
+    #
+    #     Parameters
+    #     ----------
+    #     i: int
+    #         The index at which the surface density is plotted
+    #     directory : str, default=self.directory+'/'+i
+    #         The directory where the configuration are stored
+    #     size_grid : int, default=128
+    #         The size of the spatial grid (the water surface density is interpolated on it)
+    #
+    #     Returns
+    #     -------
+    #     np.ndarray[np.float64]
+    #         The spatially integrated luminosity flux
+    #
+    #     """
+    #     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(data_radmc + "/molecule_ph2olamda.inp")
+    #     lambdas = (((c / (C_L / C_t)) / (tab_trens[:, 4] * 1e9)) * 1e6)
+    #     n_calc: int = 10
+    #     if flux_radex is None:
+    #         lines = [[0, i] for i in np.argwhere((lambdas < lambda_max_micron)
+    #                                              * (lambdas > lambda_min_micron))[:, 0]]
+    #         lines = lines[::len(lines) // n_calc]
+    #         lambdas = lambdas[(lambdas < lambda_max_micron)
+    #                           * (lambdas > lambda_min_micron)][::len(lines) // 10]
+    #     else:
+    #         idx_flux_max = np.argsort(flux_radex)
+    #         lines = [[0, np.argmin(abs((tab_trens[:, 4] - f) / f))]
+    #                  for f in freqs_radex[idx_flux_max[-n_calc:]]]
+    #         print("freqs : ", freqs_radex[idx_flux_max[-n_calc:]], tab_trens[np.array(lines)[:, 1], 4])
+    #         print('relative errors on freqs : ', [np.min(abs((tab_trens[:, 4] - f) / f))
+    #                                               for f in freqs_radex[idx_flux_max[-n_calc:]]])
+    #         lambdas = [lambdas[np.argmin(abs((tab_trens[:, 4] - f) / f))]
+    #                    for f in freqs_radex[idx_flux_max[-n_calc:]]]
+    #
+    #     # mw, tabE, tabt = read_lamda(data_radmc + "/molecule_oh2olamda.inp")
+    #     # lambdas = (((c / (C_L / C_t)) / (tabt[:, 4] * 1e9)) * 1e6)
+    #     # lines.extend([[1, i] for i in np.argwhere((lambdas < lambda_max_micron)
+    #     #                                      * (lambdas > lambda_min_micron))[:, 0]]]
+    #
+    #     res = []
+    #     for t in lines:
+    #         print("transition : ", t)
+    #         res.append(list(
+    #             self.calc_flux_trans_radmcJWST(i, directory=directory, size_grid=size_grid, incl=incl, phi=phi,
+    #                                            nb_trens=t[1], id_molecule=t[0], setup_radmc=len(res) == 0)))
+    #         print("Flux = ", res[-1], "\n\n\n-----------------------\n\n\n")
+    #     return lambdas, res
+    #
+    # def calc_fluc_radmc_JWST(self, tmin: np.float64 = 0.5 * Myr,
+    #                          size_grid: int = 128, incl: np.float64 = 13, phi: np.float64 = 59.,
+    #                          freqs_radex: np.ndarray = None, flux_radex: np.ndarray = None):
+    #     imin = np.argwhere(self.tps_mf > tmin)[0, 0]
+    #     mw = trapezoid(2. * Pi * self.r * self.interp_sigma(self.tps_mf[imin:])
+    #                    * np.array(self.mass_fractions)[imin:, self.idx_mu_ast[0]], self.r)
+    #     print("t=", self.tps_mf[imin + np.argmax(mw)], " Myr, Mwater=", np.max(mw), " Earth mass")
+    #     return self.calc_single_flux_radmcJWST(i=imin + np.argmax(mw), size_grid=size_grid, incl=incl, phi=phi,
+    #                                            freqs_radex=freqs_radex, flux_radex=flux_radex)
+    #
+    # def radmc_setupALMA(self, i: int, directory: str = None, size_grid: int = 200) -> None:
+    #     """
+    #     Generate the configuration file for radmc3d for the surface density at time self.tps[i]
+    #
+    #     Parameters
+    #     ----------
+    #     i: int
+    #         The index at which the surface density is plotted
+    #     directory : str, default=self.directory+'/'+i
+    #         The directory where the configuration are stored
+    #     size_grid : int, default=128
+    #         THe size of the spatial grid (the water surface density is interpolated on it)
+    #
+    #     Returns
+    #     -------
+    #     None
+    #
+    #     """
+    #     if directory is not None:
+    #         if not os.path.exists(directory):
+    #             os.mkdir(directory)
+    #         doss: str = directory
+    #     else:
+    #         if not os.path.exists(self.directory + "/ALMA_" + str(i)):
+    #             os.mkdir(self.directory + "/ALMA_" + str(i))
+    #         doss: str = self.directory + "/ALMA_" + str(i)
+    #
+    #     nphot: int = 100000  # Monte Carlo parameters
+    #     # !! WARNING !!
+    #     # Radmc need cgs units
+    #     # !! !!
+    #
+    #     # Grid parameters
+    #
+    #     nr: int = size_grid
+    #     nlev_rin: int = 12  # Grid refinement at the inner edge: nr of cycles
+    #     nspan_rin: int = 3  # Grid refinement at the inner edge: nr of cells each cycle
+    #     ntheta: int = 32
+    #     nphi: int = 1
+    #     rin: np.float64 = (self.r.min() / C_L) * 1e2
+    #     rout: np.float64 = (self.r.max() / C_L) * 1e2
+    #     thetaup: np.float64 = np.pi * 0.5 - 1.
+    #
+    #     # Disk parameters
+    #
+    #     pstar: np.ndarray[np.float64] = np.array([0., 0., 0.])
+    #
+    #     # Make the coordinates
+    #
+    #     # ri: np.ndarray[np.float64] = self.r[::max(1, len(self.r) // size_grid)]
+    #     ri: np.ndarray[np.float64] = np.geomspace(rin, rout, nr + 1)
+    #     # ri: np.ndarray[np.float64] = grid_refine_inner_edge(ri, nlev_rin, nspan_rin)  # Refinement at inner edge
+    #
+    #     thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+    #     phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+    #     rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+    #     nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+    #     thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+    #     phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+    #
+    #     # Make the grid
+    #
+    #     qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+    #     rr: np.ndarray[np.float64] = qq[0]
+    #     tt: np.ndarray[np.float64] = qq[1]
+    #     zr: np.ndarray[np.float64] = Pi / 2. - qq[1]
+    #
+    #     # Make the temperature model
+    #     temp: np.ndarray[np.float64] = T((rr * 1e-2) * C_L, t=self.tps_mf[i], Ms=self.Ms)
+    #
+    #     # Make the density model
+    #     # g.loglog(rr.flatten(), temp.flatten(), ".")
+    #     h_h2o: np.ndarray[np.float64] = np.sqrt(kb * temp * (rr * rr * rr * 1e-6 * C_L * C_L * C_L)
+    #                                             / (18. * mp * G * self.Ms)) * 1e2 / C_L
+    #     # g.loglog([self.r, rr.flatten()], [ self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]],  np.interp(rr, self.r, self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]]).flatten()], ".")
+    #     sigma_H2O: np.ndarray[np.float64] = np.interp(rr, self.r * 1e2 / C_L,
+    #                                                   self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][
+    #                                                       self.idx_mu_ast[0]]
+    #                                                   ) * (C_L * C_L / C_M) * (1e3 / (1e4))
+    #     rhog_h2o: np.ndarray[np.float64] = (sigma_H2O / (np.sqrt(2. * np.pi) * h_h2o)
+    #                                         ) * np.exp(-zr * zr * rr * rr / (h_h2o * h_h2o * 2.))
+    #
+    #     # Make the velocity model
+    #
+    #     vr: np.ndarray[np.float64] = np.zeros_like(rr)
+    #     vtheta: np.ndarray[np.float64] = np.zeros_like(rr)
+    #     vphi: np.ndarray[np.float64] = np.sqrt(G * self.Ms / (rr * C_L * 1e-2)) * (C_t / C_L) * 1e2
+    #     vturb: np.ndarray[np.float64] = 0.001 * vphi
+    #
+    #     # Write the wavelength_micron.inp file
+    #
+    #     lam1 = 0.1e0
+    #     lam2 = 7.0e0
+    #     lam3 = 25.e0
+    #     lam4 = 1.0e4
+    #     n12 = 60
+    #     n23 = 200
+    #     n34 = 30
+    #     lam12 = np.logspace(np.log10(lam1), np.log10(lam2), n12, endpoint=False)
+    #     lam23 = np.logspace(np.log10(lam2), np.log10(lam3), n23, endpoint=False)
+    #     lam34 = np.logspace(np.log10(lam3), np.log10(lam4), n34, endpoint=True)
+    #     lam = np.concatenate([lam12, lam23, lam34])
+    #
+    #     nlam: int = lam.size
+    #
+    #     # Write the wavelength file
+    #
+    #     with open(doss + '/wavelength_micron.inp', 'w+') as f:
+    #         f.write('%d\n' % (nlam))
+    #         for value in lam:
+    #             f.write('%13.6e\n' % (value))
+    #
+    #     # NB All datas needs to be saved in cgs system....
+    #
+    #     # Write the stars.inp file
+    #
+    #     with open(doss + '/stars.inp', 'w+') as f:
+    #         f.write('2\n')
+    #         f.write('1 %d\n\n' % nlam)
+    #         f.write('%13.6e %13.6e %13.6e %13.6e %13.6e\n\n' % (interpRs(self.tps_mf[i] + self.t0, self.Ms) * 1e2 / C_L,
+    #                                                             self.Ms * 1e3 / C_M,
+    #                                                             pstar[0], pstar[1], pstar[2]))
+    #         for value in lam:
+    #             f.write('%13.6e\n' % value)
+    #         f.write('\n%13.6e\n' % (- ((interpLbol(self.tps_mf[i] + self.t0, self.Ms)
+    #                                     / (4. * Pi * (interpRs(self.tps_mf[i] + self.t0, self.Ms) ** 2) * sigma))) ** (
+    #                                               1. / 4.)))
+    #
+    #     # Write the grid file
+    #
+    #     with open(doss + '/amr_grid.inp', 'w+') as f:
+    #         f.write('1\n')  # iformat
+    #         f.write('0\n')  # AMR grid style  (0=regular grid, no AMR)
+    #         f.write('100\n')  # Coordinate system: spherical
+    #         f.write('0\n')  # gridinfo
+    #         f.write('1 1 0\n')  # Include r,theta coordinates
+    #         f.write('%d %d %d\n' % (nr, ntheta, 1))  # Size of grid
+    #         for value in ri:
+    #             f.write('%13.6e\n' % value)  # X coordinates (cell walls)
+    #         for value in thetai:
+    #             f.write('%13.6e\n' % value)  # Y coordinates (cell walls)
+    #         for value in phii:
+    #             f.write('%13.6e\n' % value)  # Z coordinates (cell walls)
+    #
+    #     # Write the density file
+    #
+    #     with open(doss + '/dust_density.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         f.write('1\n')  # Nr of dust species
+    #         data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #     # with open(doss + '/dust_density.inp', 'w+') as f:
+    #     #     f.write('1\n')  # Format number
+    #     #     f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #     #     f.write('0\n')  # Nr of dust species
+    #     #     # data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #     #     # data.tofile(f, sep='\n', format="%13.6e")
+    #     #     # f.write('\n')
+    #
+    #     # Dust opacity control file
+    #
+    #     with open(doss + '/dustopac.inp', 'w+') as f:
+    #         f.write('2               Format number of this file\n')
+    #         f.write('1               Nr of dust species\n')
+    #         f.write('============================================================================\n')
+    #         f.write('1               Way in which this dust species is read\n')
+    #         f.write('0               0=Thermal grain\n')
+    #         f.write('silicate        Extension of name of dustkappa_***.inp file\n')
+    #         f.write('----------------------------------------------------------------------------\n')
+    #
+    #     # with open(doss + '/dustopac.inp', 'w+') as f:
+    #     #     f.write('2               Format number of this file\n')
+    #     #     f.write('0               Nr of dust species\n')
+    #     #     f.write('============================================================================\n')
+    #     #     f.write('----------------------------------------------------------------------------\n')
+    #
+    #     # Write the molecule number density file.
+    #
+    #     mu_h2o = 18  # Mass of a H2O molecule in proton mass unity
+    #     nh2o = rhog_h2o / (mu_h2o * (mp * 1e3 / C_M))
+    #     print("test nh2o", nh2o.sum(), rhog_h2o.sum(), sigma_H2O.sum())
+    #     with open(doss + '/numberdens_ph2oradex.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         data = nh2o.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #     with open(doss + '/numberdens_oh2oradex.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         data = nh2o.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #
+    #     # Write the gas velocity field
+    #
+    #     with open(doss + '/gas_velocity.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         for iphi in range(nphi):
+    #             for itheta in range(ntheta):
+    #                 for ir in range(nr):
+    #                     f.write(
+    #                         '%13.6e %13.6e %13.6e\n' % (vr[ir, itheta, iphi],
+    #                                                     vtheta[ir, itheta, iphi],
+    #                                                     vphi[ir, itheta, iphi]))
+    #
+    #     # Write the temperature file
+    #
+    #     with open(doss + '/gas_temperature.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #
+    #     # Write the microturbulence file
+    #
+    #     with open(doss + '/microturbulence.inp', 'w+') as f:
+    #         f.write('1\n')  # Format number
+    #         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #         data = vturb.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #         data.tofile(f, sep='\n', format="%13.6e")
+    #         f.write('\n')
+    #
+    #     # Write the lines.inp control file
+    #
+    #     with open(doss + '/lines.inp', 'w') as f:
+    #         f.write('2\n')
+    #         f.write('2\n')
+    #         f.write('ph2oradex  leiden 0   0   0\n')
+    #         f.write('oh2oradex  leiden 0   0   0\n')
+    #
+    #     # Write the radmc3d.inp control file
+    #
+    #     with open(doss + '/radmc3d.inp', 'w+') as f:
+    #         f.write('nphot = %d\n' % nphot)
+    #         f.write('camera_incl_stars = 0\n')  # remove the central star flux
+    #         f.write('scattering_mode_max = 0\n')
+    #         f.write('iranfreqmode = 1\n')
+    #         # f.write('tgas_eq_tdust = 1\n')  # Use the dust temperature of dust species 1 as gas temperature
+    #
+    #     shutil.copyfile(data_radmc + "/molecule_ph2oradex.inp", doss + "/molecule_ph2oradex.inp")
+    #     shutil.copyfile(data_radmc + "/molecule_oh2oradex.inp", doss + "/molecule_oh2oradex.inp")
+    #     # shutil.copyfile(data_radmc + "/molecule_h2op.inp", doss + "/molecule_h2op.inp" )
+    #     # shutil.copyfile(data_radmc + "/partitionfunction_h2o.inp", doss + "/partitionfunction_h2o.inp" )
+    #     #shutil.copyfile(data_radmc + "/linelist_h2o.inp", doss + "/linelist_h2o.inp" )
+    #     shutil.copyfile(data_radmc + "/dustkappa_silicate.inp", doss + "/dustkappa_silicate.inp")
+    #
+    # def calc_flux_trans_radmcALMA(self, i: int, directory: str = None, size_grid: int = 200,
+    #                               incl: np.float64 = 0, phi: np.float64 = 59., dpc: np.float64 = 50,
+    #                               nb_trens: int = 1, id_molecule: int = 1,
+    #                               setup_radmc: bool = True) -> np.float64:
+    #     idx_i = -1
+    #     # if len(self.id_flux) > 0 and i in [t[0] for t in self.id_flux]:
+    #     #    idx_i = np.argwhere(np.array([t[0] for t in self.id_flux]) == i)[0, 0]
+    #
+    #     if directory is None:
+    #         if not os.path.exists(self.directory + "/ALMA_" + str(i)):
+    #             os.mkdir(self.directory + "/ALMA_" + str(i))
+    #         directory: str = self.directory + "/ALMA_" + str(i)
+    #
+    #     if setup_radmc:
+    #         self.radmc_setupALMA(i=i, directory=directory, size_grid=size_grid)
+    #         thetaup: np.float64 = Pi * 0.5 - 1.
+    #         ntheta: int = 32
+    #         nphi: int = 1
+    #         ri: np.ndarray[np.float64] = np.geomspace(self.r.min(), self.r.max(), size_grid + 1) * 1e2 / C_L
+    #         thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+    #         phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+    #         rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+    #         nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+    #         thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+    #         phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+    #         # Make the grid
+    #         qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+    #         rr: np.ndarray[np.float64] = qq[0]
+    #         # Make the temperature model
+    #         temp: np.ndarray[np.float64] = T(r=rr * 1e-2 * C_L, t=self.tps_mf[i], Ms=self.Ms)
+    #         with open(directory + '/gas_temperature.inp', 'w+') as f:
+    #             f.write('1\n')  # Format number
+    #             f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+    #             data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+    #             data.tofile(f, sep='\n', format="%13.6e")
+    #             f.write('\n')
+    #
+    #     cwd: str = os.getcwd()
+    #     os.chdir(directory)
+    #     vkms: np.float64 = 0.
+    #     widthkms: np.float64 = 40.0
+    #     npix: np.float64 = 400
+    #     linenlam: np.float64 = 70
+    #     if setup_radmc:
+    #         os.system("radmc3d mctherm")
+    #
+    #     command = 'radmc3d image imolspec {} iline {} vkms {} widthkms {} incl {}  phi {}' \
+    #               ' npix {} linenlam {}'.format(id_molecule, nb_trens,
+    #                                             vkms, widthkms, incl, phi, npix, linenlam)
+    #     os.system(command)
+    #     im = radmc_im.readImage()
+    #     tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
+    #     print("shape : ", im.imageJyppix.shape, tab_vkms.shape)
+    #     flux_jy_km_s = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).sum() / (dpc * dpc)
+    #     flux_w_m2 = flux_jy_km_s / (np.double(1e26) / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+    #                                                    * (np.mean(im.freq))))
+    #     os.chdir(cwd)
+    #     if idx_i < 0:
+    #         self.flux_radmc.append(np.array([i, flux_w_m2]))
+    #         self.flux_radmc_jykms.append(np.array([i, flux_jy_km_s]))
+    #         self.id_flux.append(np.array([id_molecule, nb_trens]))
+    #     else:
+    #         self.flux_radmc[idx_i] = np.append(self.flux_radmc[idx_i], flux_w_m2)
+    #         self.flux_radmc_jykms[idx_i] = np.append(self.flux_radmc_jykms[idx_i], flux_jy_km_s)
+    #         self.id_flux[idx_i] = np.append(self.id_flux[idx_i], nb_trens)
+    #
+    #     return self.flux_radmc[idx_i][-1], self.flux_radmc_jykms[idx_i][-1]
+    #
+    # def calc_single_flux_radmcALMA(self, i: int, directory: str = None,
+    #                                size_grid: int = 128, incl: np.float64 = 13, phi: np.float64 = 59.,
+    #                                lambda_min_micron=0.7, lambda_max_micron=27.9
+    #                                ) -> list[np.ndarray]:
+    #     """
+    #
+    #     Parameters
+    #     ----------
+    #     i: int
+    #         The index at which the surface density is plotted
+    #     directory : str, default=self.directory+'/'+i
+    #         The directory where the configuration are stored
+    #     size_grid : int, default=128
+    #         The size of the spatial grid (the water surface density is interpolated on it)
+    #
+    #     Returns
+    #     -------
+    #     np.ndarray[np.float64]
+    #         The spatially integrated luminosity flux
+    #
+    #     """
+    #     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(data_radmc + "/molecule_ph2oradex.inp")
+    #     freqs_pH2O = np.array([183.31009, 325.15290])  # Frequences obs ALMA pH2O GHz
+    #     lines = [[0, np.argmin(abs((tab_trens[:, 4] - f) / f))]
+    #              for f in freqs_pH2O]
+    #     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(data_radmc + "/molecule_oh2oradex.inp")
+    #     freqs_oH2O = np.array([321.22569])  # Frequences obs ALMA pH2O GHz
+    #     lines.extend([[1, np.argmin(abs((tab_trens[:, 4] - f) / f))]
+    #                   for f in freqs_oH2O])
+    #     freqs = np.append(freqs_pH2O, freqs_oH2O)
+    #     # mw, tabE, tabt = read_lamda(data_radmc + "/molecule_oh2olamda.inp")
+    #     # lambdas = (((c / (C_L / C_t)) / (tabt[:, 4] * 1e9)) * 1e6)
+    #     # lines.extend([[1, i] for i in np.argwhere((lambdas < lambda_max_micron)
+    #     #                                      * (lambdas > lambda_min_micron))[:, 0]]]
+    #
+    #     res = []
+    #     for t in lines:
+    #         print("transition : ", t)
+    #         res.append(list(
+    #             self.calc_flux_trans_radmcALMA(i, directory=directory, size_grid=size_grid, incl=incl, phi=phi,
+    #                                            nb_trens=t[1], id_molecule=t[0], setup_radmc=len(res) == 0)))
+    #         print("Flux = ", res[-1], "\n\n\n-----------------------\n\n\n")
+    #     return freqs, res
+    #
+    # def calc_fluc_radmc_ALMA(self, tmin: np.float64 = 0.5 * Myr,
+    #                          size_grid: int = 128, incl: np.float64 = 13, phi: np.float64 = 59.):
+    #     imin = np.argwhere(self.tps_mf > tmin)[0, 0]
+    #     mw = trapezoid(2. * Pi * self.r * self.interp_sigma(self.tps_mf[imin:])
+    #                    * np.array(self.mass_fractions)[imin:, self.idx_mu_ast[0]], self.r)
+    #     print("t=", self.tps_mf[imin + np.argmax(mw)], " Myr, Mwater=", np.max(mw), " Earth mass")
+    #     return self.calc_single_flux_radmcALMA(i=imin + np.argmax(mw), size_grid=size_grid, incl=incl, phi=phi)
 
-        Parameters
-        ----------
-        i: int
-            The index at which the surface density is plotted
-        directory : str, default=self.directory+'/'+i
-            The directory where the configuration are stored
-        size_grid : int, default=128
-            THe size of the spatial grid (the water surface density is interpolated on it)
 
-        Returns
-        -------
-        None
+# # Flux
+# ## Modèle 0d
+# def calcul_flux_thin_JWST(graphs: list[Graphique], consts: dict, jykms: bool = False, dpc: np.float64 = 50,
+#                           molecule: str = "oh2lamda", return_frequency: bool = False,
+#                           tau_dust=1e-3, edge_on: bool = False,
+#                           lte: bool = False, radex=False,
+#                           tmin: np.float64 = 0.5 * Myr, n_ech: int = 100, return_full: bool = True):
+#     """
+#
+#     Parameters
+#     ----------
+#     graphs: list[Graphique]
+#         [Water surface density, total surface density]
+#     jykms
+#     dpc
+#     molecule
+#     return_frequency
+#     tau_dust
+#     edge_on
+#     return_tau
+#     return_Tex
+#     lte
+#     consts
+#
+#     Returns
+#     -------
+#
+#     """
+#     d = dpc * pc
+#
+#     init_source(molecule,
+#                 width_v=np.sqrt(G * Ms / consts["AB_a0"]) * C_t / C_L)
+#     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+#     mw0, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+#     # conversion to code units
+#     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+#     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+#     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+#     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+#
+#     # total gaseous water mass as function of time
+#     if radex:
+#         width_v = source[molecule + "_width_v"]
+#     else:
+#         width_v = np.sqrt(G * Ms / consts["AB_a0"]) * C_t / C_L
+#     v = np.linspace(-2 * width_v, 2 * width_v, 10)  # m/sflux = []
+#     C_flux_final = 1. / (C_E / (C_L * C_L * C_t))
+#     if jykms:
+#         C_flux_final *= (np.double(1e26)
+#                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+#                             * (tab_trens[:, 4] * C_t)))
+#     tau = []
+#     Tex = []
+#     flux = []
+#     Tkin = []
+#     Mws = []
+#     times_calc = []
+#     omega = []  # solid angle
+#     mwmin = trapezoid(2 * Pi * graphs[0].y_axe_image
+#                       * np.array([1e-10 for r in graphs[0].y_axe_image]),
+#                       graphs[0].y_axe_image)
+#     imin = np.argwhere(graphs[0].x_axe_image > tmin)[0, 0]
+#     Mw = trapezoid(2 * Pi * graphs[0].y_axe_image * (graphs[0].array_image.T), graphs[0].y_axe_image) - mwmin
+#     if n_ech == 0:
+#         imax = imin + np.argmax(Mw[imin:])
+#         sig = np.array(
+#             [np.interp(graphs[0].x_axe_image[imax], graphs[1].x_axe_image, Sig) for Sig in graphs[1].array_image])
+#         mw = Mw[imax]
+#         print("mw=", mw)
+#         Hz = np.sqrt(Rgp * T(r=graphs[0].y_axe_image, t=graphs[0].x_axe_image[imax] + consts["t0"], Ms=consts["Ms"])
+#                      * (graphs[0].y_axe_image ** 3) / ((18. * 1e-3 * C_M) * G * consts["Ms"]))
+#         Ncol = np.max(sig / (18 * mp * Hz))
+#         if lte:
+#             Ncol *= 1e50
+#         consts["AB_a0"] = np.array(consts["AB_a0"], dtype=np.float64).tolist()
+#         if isinstance(consts["AB_a0"], list):
+#             consts["AB_a0"] = consts["AB_a0"][0]
+#         t = graphs[0].x_axe_image[imax]
+#         Temp = T(r=consts["AB_a0"], t=t + consts["t0"], Ms=consts["Ms"])
+#         iwmax = np.argmax(graphs[0].array_image[:, imax])
+#         sig_w_max = graphs[0].array_image[iwmax, imax]
+#
+#         if np.any(graphs[0].array_image[:iwmax, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#             imin_w_in = \
+#             np.argwhere(graphs[0].array_image[:iwmax, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[-1, 0]
+#         else:
+#             imin_w_in = 0
+#         if np.any(graphs[0].array_image[iwmax:, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#             imin_w_out = (iwmax +
+#                           np.argwhere(
+#                               graphs[0].array_image[iwmax:, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                               0, 0])
+#         else:
+#             imin_w_out = len(graphs[0].y_axe_image) - 1
+#
+#         # gr = g.loglog(graphs[0].y_axe_image, graphs[0].array_image[:, imax], show=False)
+#         # gr.line([graphs[0].y_axe_image[imin_w_in], graphs[0].y_axe_image[imin_w_in]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color="k", lw=2)
+#         # gr.line([graphs[0].y_axe_image[imin_w_out], graphs[0].y_axe_image[imin_w_out]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color="k", lw=2)
+#         # gr.line([graphs[0].y_axe_image[iwmax], graphs[0].y_axe_image[iwmax]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color=g.C6, lw=2)
+#         # gr.show()
+#         if edge_on:
+#             S = 4 * trapezoid(Hz[imin_w_in: imin_w_out], graphs[0].y_axe_image[imin_w_in:imin_w_out])
+#         else:
+#             S = 2. * Pi * (graphs[0].y_axe_image[imin_w_out] ** 2 - graphs[0].y_axe_image[imin_w_in] ** 2)
+#         Nemit_surf = mw / (18 * mp * S)
+#         print("t=", t, "S/Sbelt=", S / (Pi * ((consts["AB_a0"] + consts["AB_delta_r"] / 2.) ** 2
+#                                               - (consts["AB_a0"] - consts["AB_delta_r"] / 2.) ** 2)))
+#         Rstar = interpRs(t + consts["t0"], consts["Ms"])
+#         if lte:
+#             xj = get_popLTE(molecule=molecule, n_col_partner=Nemit_surf, Tcin=Temp,
+#                             Lstar=interpLbol(t + consts["t0"], consts["Ms"]),
+#                             Rstar=interpRs(t + consts["t0"], consts["Ms"]),
+#                             a=consts["AB_a0"], verbose=False,
+#                             files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+#         elif radex:
+#             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                       T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                          * (Rstar ** 2) / ((consts["AB_a0"]) ** 2)
+#                                          + helpers.generate_CMB_background(z=0)(nu))
+#             collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+#             print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#
+#             source[molecule].update_parameters(
+#                 N=Nemit_surf * C_L * C_L,
+#                 Tkin=np.max([Temp, 200]),
+#                 collider_densities=collider_densities,
+#                 ext_background=ext_background,
+#                 T_dust=Temp,
+#                 tau_dust=tau_dust,
+#             )
+#             source[molecule].solve_radiative_transfer()
+#             xj = source[molecule].level_pop
+#         else:
+#             xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+#                          Lstar=interpLbol(t + consts["t0"], consts["Ms"]),
+#                          Rstar=interpRs(t + consts["t0"], consts["Ms"]),
+#                          a=consts["AB_a0"], verbose=False, Tdust=Temp,
+#                          files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+#         flux = (C_flux_final
+#                 * mw * h * tab_trens[:, 3] * tab_trens[:, 4]
+#                 * xj[np.int64(tab_trens[:, 1]) - 1]
+#                 / (4. * Pi * (18. * mp) * d * d))
+#
+#         if return_full:
+#             Tkin = Temp
+#             print("mw=", mw)
+#             Mws = mw
+#             times_calc = t
+#             omega = S / (dpc * dpc * pc * pc)
+#     else:
+#         times = np.linspace(tmin, graphs[0].x_axe_image.max(), n_ech)
+#         for t in times:
+#             it: int = np.argwhere(graphs[0].x_axe_image < t)[-1, 0]
+#             sig = np.array(
+#                 [np.interp(graphs[0].x_axe_image[it], graphs[1].x_axe_image, Sig) for Sig in graphs[1].array_image])
+#             mw = Mw[it]
+#             Hz = np.sqrt(Rgp * T(r=graphs[0].y_axe_image, t=graphs[0].x_axe_image[it] + consts["t0"], Ms=consts["Ms"])
+#                          * (graphs[0].y_axe_image ** 3) / ((18. * 1e-3 * C_M) * G * consts["Ms"]))
+#             Ncol = np.max(sig / (18 * mp * Hz))
+#             if lte:
+#                 Ncol *= 1e50
+#             consts["AB_a0"] = np.array(consts["AB_a0"], dtype=np.float64).tolist()
+#             if isinstance(consts["AB_a0"], list):
+#                 consts["AB_a0"] = consts["AB_a0"][0]
+#             t = graphs[0].x_axe_image[it]
+#             Temp = T(r=consts["AB_a0"], t=t + consts["t0"], Ms=consts["Ms"])
+#             iwmax = np.argmax(graphs[0].array_image[:, it])
+#             sig_w_max = graphs[0].array_image[iwmax, it]
+#
+#             if np.any(graphs[0].array_image[:iwmax, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#                 imin_w_in = \
+#                 np.argwhere(graphs[0].array_image[:iwmax, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                     -1, 0]
+#             else:
+#                 imin_w_in = 0
+#             if np.any(graphs[0].array_image[iwmax:, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#                 imin_w_out = (iwmax +
+#                               np.argwhere(graphs[0].array_image[iwmax:, it] < max(sig_w_max * 1e-3,
+#                                                                                   1e-10 * Mearth / (au * au)))[0, 0])
+#             else:
+#                 imin_w_out = len(graphs[0].y_axe_image) - 1
+#             if edge_on:
+#                 S = 4 * trapezoid(Hz[imin_w_in: imin_w_out], graphs[0].x_axe_imager[imin_w_in:imin_w_out])
+#             else:
+#                 S = 2. * Pi * (graphs[0].y_axe_image[imin_w_out] ** 2 - graphs[0].y_axe_image[imin_w_in] ** 2)
+#             Nemit_surf = mw / (18 * mp * S)
+#             print("t=", t, "S/Sbelt=", S / (Pi * ((consts["AB_a0"] + consts["AB_delta_r"] / 2.) ** 2
+#                                                   - (consts["AB_a0"] - consts["AB_delta_r"] / 2.) ** 2)))
+#             Rstar = interpRs(t + consts["t0"], consts["Ms"])
+#
+#             collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+#             print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#             if Nemit_surf > zero:
+#
+#                 if lte:
+#                     xj = get_popLTE(molecule=molecule, n_col_partner=Nemit_surf, Tcin=Temp,
+#                                     Lstar=interpLbol(t + consts["t0"], consts["Ms"]),
+#                                     Rstar=interpRs(t + consts["t0"], consts["Ms"]),
+#                                     a=consts["AB_a0"], verbose=False,
+#                                     files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+#                 elif radex:
+#                     ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                               T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                                  / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                                  * (Rstar ** 2) / ((consts["AB_a0"]) ** 2)
+#                                                  + helpers.generate_CMB_background(z=0)(nu))
+#                     collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+#                     print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#
+#                     source[molecule].update_parameters(
+#                         N=Nemit_surf * C_L * C_L,
+#                         Tkin=np.max([Temp, 200]),
+#                         collider_densities=collider_densities,
+#                         ext_background=ext_background,
+#                         T_dust=Temp,
+#                         tau_dust=tau_dust,
+#                     )
+#                     source[molecule].solve_radiative_transfer()
+#                     xj = source[molecule].level_pop
+#                 else:
+#                     xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+#                                  Lstar=interpLbol(t + consts["t0"], consts["Ms"]),
+#                                  Rstar=interpRs(t + consts["t0"], consts["Ms"]),
+#                                  a=consts["AB_a0"], verbose=False, Tdust=Temp,
+#                                  files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+#
+#                 flux.append(C_flux_final
+#                             * mw * h * tab_trens[:, 3] * tab_trens[:, 4]
+#                             * xj[np.int64(tab_trens[:, 1]) - 1]
+#                             / (4. * Pi * (18. * mp) * d * d))
+#
+#                 if return_full:
+#                     Tkin.append(Temp)
+#                     Mws.append(mw)
+#                     times_calc.append(t)
+#                     omega.append(S / (dpc * dpc * pc * pc))
+#             else:
+#                 flux.append(np.zeros_like(tab_trens[:, 4]))
+#
+#                 if return_full:
+#                     Tkin.append(Temp)
+#                     Mws.append(mw)
+#                     times_calc.append(t)
+#                     omega.append(S / (dpc * dpc * pc * pc))
+#
+#     if return_full:
+#         freqs = tab_trens[:, 4] * C_t
+#         return freqs, np.array(flux), Tkin, times_calc, Mws, omega
+#     elif return_frequency:
+#         freqs = tab_trens[:, 4] * C_t
+#         return freqs, np.array(flux)
+#     else:
+#         return np.array(flux)
+#
+#
+# def calcul_flux_thick_JWST(graphs: list[Graphique], consts: dict, jykms: bool = False, dpc: np.float64 = 50,
+#                            molecule: str = "oh2lamda", return_frequency: bool = False,
+#                            tau_dust=1e-3, edge_on: bool = False,
+#                            lte: bool = False, radex=False,
+#                            tmin: np.float64 = 0.5 * Myr, n_ech: int = 100, return_full: bool = True):
+#     """
+#
+#     Parameters
+#     ----------
+#     graphs: list[Graphique]
+#         [Water surface density, total surface density]
+#     jykms
+#     dpc
+#     molecule
+#     return_frequency
+#     tau_dust
+#     edge_on
+#     return_tau
+#     return_Tex
+#     lte
+#     consts
+#
+#     Returns
+#     -------
+#
+#     """
+#     d = dpc * pc
+#     init_source(molecule,
+#                 width_v=np.sqrt(G * consts["Ms"] / consts["AB_a0"]) * C_t / C_L)
+#
+#     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+#     mw0, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+#     # conversion to code units
+#     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+#     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+#     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+#     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+#
+#     # total gaseous water mass as function of time
+#     if radex:
+#         width_v = source[molecule + "_width_v"]
+#     else:
+#         width_v = np.sqrt(G * consts["Ms"] / consts["AB_a0"]) * C_t / C_L
+#     v = np.linspace(-2 * width_v, 2 * width_v, 10)  # m/sflux = []
+#     C_flux_final = 1. / (C_E / (C_L * C_L * C_t))
+#     if jykms:
+#         C_flux_final *= (np.double(1e26)
+#                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+#                             * (tab_trens[:, 4] * C_t)))
+#     flux = []
+#     Tkin = []
+#     Mws = []
+#     times_calc = []
+#     omega = []  # solid angle
+#     mwmin = trapezoid(2 * Pi * graphs[0].y_axe_image
+#                       * np.array([1e-10 for r in graphs[0].y_axe_image]),
+#                       graphs[0].y_axe_image)
+#     imin = np.argwhere(graphs[0].x_axe_image > tmin)[0, 0]
+#     Mw = trapezoid(2 * Pi * graphs[0].y_axe_image * (graphs[0].array_image.T), graphs[0].y_axe_image) - mwmin
+#     if n_ech == 0:
+#         imax = imin + np.argmax(Mw[imin:])
+#         sig = np.array(
+#             [np.interp(graphs[0].x_axe_image[imax], graphs[1].x_axe_image, Sig) for Sig in graphs[1].array_image])
+#         mw = Mw[imax]
+#         print("mw=", mw)
+#         Hz = np.sqrt(Rgp * T(r=graphs[0].y_axe_image, t=graphs[0].x_axe_image[imax] + consts["t0"], Ms=consts["Ms"])
+#                      * (graphs[0].y_axe_image ** 3) / ((18. * 1e-3 * C_M) * G * consts["Ms"]))
+#         Ncol = np.max(sig / (18 * mp * Hz))
+#         if lte:
+#             Ncol *= 1e50
+#         consts["AB_a0"] = np.array(consts["AB_a0"], dtype=np.float64).tolist()
+#         if isinstance(consts["AB_a0"], list):
+#             consts["AB_a0"] = consts["AB_a0"][0]
+#         t = graphs[0].x_axe_image[imax]
+#         Temp = T(r=consts["AB_a0"], t=t + consts["t0"], Ms=consts["Ms"])
+#         iwmax = np.argmax(graphs[0].array_image[:, imax])
+#         sig_w_max = graphs[0].array_image[iwmax, imax]
+#
+#         if np.any(graphs[0].array_image[:iwmax, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#             imin_w_in = \
+#             np.argwhere(graphs[0].array_image[:iwmax, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[-1, 0]
+#         else:
+#             imin_w_in = 0
+#         if np.any(graphs[0].array_image[iwmax:, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#             imin_w_out = (iwmax +
+#                           np.argwhere(
+#                               graphs[0].array_image[iwmax:, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                               0, 0])
+#         else:
+#             imin_w_out = len(graphs[0].y_axe_image) - 1
+#
+#         # gr = g.loglog(graphs[0].y_axe_image, graphs[0].array_image[:, imax], show=False)
+#         # gr.line([graphs[0].y_axe_image[imin_w_in], graphs[0].y_axe_image[imin_w_in]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color="k", lw=2)
+#         # gr.line([graphs[0].y_axe_image[imin_w_out], graphs[0].y_axe_image[imin_w_out]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color="k", lw=2)
+#         # gr.line([graphs[0].y_axe_image[iwmax], graphs[0].y_axe_image[iwmax]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color=g.C6, lw=2)
+#         # gr.show()
+#         if edge_on:
+#             S = 4 * trapezoid(Hz[imin_w_in: imin_w_out], graphs[0].y_axe_image[imin_w_in:imin_w_out])
+#         else:
+#             S = 2. * Pi * (graphs[0].y_axe_image[imin_w_out] ** 2 - graphs[0].y_axe_image[imin_w_in] ** 2)
+#         Nemit_surf = mw / (18 * mp * S)
+#         print("t=", t, "S/Sbelt=", S / (Pi * ((consts["AB_a0"] + consts["AB_delta_r"] / 2.) ** 2
+#                                               - (consts["AB_a0"] - consts["AB_delta_r"] / 2.) ** 2)))
+#         Rstar = interpRs(t + consts["t0"], consts["Ms"])
+#         if radex:
+#             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                       T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                          * (Rstar ** 2) / ((consts["AB_a0"]) ** 2)
+#                                          + helpers.generate_CMB_background(z=0)(nu))
+#             if lte:
+#                 Ncol *= 1e80
+#             collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+#             print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#
+#             source[molecule].update_parameters(
+#                 N=Nemit_surf * C_L * C_L,
+#                 Tkin=np.max([Temp, 200]),
+#                 collider_densities=collider_densities,
+#                 ext_background=ext_background,
+#                 T_dust=Temp,
+#                 tau_dust=tau_dust,
+#             )
+#             source[molecule].solve_radiative_transfer()
+#             xj = source[molecule].level_pop
+#         elif lte:
+#             xj = get_popLTE(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+#                             Lstar=interpLbol(t + consts["t0"], consts["Ms"]),
+#                             Rstar=interpRs(t + consts["t0"], consts["Ms"]),
+#                             a=consts["AB_a0"], verbose=False,
+#                             files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+#         else:
+#             xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+#                          Lstar=interpLbol(t + consts["t0"], consts["Ms"]),
+#                          Rstar=interpRs(t + consts["t0"], consts["Ms"]),
+#                          a=consts["AB_a0"], verbose=False, Tdust=Temp,
+#                          files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+#         deltav = width_v * C_L / C_t
+#         print("C_flux_final=", C_flux_final)
+#         flux = (C_flux_final
+#                 * 2 * h * S
+#                 * (tab_trens[:, 4] ** 4) * ((deltav / c) / (1. - deltav / c)
+#                                             * xj[np.int64(tab_trens[:, 1]) - 1]
+#                                             / (c * c * d * d
+#                                                * (tab_E[np.int64(tab_trens[:, 2]) - 1, 2]
+#                                                   * xj[np.int64(tab_trens[:, 2]) - 1]
+#                                                   / tab_E[np.int64(tab_trens[:, 1]) - 1, 2]
+#                                                   - xj[np.int64(tab_trens[:, 1]) - 1]))))
+#
+#         if return_full:
+#             Tkin = Temp
+#             print("mw=", mw)
+#             Mws = mw
+#             times_calc = t
+#             omega = S / (dpc * dpc * pc * pc)
+#     else:
+#         times = np.linspace(tmin, graphs[0].x_axe_image.max(), n_ech)
+#         for t in times:
+#             it: int = np.argwhere(graphs[0].x_axe_image < t)[-1, 0]
+#             sig = np.array(
+#                 [np.interp(graphs[0].x_axe_image[it], graphs[1].x_axe_image, Sig) for Sig in graphs[1].array_image])
+#             mw = Mw[it]
+#             Hz = np.sqrt(Rgp * T(r=graphs[0].y_axe_image, t=graphs[0].x_axe_image[it] + consts["t0"], Ms=consts["Ms"])
+#                          * (graphs[0].y_axe_image ** 3) / ((18. * 1e-3 * C_M) * G * consts["Ms"]))
+#             Ncol = np.max(sig / (18 * mp * Hz))
+#             if lte:
+#                 Ncol *= 1e50
+#             consts["AB_a0"] = np.array(consts["AB_a0"], dtype=np.float64).tolist()
+#             if isinstance(consts["AB_a0"], list):
+#                 consts["AB_a0"] = consts["AB_a0"][0]
+#             t = graphs[0].x_axe_image[it]
+#             Temp = T(r=consts["AB_a0"], t=t + consts["t0"], Ms=consts["Ms"])
+#             iwmax = np.argmax(graphs[0].array_image[:, it])
+#             sig_w_max = graphs[0].array_image[iwmax, it]
+#
+#             if np.any(graphs[0].array_image[:iwmax, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#                 imin_w_in = \
+#                 np.argwhere(graphs[0].array_image[:iwmax, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                     -1, 0]
+#             else:
+#                 imin_w_in = 0
+#             if np.any(graphs[0].array_image[iwmax:, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#                 imin_w_out = (iwmax +
+#                               np.argwhere(graphs[0].array_image[iwmax:, it] < max(sig_w_max * 1e-3,
+#                                                                                   1e-10 * Mearth / (au * au)))[0, 0])
+#             else:
+#                 imin_w_out = len(graphs[0].y_axe_image) - 1
+#             if edge_on:
+#                 S = 4 * trapezoid(Hz[imin_w_in: imin_w_out], graphs[0].x_axe_imager[imin_w_in:imin_w_out])
+#             else:
+#                 S = 2. * Pi * (graphs[0].y_axe_image[imin_w_out] ** 2 - graphs[0].y_axe_image[imin_w_in] ** 2)
+#             Nemit_surf = mw / (18 * mp * S)
+#             print("t=", t, "S/Sbelt=", S / (Pi * ((consts["AB_a0"] + consts["AB_delta_r"] / 2.) ** 2
+#                                                   - (consts["AB_a0"] - consts["AB_delta_r"] / 2.) ** 2)))
+#             Rstar = interpRs(t + consts["t0"], consts["Ms"])
+#
+#             collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+#             print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#             if Nemit_surf > zero:
+#
+#                 if lte:
+#                     xj = get_popLTE(molecule=molecule, n_col_partner=Nemit_surf, Tcin=Temp,
+#                                     Lstar=interpLbol(t + consts["t0"], consts["Ms"]),
+#                                     Rstar=interpRs(t + consts["t0"], consts["Ms"]),
+#                                     a=consts["AB_a0"], verbose=False,
+#                                     files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+#                 elif radex:
+#                     ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                               T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                                  / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                                  * (Rstar ** 2) / ((consts["AB_a0"]) ** 2)
+#                                                  + helpers.generate_CMB_background(z=0)(nu))
+#                     collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+#                     print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#
+#                     source[molecule].update_parameters(
+#                         N=Nemit_surf * C_L * C_L,
+#                         Tkin=np.max([Temp, 200]),
+#                         collider_densities=collider_densities,
+#                         ext_background=ext_background,
+#                         T_dust=Temp,
+#                         tau_dust=tau_dust,
+#                     )
+#                     source[molecule].solve_radiative_transfer()
+#                     xj = source[molecule].level_pop
+#                 else:
+#                     xj = get_pop(molecule=molecule, n_col_partner=Ncol, Tcin=Temp,
+#                                  Lstar=interpLbol(t + consts["t0"], consts["Ms"]),
+#                                  Rstar=interpRs(t + consts["t0"], consts["Ms"]),
+#                                  a=consts["AB_a0"], verbose=False, Tdust=Temp,
+#                                  files=[mw0, tab_E, tab_trens, temps_cols, tab_col_trens])
+#
+#                 Delta_v = width_v * C_L / C_t
+#                 flux.append(C_flux_final
+#                             * 2 * h * Sview
+#                             * (tab_trens[:, 4] ** 4) * ((Delta_v / c) / (1. - Delta_v / c)
+#                                                         * xj[np.int64(tab_trens[:, 1]) - 1]
+#                                                         / (c * c * d * d
+#                                                            * (tab_E[np.int64(tab_trens[:, 2]) - 1, 2]
+#                                                               * xj[np.int64(tab_trens[:, 2]) - 1]
+#                                                               / tab_E[np.int64(tab_trens[:, 1]) - 1, 2]
+#                                                               - xj[np.int64(tab_trens[:, 1]) - 1]))))
+#
+#                 if return_full:
+#                     Tkin.append(Temp)
+#                     Mws.append(mw)
+#                     times_calc.append(t)
+#                     omega.append(S / (dpc * dpc * pc * pc))
+#             else:
+#                 flux.append(np.zeros_like(tab_trens[:, 4]))
+#
+#                 if return_full:
+#                     Tkin.append(Temp)
+#                     Mws.append(mw)
+#                     times_calc.append(t)
+#                     omega.append(S / (dpc * dpc * pc * pc))
+#
+#     if return_full:
+#         freqs = tab_trens[:, 4] * C_t
+#         return freqs, np.array(flux), Tkin, times_calc, Mws, omega
+#     elif return_frequency:
+#         freqs = tab_trens[:, 4] * C_t
+#         return freqs, np.array(flux)
+#     else:
+#         return np.array(flux)
+#
+#
+#
+#     ## Radex
+#
+# def calcul_flux_radex_JWST(graphs: list[Graphique], consts: dict, jykms: bool = False, dpc: np.float64 = 50,
+#                            molecule: str = "oh2lamda", return_frequency: bool = False,
+#                            tau_dust=1e-3, edge_on: bool = False,
+#                            lambda_max_micron: np.float64 = 20,
+#                            return_tau: bool = False, return_Tex: bool = False, lte: bool = False,
+#                            tmin: np.float64 = 0.5 * Myr, n_ech: int = 100, return_full: bool = True):
+#     """
+#
+#     Parameters
+#     ----------
+#     graphs: list[Graphique]
+#         [Water surface density, total surface density]
+#     jykms
+#     dpc
+#     molecule
+#     return_frequency
+#     tau_dust
+#     edge_on
+#     return_tau
+#     return_Tex
+#     lte
+#     consts
+#
+#     Returns
+#     -------
+#
+#     """
+#     init_source(molecule,
+#                 width_v=np.sqrt(G * Ms / consts["AB_a0"]) * C_t / C_L)
+#     freq_min = c / (lambda_max_micron * 1e-6 * C_L)
+#     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+#     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+#     # conversion to code units
+#     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+#     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+#     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+#     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+#     freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+#
+#     # total gaseous water mass as function of time
+#     width_v = source[molecule + "_width_v"]
+#     v = np.linspace(-2 * width_v, 2 * width_v, 10)  # m/sflux = []
+#     C_flux_final = 1.
+#     if jykms:
+#         C_flux_final *= (np.double(1e26)
+#                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+#                             * (tab_trens[:, 4] * C_t)))
+#     tau = []
+#     Tex = []
+#     flux = []
+#     Tkin = []
+#     Mws = []
+#     times_calc = []
+#     omega = []  # solid angle
+#     mwmin = trapezoid(2 * Pi * graphs[0].y_axe_image
+#                       * np.array([1e-10 for r in graphs[0].y_axe_image]),
+#                       graphs[0].y_axe_image)
+#     imin = np.argwhere(graphs[0].x_axe_image > tmin)[0, 0]
+#     Mw = trapezoid(2 * Pi * graphs[0].y_axe_image * (graphs[0].array_image.T), graphs[0].y_axe_image) - mwmin
+#     if n_ech == 0:
+#         imax = imin + np.argmax(Mw[imin:])
+#         sig = np.array(
+#             [np.interp(graphs[0].x_axe_image[imax], graphs[1].x_axe_image, Sig) for Sig in graphs[1].array_image])
+#         mw = Mw[imax]
+#         print("mw=", mw)
+#         Hz = np.sqrt(Rgp * T(r=graphs[0].y_axe_image, t=graphs[0].x_axe_image[imax] + consts["t0"], Ms=consts["Ms"])
+#                      * (graphs[0].y_axe_image ** 3) / ((18. * 1e-3 * C_M) * G * consts["Ms"]))
+#         Ncol = np.max(sig / (18 * mp * Hz))
+#         if lte:
+#             Ncol *= 1e50
+#         consts["AB_a0"] = np.array(consts["AB_a0"], dtype=np.float64).tolist()
+#         if isinstance(consts["AB_a0"], list):
+#             consts["AB_a0"] = consts["AB_a0"][0]
+#         t = graphs[0].x_axe_image[imax]
+#         Temp = T(r=consts["AB_a0"], t=t + consts["t0"], Ms=consts["Ms"])
+#         iwmax = np.argmax(graphs[0].array_image[:, imax])
+#         sig_w_max = graphs[0].array_image[iwmax, imax]
+#
+#         if np.any(graphs[0].array_image[:iwmax, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#             imin_w_in = \
+#                 np.argwhere(graphs[0].array_image[:iwmax, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                     -1, 0]
+#         else:
+#             imin_w_in = 0
+#         if np.any(graphs[0].array_image[iwmax:, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#             imin_w_out = (iwmax +
+#                           np.argwhere(
+#                               graphs[0].array_image[iwmax:, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                               0, 0])
+#         else:
+#             imin_w_out = len(graphs[0].y_axe_image) - 1
+#
+#         # gr = g.loglog(graphs[0].y_axe_image, graphs[0].array_image[:, imax], show=False)
+#         # gr.line([graphs[0].y_axe_image[imin_w_in], graphs[0].y_axe_image[imin_w_in]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color="k", lw=2)
+#         # gr.line([graphs[0].y_axe_image[imin_w_out], graphs[0].y_axe_image[imin_w_out]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color="k", lw=2)
+#         # gr.line([graphs[0].y_axe_image[iwmax], graphs[0].y_axe_image[iwmax]],
+#         #         [ graphs[0].array_image[:, imax].min(),  graphs[0].array_image[:, imax].max()], color=g.C6, lw=2)
+#         # gr.show()
+#         if edge_on:
+#             S = 4 * trapezoid(Hz[imin_w_in: imin_w_out], graphs[0].y_axe_image[imin_w_in:imin_w_out])
+#         else:
+#             S = 2. * Pi * (graphs[0].y_axe_image[imin_w_out] ** 2 - graphs[0].y_axe_image[imin_w_in] ** 2)
+#         Nemit_surf = mw / (18 * mp * S)
+#         print("t=", t, "S/Sbelt=", S / (Pi * ((consts["AB_a0"] + consts["AB_delta_r"] / 2.) ** 2
+#                                               - (consts["AB_a0"] - consts["AB_delta_r"] / 2.) ** 2)))
+#         Rstar = interpRs(t + consts["t0"], consts["Ms"])
+#         ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                   T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                      / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                      * (Rstar ** 2) / ((consts["AB_a0"]) ** 2)
+#                                      + helpers.generate_CMB_background(z=0)(nu))
+#         collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+#         print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#         if source[molecule].geometry_name == "LVG slab":
+#             source[molecule].update_parameters(
+#                 N=Nemit_surf * C_L * C_L,
+#                 Tkin=np.max([Temp, 200]),
+#                 collider_densities=collider_densities,
+#                 ext_background=ext_background,
+#                 T_dust=0,
+#                 tau_dust=0,
+#             )
+#         else:
+#             source[molecule].update_parameters(
+#                 N=Nemit_surf * C_L * C_L,
+#                 Tkin=np.max([Temp, 200]),
+#                 collider_densities=collider_densities,
+#                 ext_background=ext_background,
+#                 T_dust=Temp,
+#                 tau_dust=tau_dust,
+#             )
+#         source[molecule].solve_radiative_transfer()
+#         # flux = source[molecule].frequency_integrated_emission(
+#         #     output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)) freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+#         flux_loc = np.zeros_like(freqs)
+#         for i in range(len(flux_loc)):
+#             nu = freqs[i] * (1 - v / 299792458)
+#             flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+#                                                                nu=nu, solid_angle=S / (dpc * dpc * pc * pc)), nu)
+#         flux = flux_loc
+#
+#         if return_tau:
+#             tau = source[molecule].tau(nu=source[molecule].emitting_molecule.nu0)
+#         if return_Tex:
+#             Tex = source[molecule].Tex / Temp
+#         if return_full:
+#             Tkin = Temp
+#             print("mw=", mw)
+#             Mws = mw
+#             times_calc = t
+#             omega = S / (dpc * dpc * pc * pc)
+#     else:
+#         times = np.linspace(tmin, graphs[0].x_axe_image.max(), n_ech)
+#         for t in times:
+#             it: int = np.argwhere(graphs[0].x_axe_image < t)[-1, 0]
+#             sig = np.array(
+#                 [np.interp(graphs[0].x_axe_image[it], graphs[1].x_axe_image, Sig) for Sig in graphs[1].array_image])
+#             mw = Mw[it]
+#             Hz = np.sqrt(Rgp * T(r=graphs[0].y_axe_image, t=graphs[0].x_axe_image[it] + consts["t0"], Ms=consts["Ms"])
+#                          * (graphs[0].y_axe_image ** 3) / ((18. * 1e-3 * C_M) * G * consts["Ms"]))
+#             Ncol = np.max(sig / (18 * mp * Hz))
+#             if lte:
+#                 Ncol *= 1e50
+#             consts["AB_a0"] = np.array(consts["AB_a0"], dtype=np.float64).tolist()
+#             if isinstance(consts["AB_a0"], list):
+#                 consts["AB_a0"] = consts["AB_a0"][0]
+#             t = graphs[0].x_axe_image[it]
+#             Temp = T(r=consts["AB_a0"], t=t + consts["t0"], Ms=consts["Ms"])
+#             iwmax = np.argmax(graphs[0].array_image[:, it])
+#             sig_w_max = graphs[0].array_image[iwmax, it]
+#
+#             if np.any(graphs[0].array_image[:iwmax, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#                 imin_w_in = \
+#                     np.argwhere(graphs[0].array_image[:iwmax, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                         -1, 0]
+#             else:
+#                 imin_w_in = 0
+#             if np.any(graphs[0].array_image[iwmax:, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#                 imin_w_out = (iwmax +
+#                               np.argwhere(graphs[0].array_image[iwmax:, it] < max(sig_w_max * 1e-3,
+#                                                                                   1e-10 * Mearth / (au * au)))[0, 0])
+#             else:
+#                 imin_w_out = len(graphs[0].y_axe_image) - 1
+#             if edge_on:
+#                 S = 4 * trapezoid(Hz[imin_w_in: imin_w_out], graphs[0].x_axe_imager[imin_w_in:imin_w_out])
+#             else:
+#                 S = 2. * Pi * (graphs[0].y_axe_image[imin_w_out] ** 2 - graphs[0].y_axe_image[imin_w_in] ** 2)
+#             Nemit_surf = mw / (18 * mp * S)
+#             print("t=", t, "S/Sbelt=", S / (Pi * ((consts["AB_a0"] + consts["AB_delta_r"] / 2.) ** 2
+#                                                   - (consts["AB_a0"] - consts["AB_delta_r"] / 2.) ** 2)))
+#             Rstar = interpRs(t + consts["t0"], consts["Ms"])
+#             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                       T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                          * (Rstar ** 2) / ((consts["AB_a0"]) ** 2)
+#                                          + helpers.generate_CMB_background(z=0)(nu))
+#             collider_densities = {"H2": Ncol * (C_L * C_L * C_L)}
+#             print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#             if Nemit_surf > zero:
+#                 if source[molecule].geometry_name == "LVG slab":
+#                     source[molecule].update_parameters(
+#                         N=Nemit_surf * C_L * C_L,
+#                         Tkin=np.max([Temp, 200]),
+#                         collider_densities=collider_densities,
+#                         ext_background=ext_background,
+#                         T_dust=0,
+#                         tau_dust=0,
+#                     )
+#                 else:
+#                     source[molecule].update_parameters(
+#                         N=Nemit_surf * C_L * C_L,
+#                         Tkin=np.max([Temp, 200]),
+#                         collider_densities=collider_densities,
+#                         ext_background=ext_background,
+#                         T_dust=Temp,
+#                         tau_dust=tau_dust,
+#                     )
+#                 source[molecule].solve_radiative_transfer()
+#                 # flux.append(source[molecule].frequency_integrated_emission(
+#                 #     output_type="flux", solid_angle=S / (dpc * dpc * pc * pc))) freqs = source[molecule].emitting_molecule.nu0[source[molecule].emitting_molecule.nu0 > freq_min * C_t]
+#                 flux_loc = np.zeros_like(freqs)
+#                 for i in range(len(flux_loc)):
+#                     nu = freqs[i] * (1 - v / 299792458)
+#                     flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+#                                                                        nu=nu, solid_angle=S / (dpc * dpc * pc * pc)),
+#                                              nu)
+#                 flux.append(flux_loc)
+#
+#                 if return_tau:
+#                     tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+#                 if return_Tex:
+#                     Tex.append(source[molecule].Tex / Temp)
+#             else:
+#                 flux.append(np.zeros_like(tab_trens[:, 4]))
+#                 if return_tau:
+#                     tau.append(np.zeros_like(tab_trens[:, 4]))
+#                 if return_Tex:
+#                     Tex.append(np.zeros_like(tab_trens[:, 4]))
+#
+#             if return_full:
+#                 Tkin.append(Temp)
+#                 Mws.append(mw)
+#                 times_calc.append(t)
+#                 omega.append(S / (dpc * dpc * pc * pc))
+#     if return_full:
+#         # freqs = tab_trens[:, 4] * C_t
+#         return freqs, np.array(flux) * C_flux_final, tau, Tex, Tkin, times_calc, Mws, omega
+#     elif return_frequency:
+#         # freqs = tab_trens[:, 4] * C_t
+#         if return_tau and return_Tex:
+#             return freqs, np.array(flux) * C_flux_final, tau, Tex
+#         elif return_tau:
+#             return freqs, np.array(flux) * C_flux_final, tau
+#         elif return_Tex:
+#             return freqs, np.array(flux) * C_flux_final, Tex
+#         else:
+#             return freqs, np.array(flux) * C_flux_final
+#     else:
+#         if return_tau and return_Tex:
+#             return np.array(flux) * C_flux_final, tau, Tex
+#         elif return_tau:
+#             return np.array(flux) * C_flux_final, tau
+#         elif return_Tex:
+#             return np.array(flux) * C_flux_final, Tex
+#         else:
+#             return np.array(flux) * C_flux_final
+#
+#
+# def calcul_flux_radex_ALMA(graphs: Graphique, consts: dict, jykms: bool = True, dpc: np.float64 = 50,
+#                            molecule: str = "oh2lamda", return_frequency: bool = False,
+#                            tau_dust=1e-3, edge_on: bool = False,
+#                            return_tau: bool = False, return_Tex: bool = False, lte: bool = False,
+#                            tmin: np.float64 = 0.5 * Myr, n_ech: int = 100, return_full: bool = True,
+#                            with_CMB: bool = True):
+#     """
+#
+#     Parameters
+#     ----------
+#     graphs: list[Graphique]
+#         [Water surface density, total surface density]
+#     jykms
+#     dpc
+#     molecule
+#     return_frequency
+#     tau_dust
+#     edge_on
+#     return_tau
+#     return_Tex
+#     lte
+#     consts
+#
+#     Returns
+#     -------
+#
+#     """
+#     init_source(molecule,
+#                 width_v=np.sqrt(G * Ms / consts["AB_a0"]) * C_t / C_L)
+#     freqs = source[molecule].emitting_molecule.nu0
+#
+#     file_lines: str = data_radmc + "/molecule_" + molecule + ".inp"
+#     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(filename=file_lines)
+#     # conversion to code units
+#     tab_E[:, 1] *= h * c * 1e2 / C_L  # conversion of the enery level from cm**-1 to the code energy uni
+#     tab_trens[:, 3] /= C_t  # conversion Einstein number from s**-1 to code unit
+#     tab_trens[:, 4] *= 1e9 / C_t  # conversion frequency from s**-1 to code unit
+#     tab_col_trens[:, 3:] *= 1e-6 * (C_L * C_L * C_L) / C_t  # conversion cm**3/s to equivalent code unit
+#
+#     # total gaseous water mass as function of time
+#     width_v = source[molecule + "_width_v"]
+#     v = np.linspace(-2 * width_v, 2 * width_v, 10)  # m/sflux = []
+#     C_flux_final = 1.
+#     if jykms:
+#         C_flux_final *= (np.double(1e26)
+#                          / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+#                             * (tab_trens[:, 4] * C_t)))
+#     tau = []
+#     Tex = []
+#     flux = []
+#     Tkin = []
+#     Mws = []
+#     times_calc = []
+#     omega = []
+#     mwmin = trapezoid(2 * Pi * graphs[0].y_axe_image
+#                       * np.array([1e-10 for r in graphs[0].y_axe_image]),
+#                       graphs[0].y_axe_image)
+#     imin = np.argwhere(graphs[0].x_axe_image > tmin)[0, 0]
+#     Mw = trapezoid(2 * Pi * graphs[0].y_axe_image * (graphs[0].array_image.T), graphs[0].y_axe_image) - mwmin
+#     if n_ech == 0:
+#         imax = imin + np.argmax(Mw[imin:])
+#         sig = np.array(
+#             [np.interp(graphs[0].x_axe_image[imax], graphs[1].x_axe_image, Sig) for Sig in graphs[1].array_image])
+#         mw = Mw[imax]
+#         Hz = np.sqrt(Rgp * T(r=graphs[0].y_axe_image, t=graphs[0].x_axe_image[imax] + consts["t0"], Ms=consts["Ms"])
+#                      * (graphs[0].y_axe_image ** 3) / ((18. * 1e-3 * C_M) * G * consts["Ms"]))
+#         Ncol = np.max(sig / (18 * mp * Hz))
+#         if lte:
+#             Ncol *= 1e50
+#
+#         consts["AB_a0"] = np.array(consts["AB_a0"], dtype=np.float64).tolist()
+#         if isinstance(consts["AB_a0"], list):
+#             consts["AB_a0"] = consts["AB_a0"][0]
+#         t = graphs[0].x_axe_image[imax]
+#         Temp = T(r=consts["AB_a0"], t=t + consts["t0"], Ms=consts["Ms"])
+#         iwmax = np.argmax(graphs[0].array_image[:, imax])
+#         sig_w_max = graphs[0].array_image[iwmax, imax]
+#
+#         if np.any(graphs[0].array_image[:iwmax, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#             imin_w_in = \
+#             np.argwhere(graphs[0].array_image[:iwmax, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[-1, 0]
+#         else:
+#             imin_w_in = 0
+#         if np.any(graphs[0].array_image[iwmax:, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#             imin_w_out = (iwmax +
+#                           np.argwhere(
+#                               graphs[0].array_image[iwmax:, imax] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                               0, 0])
+#         else:
+#             imin_w_out = len(graphs[0].y_axe_image) - 1
+#
+#         if edge_on:
+#             S = 4 * trapezoid(Hz[imin_w_in: imin_w_out], graphs[0].x_axe_imager[imin_w_in:imin_w_out])
+#         else:
+#             S = 2. * Pi * (graphs[0].y_axe_image[imin_w_out] ** 2 - graphs[0].y_axe_image[imin_w_in] ** 2)
+#         Nemit_surf = mw / (18 * mp * S)
+#         print("t=", t, "S/Sbelt=", S / (Pi * ((consts["AB_a0"] + consts["AB_delta_r"] / 2.) ** 2
+#                                               - (consts["AB_a0"] - consts["AB_delta_r"] / 2.) ** 2)))
+#         Rstar = interpRs(t + consts["t0"], consts["Ms"])
+#         if with_CMB:
+#             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                       T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                          * (Rstar ** 2) / ((consts["AB_a0"]) ** 2)
+#                                          + helpers.generate_CMB_background(z=0)(nu))
+#         else:
+#             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                       T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                          * (Rstar ** 2) / ((consts["AB_a0"]) ** 2))
+#
+#         collider_densities = {"H": Ncol * (C_L * C_L * C_L)}
+#         print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#
+#         if Nemit_surf > zero:
+#             if source[molecule].geometry_name == "LVG slab":
+#                 source[molecule].update_parameters(
+#                     N=Nemit_surf * C_L * C_L,
+#                     Tkin=np.max([Temp, 200]),
+#                     collider_densities=collider_densities,
+#                     ext_background=ext_background,
+#                     T_dust=0,
+#                     tau_dust=0,
+#                 )
+#             else:
+#                 source[molecule].update_parameters(
+#                     N=Nemit_surf * C_L * C_L,
+#                     Tkin=np.max([Temp, 200]),
+#                     collider_densities=collider_densities,
+#                     ext_background=ext_background,
+#                     T_dust=Temp,
+#                     tau_dust=tau_dust,
+#                 )
+#             source[molecule].solve_radiative_transfer()
+#             # flux = source[molecule].frequency_integrated_emission(
+#             #     output_type="flux", solid_angle=S / (dpc * dpc * pc * pc))
+#             flux_loc = np.zeros_like(freqs)
+#             for i in range(len(flux_loc)):
+#                 nu = freqs[i] * (1 - v / 299792458)
+#                 flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+#                                                                    nu=nu, solid_angle=S / (dpc * dpc * pc * pc)), nu)
+#             flux = flux_loc
+#             if return_tau:
+#                 tau = source[molecule].tau(nu=source[molecule].emitting_molecule.nu0)
+#             if return_Tex:
+#                 Tex = source[molecule].Tex / Temp
+#         else:
+#             flux = np.zeros_like(tab_trens[:, 4])
+#             if return_tau:
+#                 tau = np.zeros_like(tab_trens[:, 4])
+#             if return_Tex:
+#                 Tex = np.zeros_like(tab_trens[:, 4])
+#         if return_full:
+#             Tkin = Temp
+#             Mws = mw
+#             times_calc = t
+#             omega = S / (dpc * dpc * pc * pc)
+#     else:
+#         times = np.linspace(tmin, graphs[0].x_axe_image.max(), n_ech)
+#         for t in times:
+#             it: int = np.argwhere(graphs[0].x_axe_image < t)[-1, 0]
+#             sig = np.array(
+#                 [np.interp(graphs[0].x_axe_image[it], graphs[1].x_axe_image, Sig) for Sig in graphs[1].array_image])
+#             mw = Mw[it]
+#             Hz = np.sqrt(Rgp * T(r=graphs[0].y_axe_image, t=graphs[0].x_axe_image[it] + consts["t0"], Ms=consts["Ms"])
+#                          * (graphs[0].y_axe_image ** 3) / ((18. * 1e-3 * C_M) * G * consts["Ms"]))
+#             Ncol = np.max(sig / (18 * mp * Hz))
+#             if lte:
+#                 Ncol *= 1e50
+#
+#             consts["AB_a0"] = np.array(consts["AB_a0"], dtype=np.float64).tolist()
+#             if isinstance(consts["AB_a0"], list):
+#                 consts["AB_a0"] = consts["AB_a0"][0]
+#             t = graphs[0].x_axe_image[it]
+#             Temp = T(r=consts["AB_a0"], t=t + consts["t0"], Ms=consts["Ms"])
+#             iwmax = np.argmax(graphs[0].array_image[:, it])
+#             sig_w_max = graphs[0].array_image[iwmax, it]
+#
+#             if np.any(graphs[0].array_image[:iwmax, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#                 imin_w_in = \
+#                 np.argwhere(graphs[0].array_image[:iwmax, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au)))[
+#                     -1, 0]
+#             else:
+#                 imin_w_in = 0
+#             if np.any(graphs[0].array_image[iwmax:, it] < max(sig_w_max * 1e-3, 1e-10 * Mearth / (au * au))):
+#                 imin_w_out = (iwmax +
+#                               np.argwhere(graphs[0].array_image[iwmax:, it] < max(sig_w_max * 1e-3,
+#                                                                                   1e-10 * Mearth / (au * au)))[0, 0])
+#             else:
+#                 imin_w_out = len(graphs[0].y_axe_image) - 1
+#             if edge_on:
+#                 S = 4 * trapezoid(Hz[imin_w_in: imin_w_out], graphs[0].x_axe_imager[imin_w_in:imin_w_out])
+#             else:
+#                 S = 2. * Pi * (graphs[0].y_axe_image[imin_w_out] ** 2 - graphs[0].y_axe_image[imin_w_in] ** 2)
+#             Nemit_surf = mw / (18 * mp * S)
+#             print("t=", t, "S/Sbelt=", S / (Pi * ((consts["AB_a0"] + consts["AB_delta_r"] / 2.) ** 2
+#                                                   - (consts["AB_a0"] - consts["AB_delta_r"] / 2.) ** 2)))
+#             Rstar = interpRs(t + consts["t0"], consts["Ms"])
+#             ext_background = lambda nu: (helpers.B_nu(nu=nu,
+#                                                       T=(interpLbol(t + consts["t0"], consts["Ms"])
+#                                                          / (4. * Pi * (Rstar ** 2) * sigma)) ** (1 / 4))
+#                                          * (Rstar ** 2) / ((consts["AB_a0"]) ** 2)
+#                                          + helpers.generate_CMB_background(z=0)(nu))
+#             collider_densities = {"H": Ncol * (C_L * C_L * C_L)}
+#             print("Nsurf=", Nemit_surf * C_L * C_L, "ncol=", Ncol * (C_L * C_L * C_L))
+#
+#             source[molecule].update_parameters(
+#                 N=Nemit_surf * C_L * C_L,
+#                 Tkin=np.max([Temp, 200]),
+#                 collider_densities=collider_densities,
+#                 ext_background=ext_background,
+#                 T_dust=Temp,
+#                 tau_dust=tau_dust,
+#             )
+#             source[molecule].solve_radiative_transfer()
+#             # flux.append(source[molecule].frequency_integrated_emission(
+#             #    output_type="flux", solid_angle=S / (dpc * dpc * pc * pc)))
+#             flux_loc = np.zeros_like(freqs)
+#             for i in range(len(flux_loc)):
+#                 nu = freqs[i] * (1 - v / 299792458)
+#                 flux_loc[i] = -trapezoid(source[molecule].spectrum(output_type="flux density",
+#                                                                    nu=nu, solid_angle=S / (dpc * dpc * pc * pc)), nu)
+#             flux.append(flux_loc)
+#             if return_tau:
+#                 tau.append(source[molecule].tau(nu=source[molecule].emitting_molecule.nu0))
+#             if return_Tex:
+#                 Tex.append(source[molecule].Tex / Temp)
+#             if return_full:
+#                 Tkin.append(Temp)
+#                 Mws.append(mw)
+#                 times_calc.append(t)
+#                 omega.append(S / (dpc * dpc * pc * pc))
+#     if return_full:
+#         return freqs, np.array(flux) * C_flux_final, tau, Tex, Tkin, times_calc, Mws, omega
+#     elif return_frequency:
+#         freqs = tab_trens[:, 4] * C_t
+#         if return_tau and return_Tex:
+#             return freqs, np.array(flux) * C_flux_final, tau, Tex
+#         elif return_tau:
+#             return freqs, np.array(flux) * C_flux_final, tau
+#         elif return_Tex:
+#             return freqs, np.array(flux) * C_flux_final, Tex
+#         else:
+#             return freqs, np.array(flux) * C_flux_final
+#     else:
+#         if return_tau and return_Tex:
+#             return np.array(flux) * C_flux_final, tau, Tex
+#         elif return_tau:
+#             return np.array(flux) * C_flux_final, tau
+#         elif return_Tex:
+#             return np.array(flux) * C_flux_final, Tex
+#         else:
+#             return np.array(flux) * C_flux_final
+#
+#
+# ## Radmc
+#
+# def radmc_setupJWST(graphs: Graphique, consts: dict, i: int, directory: str = None, size_grid: int = 200
+#                     ) -> None:
+#     """
+#     Generate the configuration file for radmc3d for the surface density at time self.tps[i]
+#
+#     Parameters
+#     ----------
+#     i: int
+#         The index at which the surface density is plotted
+#     directory : str, default=self.directory+'/'+i
+#         The directory where the configuration are stored
+#     size_grid : int, default=128
+#         THe size of the spatial grid (the water surface density is interpolated on it)
+#
+#     Returns
+#     -------
+#     None
+#
+#     """
+#     if directory is None:
+#         directory = consts["results"] + "/" + consts["Simulation"]
+#     if not os.path.exists(directory):
+#         os.mkdir(directory)
+#     doss: str = directory
+#
+#     nphot: int = 100000  # Monte Carlo parameters
+#     # !! WARNING !!
+#     # Radmc need cgs units
+#     # !! !!
+#
+#     # Grid parameters
+#
+#     nr: int = size_grid
+#     nlev_rin: int = 12  # Grid refinement at the inner edge: nr of cycles
+#     nspan_rin: int = 3  # Grid refinement at the inner edge: nr of cells each cycle
+#     ntheta: int = 32
+#     nphi: int = 1
+#     r = graphs[0].y_axe_image
+#     rin: np.float64 = (r.min() / C_L) * 1e2
+#     rout: np.float64 = (r.max() / C_L) * 1e2
+#     thetaup: np.float64 = Pi * 0.5 - 1.
+#
+#     # Disk parameters
+#
+#     pstar: np.ndarray[np.float64] = np.array([0., 0., 0.])
+#
+#     # Make the coordinates
+#
+#     # ri: np.ndarray[np.float64] = self.r[::max(1, len(self.r) // size_grid)]
+#     ri: np.ndarray[np.float64] = np.geomspace(rin, rout, nr + 1)
+#     # ri: np.ndarray[np.float64] = grid_refine_inner_edge(ri, nlev_rin, nspan_rin)  # Refinement at inner edge
+#
+#     thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+#     phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+#     rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+#     nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+#     thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+#     phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+#
+#     # Make the grid
+#
+#     qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+#     rr: np.ndarray[np.float64] = qq[0]
+#     tt: np.ndarray[np.float64] = qq[1]
+#     zr: np.ndarray[np.float64] = Pi / 2. - qq[1]
+#
+#     # Make the temperature model
+#     temp: np.ndarray[np.float64] = T((rr * 1e-2) * C_L, t=graphs[0].x_axe_image[i], Ms=consts["Ms"])
+#
+#     # Make the density model
+#     # g.loglog(rr.flatten(), temp.flatten(), ".")
+#     h_h2o: np.ndarray[np.float64] = np.sqrt(kb * temp * (rr * rr * rr * 1e-6 * C_L * C_L * C_L)
+#                                             / (18. * mp * G * consts["Ms"])) * 1e2 / C_L
+#
+#     sigma_H2O: np.ndarray[np.float64] = np.interp(rr, r * 1e2 / C_L,
+#                                                   graphs[0].array_image[:, i]) * (C_L * C_L / C_M) * (1e3 / (1e4))
+#     rhog_h2o: np.ndarray[np.float64] = (sigma_H2O / (np.sqrt(2. * Pi) * h_h2o)
+#                                         ) * np.exp(-zr * zr * rr * rr / (h_h2o * h_h2o * 2.))
+#
+#     # Make the velocity model
+#
+#     vr: np.ndarray[np.float64] = np.zeros_like(rr)
+#     vtheta: np.ndarray[np.float64] = np.zeros_like(rr)
+#     vphi: np.ndarray[np.float64] = np.sqrt(G * consts["Ms"] / (rr * C_L * 1e-2)) * (C_t / C_L) * 1e2
+#     vturb: np.ndarray[np.float64] = 0.001 * vphi
+#
+#     # Write the wavelength_micron.inp file
+#
+#     lam1 = 0.1e0
+#     lam2 = 7.0e0
+#     lam3 = 25.e0
+#     lam4 = 1.0e4
+#     n12 = 60
+#     n23 = 200
+#     n34 = 30
+#     lam12 = np.logspace(np.log10(lam1), np.log10(lam2), n12, endpoint=False)
+#     lam23 = np.logspace(np.log10(lam2), np.log10(lam3), n23, endpoint=False)
+#     lam34 = np.logspace(np.log10(lam3), np.log10(lam4), n34, endpoint=True)
+#     lam = np.concatenate([lam12, lam23, lam34])
+#
+#     nlam: int = lam.size
+#
+#     # Write the wavelength file
+#
+#     with open(doss + '/wavelength_micron.inp', 'w+') as f:
+#         f.write('%d\n' % (nlam))
+#         for value in lam:
+#             f.write('%13.6e\n' % (value))
+#
+#     # NB All datas needs to be saved in cgs system....
+#
+#     # Write the stars.inp file
+#
+#     with open(doss + '/stars.inp', 'w+') as f:
+#         f.write('2\n')
+#         f.write('1 %d\n\n' % nlam)
+#         f.write('%13.6e %13.6e %13.6e %13.6e %13.6e\n\n' % (interpRs(graphs[0].x_axe_image[i] + consts["t0"], consts["Ms"]) * 1e2 / C_L,
+#                                                             consts["Ms"] * 1e3 / C_M,
+#                                                             pstar[0], pstar[1], pstar[2]))
+#         for value in lam:
+#             f.write('%13.6e\n' % value)
+#         f.write('\n%13.6e\n' % (- ((interpLbol(graphs[0].x_axe_image[i] + consts["t0"], consts["Ms"])
+#                                     / (4. * Pi * (interpRs(graphs[0].x_axe_image[i] + consts["t0"], consts["Ms"]) ** 2) * sigma))) ** (
+#                                               1. / 4.)))
+#
+#     # Write the grid file
+#
+#     with open(doss + '/amr_grid.inp', 'w+') as f:
+#         f.write('1\n')  # iformat
+#         f.write('0\n')  # AMR grid style  (0=regular grid, no AMR)
+#         f.write('100\n')  # Coordinate system: spherical
+#         f.write('0\n')  # gridinfo
+#         f.write('1 1 0\n')  # Include r,theta coordinates
+#         f.write('%d %d %d\n' % (nr, ntheta, 1))  # Size of grid
+#         for value in ri:
+#             f.write('%13.6e\n' % value)  # X coordinates (cell walls)
+#         for value in thetai:
+#             f.write('%13.6e\n' % value)  # Y coordinates (cell walls)
+#         for value in phii:
+#             f.write('%13.6e\n' % value)  # Z coordinates (cell walls)
+#
+#     # Write the density file
+#
+#     with open(doss + '/dust_density.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         f.write('1\n')  # Nr of dust species
+#         data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#     # with open(doss + '/dust_density.inp', 'w+') as f:
+#     #     f.write('1\n')  # Format number
+#     #     f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#     #     f.write('0\n')  # Nr of dust species
+#     #     # data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#     #     # data.tofile(f, sep='\n', format="%13.6e")
+#     #     # f.write('\n')
+#
+#     # Dust opacity control file
+#
+#     with open(doss + '/dustopac.inp', 'w+') as f:
+#         f.write('2               Format number of this file\n')
+#         f.write('1               Nr of dust species\n')
+#         f.write('============================================================================\n')
+#         f.write('1               Way in which this dust species is read\n')
+#         f.write('0               0=Thermal grain\n')
+#         f.write('silicate        Extension of name of dustkappa_***.inp file\n')
+#         f.write('----------------------------------------------------------------------------\n')
+#
+#     # with open(doss + '/dustopac.inp', 'w+') as f:
+#     #     f.write('2               Format number of this file\n')
+#     #     f.write('0               Nr of dust species\n')
+#     #     f.write('============================================================================\n')
+#     #     f.write('----------------------------------------------------------------------------\n')
+#
+#     # Write the molecule number density file.
+#
+#     mu_h2o = 18  # Mass of a H2O molecule in proton mass unity
+#     nh2o = rhog_h2o / (mu_h2o * (mp * 1e3 / C_M))
+#     print("test nh2o", nh2o.sum(), rhog_h2o.sum(), sigma_H2O.sum())
+#     with open(doss + '/numberdens_ph2olamda.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         data = nh2o.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#     with open(doss + '/numberdens_oh2olamda.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         data = nh2o.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#
+#     # Write the gas velocity field
+#
+#     with open(doss + '/gas_velocity.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         for iphi in range(nphi):
+#             for itheta in range(ntheta):
+#                 for ir in range(nr):
+#                     f.write(
+#                         '%13.6e %13.6e %13.6e\n' % (vr[ir, itheta, iphi],
+#                                                     vtheta[ir, itheta, iphi],
+#                                                     vphi[ir, itheta, iphi]))
+#
+#     # Write the temperature file
+#
+#     with open(doss + '/gas_temperature.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#
+#     # Write the microturbulence file
+#
+#     with open(doss + '/microturbulence.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         data = vturb.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#
+#     # Write the lines.inp control file
+#
+#     with open(doss + '/lines.inp', 'w') as f:
+#         f.write('2\n')
+#         f.write('2\n')
+#         f.write('ph2olamda  leiden 0   0   0\n')
+#         f.write('oh2olamda  leiden 0   0   0\n')
+#
+#     # Write the radmc3d.inp control file
+#
+#     with open(doss + '/radmc3d.inp', 'w+') as f:
+#         f.write('nphot = %d\n' % nphot)
+#         f.write('camera_incl_stars = 0\n')  # remove the central star flux
+#         f.write('scattering_mode_max = 0\n')
+#         f.write('iranfreqmode = 1\n')
+#         # f.write('tgas_eq_tdust = 1\n')  # Use the dust temperature of dust species 1 as gas temperature
+#
+#     shutil.copyfile(data_radmc + "/molecule_ph2olamda.inp", doss + "/molecule_ph2olamda.inp")
+#     shutil.copyfile(data_radmc + "/molecule_oh2olamda.inp", doss + "/molecule_oh2olamda.inp")
+#     # shutil.copyfile(data_radmc + "/molecule_h2op.inp", doss + "/molecule_h2op.inp" )
+#     # shutil.copyfile(data_radmc + "/partitionfunction_h2o.inp", doss + "/partitionfunction_h2o.inp" )
+#     #shutil.copyfile(data_radmc + "/linelist_h2o.inp", doss + "/linelist_h2o.inp" )
+#     shutil.copyfile(data_radmc + "/dustkappa_silicate.inp", doss + "/dustkappa_silicate.inp")
+#
+#
+# def calc_flux_trans_radmcJWST(graphs: Graphique, consts: dict,
+#                               i: int, directory: str = None, size_grid: int = 200,
+#                               incl: np.float64 = 0, phi: np.float64 = 59., dpc: np.float64 = 50,
+#                               nb_trens: int = 1, id_molecule: int = 1,
+#                               setup_radmc: bool = True) -> np.float64:
+#     idx_i = -1
+#     if directory is None:
+#         directory = consts["results"] + "/" + consts["Simulation"]
+#     if not os.path.exists(directory):
+#         os.mkdir(directory)
+#     doss: str = directory
+#
+#     if setup_radmc:
+#         r = graphs[0].y_axe_image
+#         radmc_setupJWST(graphs=graphs, consts=consts, i=i, directory=directory, size_grid=size_grid)
+#         thetaup: np.float64 = Pi * 0.5 - 1.
+#         ntheta: int = 32
+#         nphi: int = 1
+#         ri: np.ndarray[np.float64] = np.geomspace(r.min(), r.max(), size_grid + 1) * 1e2 / C_L
+#         thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+#         phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+#         rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+#         nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+#         thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+#         phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+#         # Make the grid
+#         qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+#         rr: np.ndarray[np.float64] = qq[0]
+#         # Make the temperature model
+#         temp: np.ndarray[np.float64] = T(r=rr * 1e-2 * C_L, t=graphs[0].x_axe_image[i],
+#                                          Ms=consts["Ms"])
+#         with open(directory + '/gas_temperature.inp', 'w+') as f:
+#             f.write('1\n')  # Format number
+#             f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#             data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#             data.tofile(f, sep='\n', format="%13.6e")
+#             f.write('\n')
+#
+#     cwd: str = os.getcwd()
+#     os.chdir(doss)
+#     vkms: np.float64 = 0.
+#     widthkms: np.float64 = 40.0
+#     npix: np.float64 = 400
+#     linenlam: np.float64 = 70
+#     if setup_radmc:
+#         os.system("radmc3d mctherm")
+#
+#     command = 'radmc3d image imolspec {} iline {} vkms {} widthkms {} incl {}  phi {}' \
+#               ' npix {} linenlam {}'.format(id_molecule, nb_trens,
+#                                             vkms, widthkms, incl, phi, npix, linenlam)
+#     os.system(command)
+#     im = radmc_im.readImage()
+#     tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
+#     print("shape : ", im.imageJyppix.shape, tab_vkms.shape)
+#     # im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1)) #!!!!! A recalcluer
+#     # im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+#     flux_jy_km_s = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).sum() / (dpc * dpc)
+#     flux_w_m2 = flux_jy_km_s / (np.double(1e26) / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+#                                                    * (np.mean(im.freq))))
+#     os.chdir(cwd)
+#     return flux_w_m2, flux_jy_km_s
+#
+#
+# def calc_single_flux_radmcJWST(graphs: Graphique, consts: dict, i: int, directory: str = None,
+#                                size_grid: int = 128, incl: np.float64 = 13,
+#                                phi: np.float64 = 59., dpc: np.float64 = 50,
+#                                lambda_min_micron=0.7, lambda_max_micron=27.9,
+#                                freqs_radex: np.ndarray = None, flux_radex: np.ndarray = None
+#                                ) -> list[np.ndarray]:
+#     """
+#
+#     Parameters
+#     ----------
+#     i: int
+#         The index at which the surface density is plotted
+#     directory : str, default=self.directory+'/'+i
+#         The directory where the configuration are stored
+#     size_grid : int, default=128
+#         The size of the spatial grid (the water surface density is interpolated on it)
+#
+#     Returns
+#     -------
+#     np.ndarray[np.float64]
+#         The spatially integrated luminosity flux
+#
+#     """
+#     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(data_radmc + "/molecule_ph2olamda.inp")
+#     lambdas = (((c / (C_L / C_t)) / (tab_trens[:, 4] * 1e9)) * 1e6)
+#     n_calc: int = 10
+#     if flux_radex is None:
+#         lines = [[0, i] for i in np.argwhere((lambdas < lambda_max_micron)
+#                                              * (lambdas > lambda_min_micron))[:, 0]]
+#         lines = lines[::len(lines) // n_calc]
+#         lambdas = lambdas[(lambdas < lambda_max_micron)
+#                           * (lambdas > lambda_min_micron)][::len(lines) // 10]
+#     else:
+#         idx_flux_max = np.argsort(flux_radex)
+#         lines = [[0, np.argmin(abs((tab_trens[:, 4] - f) / f))]
+#                  for f in freqs_radex[idx_flux_max[-n_calc:]]]
+#         print("freqs : ", freqs_radex[idx_flux_max[-n_calc:]], tab_trens[np.array(lines)[:, 1], 4])
+#         print('relative errors on freqs : ', [np.min(abs((tab_trens[:, 4] - f) / f))
+#                                               for f in freqs_radex[idx_flux_max[-n_calc:]]])
+#         lambdas = [lambdas[np.argmin(abs((tab_trens[:, 4] - f) / f))]
+#                    for f in freqs_radex[idx_flux_max[-n_calc:]]]
+#
+#
+#     res = []
+#     for t in lines:
+#         print("transition : ", t)
+#         res.append(list(
+#             calc_flux_trans_radmcJWST(graphs = graphs, consts=consts, i=i,
+#                                       directory=directory, size_grid=size_grid, incl=incl, phi=phi, dpc=dpc,
+#                                       nb_trens=t[1], id_molecule=t[0], setup_radmc=len(res) == 0)))
+#         print("Flux = ", res[-1], "\n\n\n-----------------------\n\n\n")
+#     return lambdas, res
+#
+#
+# def calc_fluc_radmc_JWST(graphs: Graphique, consts: dict, tmin: np.float64 = 0.5 * Myr,
+#                          size_grid: int = 128, incl: np.float64 = 13, phi: np.float64 = 59.,
+#                          dpc: np.float64 = 50,
+#                          freqs_radex: np.ndarray = None, flux_radex: np.ndarray = None):
+#     mwmin = trapezoid(2 * Pi * graphs[0].y_axe_image
+#                       * np.array([1e-10 for r in graphs[0].y_axe_image]),
+#                       graphs[0].y_axe_image)
+#     imin = np.argwhere(graphs[0].x_axe_image > tmin)[0, 0]
+#     mw = trapezoid(2 * Pi * graphs[0].y_axe_image * (graphs[0].array_image.T), graphs[0].y_axe_image) - mwmin
+#     print("t=", graphs[0].x_axe_image[imin + np.argmax(mw[imin:])], " Myr, Mwater=", np.max(mw[imin:]), " Earth mass")
+#     return calc_single_flux_radmcJWST(graphs=graphs, consts=consts, i=imin + np.argmax(mw[imin:]), size_grid=size_grid, incl=incl, phi=phi, dpc=dpc,
+#
+#                                       freqs_radex=freqs_radex, flux_radex=flux_radex)
+#
+# def radmc_setupALMA(graphs: Graphique, consts: dict, i: int, directory: str = None, size_grid: int = 200
+#                     ) -> None:
+#     """
+#     Generate the configuration file for radmc3d for the surface density at time self.tps[i]
+#
+#     Parameters
+#     ----------
+#     i: int
+#         The index at which the surface density is plotted
+#     directory : str, default=self.directory+'/'+i
+#         The directory where the configuration are stored
+#     size_grid : int, default=128
+#         THe size of the spatial grid (the water surface density is interpolated on it)
+#
+#     Returns
+#     -------
+#     None
+#
+#     """
+#     if directory is None:
+#         directory = consts["results"] + "/" + consts["Simulation"]
+#     if not os.path.exists(directory):
+#         os.mkdir(directory)
+#     doss: str = directory
+#
+#     nphot: int = 100000  # Monte Carlo parameters
+#     # !! WARNING !!
+#     # Radmc need cgs units
+#     # !! !!
+#
+#     # Grid parameters
+#
+#     nr: int = size_grid
+#     nlev_rin: int = 12  # Grid refinement at the inner edge: nr of cycles
+#     nspan_rin: int = 3  # Grid refinement at the inner edge: nr of cells each cycle
+#     ntheta: int = 32
+#     nphi: int = 1
+#     r = graphs[0].y_axe_image
+#     rin: np.float64 = (r.min() / C_L) * 1e2
+#     rout: np.float64 = (r.max() / C_L) * 1e2
+#     thetaup: np.float64 = Pi * 0.5 - 1.
+#
+#     # Disk parameters
+#
+#     pstar: np.ndarray[np.float64] = np.array([0., 0., 0.])
+#
+#     # Make the coordinates
+#
+#     # ri: np.ndarray[np.float64] = self.r[::max(1, len(self.r) // size_grid)]
+#     ri: np.ndarray[np.float64] = np.geomspace(rin, rout, nr + 1)
+#     # ri: np.ndarray[np.float64] = grid_refine_inner_edge(ri, nlev_rin, nspan_rin)  # Refinement at inner edge
+#
+#     thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+#     phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+#     rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+#     nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+#     thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+#     phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+#
+#     # Make the grid
+#
+#     qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+#     rr: np.ndarray[np.float64] = qq[0]
+#     tt: np.ndarray[np.float64] = qq[1]
+#     zr: np.ndarray[np.float64] = Pi / 2. - qq[1]
+#
+#     # Make the temperature model
+#     temp: np.ndarray[np.float64] = T((rr * 1e-2) * C_L, t=graphs[0].x_axe_image[i], Ms=consts["Ms"])
+#
+#     # Make the density model
+#     # g.loglog(rr.flatten(), temp.flatten(), ".")
+#     h_h2o: np.ndarray[np.float64] = np.sqrt(kb * temp * (rr * rr * rr * 1e-6 * C_L * C_L * C_L)
+#                                             / (18. * mp * G * consts["Ms"])) * 1e2 / C_L
+#
+#     sigma_H2O: np.ndarray[np.float64] = np.interp(rr, r * 1e2 / C_L,
+#                                                   graphs[0].array_image[:, i]) * (C_L * C_L / C_M) * (1e3 / (1e4))
+#     rhog_h2o: np.ndarray[np.float64] = (sigma_H2O / (np.sqrt(2. * Pi) * h_h2o)
+#                                         ) * np.exp(-zr * zr * rr * rr / (h_h2o * h_h2o * 2.))
+#
+#     # Make the velocity model
+#
+#     vr: np.ndarray[np.float64] = np.zeros_like(rr)
+#     vtheta: np.ndarray[np.float64] = np.zeros_like(rr)
+#     vphi: np.ndarray[np.float64] = np.sqrt(G * consts["Ms"] / (rr * C_L * 1e-2)) * (C_t / C_L) * 1e2
+#     vturb: np.ndarray[np.float64] = 0.001 * vphi
+#
+#     # Write the wavelength_micron.inp file
+#
+#     lam1 = 0.1e0
+#     lam2 = 7.0e0
+#     lam3 = 25.e0
+#     lam4 = 1.0e4
+#     n12 = 60
+#     n23 = 50
+#     n34 = 300
+#     lam12 = np.logspace(np.log10(lam1), np.log10(lam2), n12, endpoint=False)
+#     lam23 = np.logspace(np.log10(lam2), np.log10(lam3), n23, endpoint=False)
+#     lam34 = np.logspace(np.log10(lam3), np.log10(lam4), n34, endpoint=True)
+#     lam = np.concatenate([lam12, lam23, lam34])
+#
+#     nlam: int = lam.size
+#
+#     # Write the wavelength file
+#
+#     with open(doss + '/wavelength_micron.inp', 'w+') as f:
+#         f.write('%d\n' % (nlam))
+#         for value in lam:
+#             f.write('%13.6e\n' % (value))
+#
+#     # NB All datas needs to be saved in cgs system....
+#
+#     # Write the stars.inp file
+#
+#     with open(doss + '/stars.inp', 'w+') as f:
+#         f.write('2\n')
+#         f.write('1 %d\n\n' % nlam)
+#         f.write('%13.6e %13.6e %13.6e %13.6e %13.6e\n\n' % (interpRs(graphs[0].x_axe_image[i] + consts["t0"], consts["Ms"]) * 1e2 / C_L,
+#                                                             consts["Ms"] * 1e3 / C_M,
+#                                                             pstar[0], pstar[1], pstar[2]))
+#         for value in lam:
+#             f.write('%13.6e\n' % value)
+#         f.write('\n%13.6e\n' % (- ((interpLbol(graphs[0].x_axe_image[i] + consts["t0"], consts["Ms"])
+#                                     / (4. * Pi * (interpRs(graphs[0].x_axe_image[i] + consts["t0"], consts["Ms"]) ** 2) * sigma))) ** (
+#                                               1. / 4.)))
+#
+#     # Write the grid file
+#
+#     with open(doss + '/amr_grid.inp', 'w+') as f:
+#         f.write('1\n')  # iformat
+#         f.write('0\n')  # AMR grid style  (0=regular grid, no AMR)
+#         f.write('100\n')  # Coordinate system: spherical
+#         f.write('0\n')  # gridinfo
+#         f.write('1 1 0\n')  # Include r,theta coordinates
+#         f.write('%d %d %d\n' % (nr, ntheta, 1))  # Size of grid
+#         for value in ri:
+#             f.write('%13.6e\n' % value)  # X coordinates (cell walls)
+#         for value in thetai:
+#             f.write('%13.6e\n' % value)  # Y coordinates (cell walls)
+#         for value in phii:
+#             f.write('%13.6e\n' % value)  # Z coordinates (cell walls)
+#
+#     # Write the density file
+#
+#     with open(doss + '/dust_density.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         f.write('1\n')  # Nr of dust species
+#         data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#     # with open(doss + '/dust_density.inp', 'w+') as f:
+#     #     f.write('1\n')  # Format number
+#     #     f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#     #     f.write('0\n')  # Nr of dust species
+#     #     # data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#     #     # data.tofile(f, sep='\n', format="%13.6e")
+#     #     # f.write('\n')
+#
+#     # Dust opacity control file
+#
+#     with open(doss + '/dustopac.inp', 'w+') as f:
+#         f.write('2               Format number of this file\n')
+#         f.write('1               Nr of dust species\n')
+#         f.write('============================================================================\n')
+#         f.write('1               Way in which this dust species is read\n')
+#         f.write('0               0=Thermal grain\n')
+#         f.write('silicate        Extension of name of dustkappa_***.inp file\n')
+#         f.write('----------------------------------------------------------------------------\n')
+#
+#     # with open(doss + '/dustopac.inp', 'w+') as f:
+#     #     f.write('2               Format number of this file\n')
+#     #     f.write('0               Nr of dust species\n')
+#     #     f.write('============================================================================\n')
+#     #     f.write('----------------------------------------------------------------------------\n')
+#
+#     # Write the molecule number density file.
+#
+#     mu_h2o = 18  # Mass of a H2O molecule in proton mass unity
+#     nh2o = rhog_h2o / (mu_h2o * (mp * 1e3 / C_M))
+#     print("test nh2o", nh2o.sum(), rhog_h2o.sum(), sigma_H2O.sum())
+#     with open(doss + '/numberdens_ph2oradex.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         data = nh2o.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#     with open(doss + '/numberdens_oh2oradex.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         data = nh2o.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#
+#     # Write the gas velocity field
+#
+#     with open(doss + '/gas_velocity.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         for iphi in range(nphi):
+#             for itheta in range(ntheta):
+#                 for ir in range(nr):
+#                     f.write(
+#                         '%13.6e %13.6e %13.6e\n' % (vr[ir, itheta, iphi],
+#                                                     vtheta[ir, itheta, iphi],
+#                                                     vphi[ir, itheta, iphi]))
+#
+#     # Write the temperature file
+#
+#     with open(doss + '/gas_temperature.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#
+#     # Write the microturbulence file
+#
+#     with open(doss + '/microturbulence.inp', 'w+') as f:
+#         f.write('1\n')  # Format number
+#         f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#         data = vturb.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#         data.tofile(f, sep='\n', format="%13.6e")
+#         f.write('\n')
+#
+#     # Write the lines.inp control file
+#
+#     with open(doss + '/lines.inp', 'w') as f:
+#         f.write('2\n')
+#         f.write('2\n')
+#         f.write('ph2oradex  leiden 0   0   0\n')
+#         f.write('oh2oradex  leiden 0   0   0\n')
+#
+#     # Write the radmc3d.inp control file
+#
+#     with open(doss + '/radmc3d.inp', 'w+') as f:
+#         f.write('nphot = %d\n' % nphot)
+#         f.write('camera_incl_stars = 0\n')  # remove the central star flux
+#         f.write('scattering_mode_max = 0\n')
+#         f.write('iranfreqmode = 1\n')
+#         # f.write('tgas_eq_tdust = 1\n')  # Use the dust temperature of dust species 1 as gas temperature
+#
+#     shutil.copyfile(data_radmc + "/molecule_ph2oradex.inp", doss + "/molecule_ph2oradex.inp")
+#     shutil.copyfile(data_radmc + "/molecule_oh2oradex.inp", doss + "/molecule_oh2oradex.inp")
+#     # shutil.copyfile(data_radmc + "/molecule_h2op.inp", doss + "/molecule_h2op.inp" )
+#     # shutil.copyfile(data_radmc + "/partitionfunction_h2o.inp", doss + "/partitionfunction_h2o.inp" )
+#     #shutil.copyfile(data_radmc + "/linelist_h2o.inp", doss + "/linelist_h2o.inp" )
+#     shutil.copyfile(data_radmc + "/dustkappa_silicate.inp", doss + "/dustkappa_silicate.inp")
+#
+#
+# def calc_flux_trans_radmcALMA(graphs: Graphique, consts: dict,
+#                               i: int, directory: str = None, size_grid: int = 200,
+#                               incl: np.float64 = 0, phi: np.float64 = 59., dpc: np.float64 = 50,
+#                               nb_trens: int = 1, id_molecule: int = 1,
+#                               setup_radmc: bool = True) -> np.float64:
+#     idx_i = -1
+#     if directory is None:
+#         directory = consts["results"] + "/" + consts["Simulation"]
+#     if not os.path.exists(directory):
+#         os.mkdir(directory)
+#     doss: str = directory
+#
+#     if setup_radmc:
+#         r = graphs[0].y_axe_image
+#         radmc_setupALMA(graphs=graphs, consts=consts, i=i, directory=directory, size_grid=size_grid)
+#         thetaup: np.float64 = Pi * 0.5 - 1.
+#         ntheta: int = 32
+#         nphi: int = 1
+#         ri: np.ndarray[np.float64] = np.geomspace(r.min(), r.max(), size_grid + 1) * 1e2 / C_L
+#         thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
+#         phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
+#         rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
+#         nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
+#         thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
+#         phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
+#         # Make the grid
+#         qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
+#         rr: np.ndarray[np.float64] = qq[0]
+#         # Make the temperature model
+#         temp: np.ndarray[np.float64] = T(r=rr * 1e-2 * C_L, t=graphs[0].x_axe_image[i],
+#                                          Ms=consts["Ms"])
+#         with open(directory + '/gas_temperature.inp', 'w+') as f:
+#             f.write('1\n')  # Format number
+#             f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
+#             data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
+#             data.tofile(f, sep='\n', format="%13.6e")
+#             f.write('\n')
+#
+#     cwd: str = os.getcwd()
+#     os.chdir(doss)
+#     vkms: np.float64 = 0.
+#     widthkms: np.float64 = 40.0
+#     npix: np.float64 = 400
+#     linenlam: np.float64 = 70
+#     if setup_radmc:
+#         os.system("radmc3d mctherm")
+#
+#     command = 'radmc3d image imolspec {} iline {} vkms {} widthkms {} incl {}  phi {}' \
+#               ' npix {} linenlam {}'.format(id_molecule, nb_trens,
+#                                             vkms, widthkms, incl, phi, npix, linenlam)
+#     os.system(command)
+#     im = radmc_im.readImage()
+#     tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
+#     print("shape : ", im.imageJyppix.shape, tab_vkms.shape)
+#     # im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1)) #!!!!! A recalcluer
+#     # im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
+#     flux_jy_km_s = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).sum() / (dpc * dpc)
+#     flux_w_m2 = flux_jy_km_s / (np.double(1e26) / (((1e3 / 299792458) / (1. - 1e3 / 299792458))
+#                                                    * (np.mean(im.freq))))
+#     os.chdir(cwd)
+#     return flux_w_m2, flux_jy_km_s
+#
+#
+# def calc_single_flux_radmcALMA(graphs: Graphique, consts: dict, i: int,
+#                                directory: str = None,
+#                                size_grid: int = 128, incl: np.float64 = 13, phi: np.float64 = 59., dpc: np.float64 = 50
+#                                ) -> list[np.ndarray]:
+#     """
+#
+#     Parameters
+#     ----------
+#     i: int
+#         The index at which the surface density is plotted
+#     directory : str, default=self.directory+'/'+i
+#         The directory where the configuration are stored
+#     size_grid : int, default=128
+#         The size of the spatial grid (the water surface density is interpolated on it)
+#
+#     Returns
+#     -------
+#     np.ndarray[np.float64]
+#         The spatially integrated luminosity flux
+#
+#     """
+#     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(data_radmc + "/molecule_ph2oradex.inp")
+#     lambdas = (((c / (C_L / C_t)) / (tab_trens[:, 4] * 1e9)) * 1e6)
+#     n_calc: int = 10
+#     freqs_pH2O = np.array([183.31009, 325.15290])  # Frequences obs ALMA pH2O GHz
+#     lines = [[0, np.argmin(abs((tab_trens[:, 4] - f) / f))]
+#              for f in freqs_pH2O]
+#     mw, tab_E, tab_trens, temps_cols, tab_col_trens = read_lamda(data_radmc + "/molecule_oh2oradex.inp")
+#     freqs_oH2O = np.array([321.22569])  # Frequences obs ALMA pH2O GHz
+#     lines.extend([[1, np.argmin(abs((tab_trens[:, 4] - f) / f))]
+#                   for f in freqs_oH2O])
+#     freqs = np.append(freqs_pH2O, freqs_oH2O)
+#
+#
+#     res = []
+#     for t in lines:
+#         print("transition : ", t)
+#         res.append(list(
+#             calc_flux_trans_radmcALMA(graphs = graphs, consts=consts, i=i,
+#                                       directory=directory, size_grid=size_grid, incl=incl, phi=phi, dpc=dpc,
+#                                       nb_trens=t[1], id_molecule=t[0], setup_radmc=len(res) == 0)))
+#         print("Flux = ", res[-1], "\n\n\n-----------------------\n\n\n")
+#     return freqs, res
+#
+#
+# def calc_fluc_radmc_ALMA(graphs: Graphique, consts: dict, tmin: np.float64 = 0.5 * Myr,
+#                          size_grid: int = 128, incl: np.float64 = 13, phi: np.float64 = 59.,
+#                          dpc: np.float64 = 50):
+#     mwmin = trapezoid(2 * Pi * graphs[0].y_axe_image
+#                       * np.array([1e-10 for r in graphs[0].y_axe_image]),
+#                       graphs[0].y_axe_image)
+#     imin = np.argwhere(graphs[0].x_axe_image > tmin)[0, 0]
+#     mw = trapezoid(2 * Pi * graphs[0].y_axe_image * (graphs[0].array_image.T), graphs[0].y_axe_image) - mwmin
+#     print("t=", graphs[0].x_axe_image[imin + np.argmax(mw[imin:])], " Myr, Mwater=", np.max(mw[imin:]), " Earth mass")
+#     return calc_single_flux_radmcALMA(graphs=graphs, consts=consts, i=imin + np.argmax(mw[imin:]), size_grid=size_grid, incl=incl, phi=phi, dpc=dpc)
+#
 
-        """
-        if directory is not None:
-            if not os.path.exists(directory):
-                os.mkdir(directory)
-            doss: str = directory
-        else:
-            if not os.path.exists(self.directory + "/" + str(i)):
-                os.mkdir(self.directory + "/" + str(i))
-            doss: str = self.directory + "/" + str(i)
-
-        nphot: int = 1000000 # Monte Carlo parameters
-
-        # Grid parameters
-
-        nr: int = size_grid
-        nlev_rin: int = 12  # Grid refinement at the inner edge: nr of cycles
-        nspan_rin: int = 3  # Grid refinement at the inner edge: nr of cells each cycle
-        ntheta: int = 32
-        nphi: int = 1
-        rin: np.float64 = self.r.min()
-        rout: np.float64 = self.r.max()
-        thetaup: np.float64 = np.pi * 0.5 - 1.
-
-        # Disk parameters
-
-        pstar: np.ndarray[np.float64] = np.array([0., 0., 0.])
-
-        # Make the coordinates
-
-        # ri: np.ndarray[np.float64] = self.r[::max(1, len(self.r) // size_grid)]
-        ri: np.ndarray[np.float64] = np.geomspace(rin, rout, nr + 1)
-        # ri: np.ndarray[np.float64] = grid_refine_inner_edge(ri, nlev_rin, nspan_rin)  # Refinement at inner edge
-
-        thetai: np.ndarray[np.float64] = np.linspace(thetaup, 0.5 * Pi, ntheta + 1)
-        phii: np.ndarray[np.float64] = np.linspace(0., Pi * 2, nphi + 1)
-        rc: np.ndarray[np.float64] = 0.5 * (ri[:-1] + ri[1:])
-        nr: int = len(rc)  # Recompute nr, because of refinement at inner edge
-        thetac: np.ndarray[np.float64] = 0.5 * (thetai[0:ntheta] + thetai[1:ntheta + 1])
-        phic: np.ndarray[np.float64] = 0.5 * (phii[0:nphi] + phii[1:nphi + 1])
-
-        # Make the grid
-
-        qq: np.ndarray[np.float64] = np.meshgrid(rc, thetac, phic, indexing='ij')
-        rr: np.ndarray[np.float64] = qq[0]
-        tt: np.ndarray[np.float64] = qq[1]
-        zr: np.ndarray[np.float64] = Pi / 2. - qq[1]
-
-        # Make the temperature model
-        temp: np.ndarray[np.float64] = T(rr, self.tps_mf[i])
-
-        # Make the density model
-        # g.loglog(rr.flatten(), temp.flatten(), ".")
-        h_h2o: np.ndarray[np.float64] = np.sqrt(kb * temp * rr * rr * rr / (18. * mp * G * self.Ms))
-        # g.loglog([self.r, rr.flatten()], [ self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]],  np.interp(rr, self.r, self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]]).flatten()], ".")
-        sigma_H2O: np.ndarray[np.float64] = np.interp(rr, self.r, self.interp_sigma(self.tps_mf[i]) * self.mass_fractions[i][self.idx_mu_ast[0]])
-        rhog_h2o: np.ndarray[np.float64] = (sigma_H2O / (np.sqrt(2. * np.pi) * h_h2o)
-                    ) * np.exp(-zr * zr * rr * rr / (h_h2o * h_h2o * 2.))
-
-        # Make the velocity model
-
-        vr: np.ndarray[np.float64] = np.zeros_like(rr)
-        vtheta: np.ndarray[np.float64] = np.zeros_like(rr)
-        vphi: np.ndarray[np.float64] = np.sqrt(G * self.Ms / rr)
-        vturb: np.ndarray[np.float64] = 0.001 * vphi
-
-        # Write the wavelength_micron.inp file
-
-        lam1: np.float64 = 1.
-        lam2: np.float64 = 9.e2
-        lam3: np.float64 = 4.e3
-        lam4: np.float64 = 1.0e4
-        n12: np.float64 = 200
-        n23: np.float64 = 500
-        n34: np.float64 = 30
-        lam12: np.ndarray[np.float64] = np.logspace(np.log10(lam1), np.log10(lam2), n12, endpoint=False)
-        lam23: np.ndarray[np.float64] = np.logspace(np.log10(lam2), np.log10(lam3), n23, endpoint=False)
-        lam34: np.ndarray[np.float64] = np.logspace(np.log10(lam3), np.log10(lam4), n34, endpoint=True)
-        lam: np.ndarray[np.float64] = np.concatenate([lam12, lam23, lam34])
-        nlam: int = lam.size
-
-        # Write the wavelength file
-
-        with open(doss + '/wavelength_micron.inp', 'w+') as f:
-            f.write('%d\n' % nlam)
-            for value in lam:
-                f.write('%13.6e\n' % value)
-
-        # NB All datas needs to be saved in cgs system....
-
-        # Write the stars.inp file
-
-        with open(doss + '/stars.inp', 'w+') as f:
-            f.write('2\n')
-            f.write('1 %d\n\n' % nlam)
-            f.write('%13.6e %13.6e %13.6e %13.6e %13.6e\n\n' % (interpRs(self.tps_mf[i], self.Ms) * Rsun * 1e2 / C_L,
-                                                                self.Ms * 1e3 / C_M,
-                                                                pstar[0], pstar[1], pstar[2]))
-            for value in lam:
-                f.write('%13.6e\n' % value)
-            f.write('\n%13.6e\n' % (- ((interpLbol(self.tps_mf[i], self.Ms)
-                                       / (4. * Pi * (interpRs(self.tps_mf[i], self.Ms) ** 2) * sigma))) ** (1. / 4.)))
-
-        # Write the grid file
-
-        with open(doss + '/amr_grid.inp', 'w+') as f:
-            f.write('1\n')  # iformat
-            f.write('0\n')  # AMR grid style  (0=regular grid, no AMR)
-            f.write('100\n')  # Coordinate system: spherical
-            f.write('0\n')  # gridinfo
-            f.write('1 1 0\n')  # Include r,theta coordinates
-            f.write('%d %d %d\n' % (nr, ntheta, 1))  # Size of grid
-            for value in ri * 1e-2 / C_L:
-                f.write('%13.6e\n' % value)  # X coordinates (cell walls)
-            for value in thetai:
-                f.write('%13.6e\n' % value)  # Y coordinates (cell walls)
-            for value in phii:
-                f.write('%13.6e\n' % value)  # Z coordinates (cell walls)
-
-        # Write the density file
-
-        with open(doss + '/dust_density.inp', 'w+') as f:
-            f.write('1\n')  # Format number
-            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
-            f.write('1\n')  # Nr of dust species
-            data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
-            data.tofile(f, sep='\n', format="%13.6e")
-            f.write('\n')
-        # with open(doss + '/dust_density.inp', 'w+') as f:
-        #     f.write('1\n')  # Format number
-        #     f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
-        #     f.write('0\n')  # Nr of dust species
-        #     # data = np.zeros_like(rhog_h2o).ravel(order='F')  # Create a 1-D view, fortran-style indexing
-        #     # data.tofile(f, sep='\n', format="%13.6e")
-        #     # f.write('\n')
-
-        # Dust opacity control file
-
-        with open(doss + '/dustopac.inp', 'w+') as f:
-            f.write('2               Format number of this file\n')
-            f.write('1               Nr of dust species\n')
-            f.write('============================================================================\n')
-            f.write('1               Way in which this dust species is read\n')
-            f.write('0               0=Thermal grain\n')
-            f.write('silicate        Extension of name of dustkappa_***.inp file\n')
-            f.write('----------------------------------------------------------------------------\n')
-
-        # with open(doss + '/dustopac.inp', 'w+') as f:
-        #     f.write('2               Format number of this file\n')
-        #     f.write('0               Nr of dust species\n')
-        #     f.write('============================================================================\n')
-        #     f.write('----------------------------------------------------------------------------\n')
-
-        # Write the molecule number density file.
-
-        mu_h2o = 18  # Mass of a H2O molecule in proton mass unity
-        nh2o = rhog_h2o / (mu_h2o * mp)
-        print("test nh2o", nh2o.sum(), rhog_h2o.sum(), sigma_H2O.sum())
-        with open(doss + '/numberdens_h2op.inp', 'w+') as f:
-            f.write('1\n')  # Format number
-            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
-            data = nh2o.ravel(order='F') * 1e-6 / (C_L * C_L * C_L) # Create a 1-D view, fortran-style indexing
-            data.tofile(f, sep='\n', format="%13.6e")
-            f.write('\n')
-
-        with open(doss + '/numberdens_h2oo.inp', 'w+') as f:
-            f.write('1\n')  # Format number
-            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
-            data = nh2o.ravel(order='F') * 1e-6 / (C_L * C_L * C_L) # Create a 1-D view, fortran-style indexing
-            data.tofile(f, sep='\n', format="%13.6e")
-            f.write('\n')
-
-        # Write the gas velocity field
-
-        with open(doss + '/gas_velocity.inp', 'w+') as f:
-            f.write('1\n')  # Format number
-            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
-            for iphi in range(nphi):
-                for itheta in range(ntheta):
-                    for ir in range(nr):
-                        f.write(
-                            '%13.6e %13.6e %13.6e\n' % (vr[ir, itheta, iphi] * 1e-2 * C_t / C_L,
-                                                        vtheta[ir, itheta, iphi] * 1e-2 * C_t / C_L,
-                                                        vphi[ir, itheta, iphi] * 1e-2 * C_t / C_L))
-
-        # Write the temperature file
-
-        with open(doss + '/gas_temperature.inp', 'w+') as f:
-            f.write('1\n')  # Format number
-            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
-            data = temp.ravel(order='F')  # Create a 1-D view, fortran-style indexing
-            data.tofile(f, sep='\n', format="%13.6e")
-            f.write('\n')
-
-        # Write the microturbulence file
-
-        with open(doss + '/microturbulence.inp', 'w+') as f:
-            f.write('1\n')  # Format number
-            f.write('%d\n' % (nr * ntheta * nphi))  # Nr of cells
-            data = vturb.ravel(order='F') * 1e-2 * C_t / C_L  # Create a 1-D view, fortran-style indexing
-            data.tofile(f, sep='\n', format="%13.6e")
-            f.write('\n')
-
-        # Write the lines.inp control file
-
-        with open(doss + '/lines.inp', 'w') as f:
-            f.write('2\n')
-            f.write('2\n')
-            f.write('h2oo   leiden   0   0   0\n')
-            f.write('h2op   leiden   0   0   0\n')
-
-        # Write the radmc3d.inp control file
-
-        with open(doss + '/radmc3d.inp', 'w+') as f:
-            f.write('nphot = %d\n' % nphot)
-            f.write('scattering_mode_max = 0\n')
-            f.write('iranfreqmode = 1\n')
-            # f.write('tgas_eq_tdust = 1\n')  # Use the dust temperature of dust species 1 as gas temperature
-
-        shutil.copyfile(data_radmc + "/molecule_h2oo.inp", doss + "/molecule_h2oo.inp" )
-        shutil.copyfile(data_radmc + "/molecule_h2op.inp", doss + "/molecule_h2op.inp" )
-        shutil.copyfile(data_radmc + "/dustkappa_silicate.inp", doss + "/dustkappa_silicate.inp" )
-
-    def calc_single_flux_radmc(self, i: int, directory: str = None, size_grid: int = 128,
-                               incl: np.float64 = 13, phi: np.float64 = 59.) -> np.ndarray[np.float64]:
-        """
-
-        Parameters
-        ----------
-        i: int
-            The index at which the surface density is plotted
-        directory : str, default=self.directory+'/'+i
-            The directory where the configuration are stored
-        size_grid : int, default=128
-            The size of the spatial grid (the water surface density is interpolated on it)
-
-        Returns
-        -------
-        np.ndarray[np.float64]
-            The spatially integrated luminosity flux
-
-        """
-        if len(self.flux_radmc) == 0 or i not in np.array(self.flux_radmc)[:, 0]:
-            self.radmc_setup(i=i, directory=directory, size_grid=size_grid)
-            if directory is None:
-                if not os.path.exists(self.directory + "/" + str(i)):
-                    os.mkdir(self.directory + "/" + str(i))
-                directory: str = self.directory + "/" + str(i)
-            cwd: str = os.getcwd()
-            os.chdir(directory)
-            vkms: np.float64 = 0.
-            widthkms: np.float64 = 20.0
-            npix: np.float64 = 400
-            linenlam: np.float64 = 40
-
-            os.system("radmc3d mctherm")
-            # H20p_5
-            print("H2O p-5")
-            command = 'radmc3d image imolspec 2 iline 6 vkms {} widthkms {} incl {}  phi {}' \
-                      ' npix {} linenlam {}'.format(vkms, widthkms, incl, phi, npix, linenlam)
-            os.system(command)
-            im = radmc_im.readImage()
-            tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
-            im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1))
-            im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
-            im.nfreq = 1
-            im.freq = np.array([np.mean(im.freq)])
-            im.nwav = 1
-            im.wav = np.array([np.mean(im.freq)])
-            res_H2Op5: np.float64 = im.imageJyppix.sum()
-
-            # H20p_7
-            command = 'radmc3d image imolspec 2 iline 12 vkms {} widthkms {} incl {}  phi {}' \
-                      ' npix {} linenlam {}'.format(vkms, widthkms, incl, phi, npix, linenlam)
-            os.system(command)
-            im = radmc_im.readImage()
-            tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
-            im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1))
-            im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
-            im.nfreq = 1
-            im.freq = np.array([np.mean(im.freq)])
-            im.nwav = 1
-            im.wav = np.array([np.mean(im.freq)])
-            res_H2Op7: np.float64 = im.imageJyppix.sum()
-
-            # H20o_7
-            command = 'radmc3d image imolspec 2 iline 42 vkms {} widthkms {} incl {}  phi {}' \
-                      ' npix {} linenlam {}'.format(vkms, widthkms, incl, phi, npix, linenlam)
-            os.system(command)
-            im = radmc_im.readImage()
-            tab_vkms = np.linspace(vkms - widthkms, vkms + widthkms, linenlam)
-            im.image = trapezoid(im.image, x=tab_vkms, axis=2).reshape((npix, npix, 1))
-            im.imageJyppix = trapezoid(im.imageJyppix, x=tab_vkms, axis=2).reshape((npix, npix, 1))
-            im.nfreq = 1
-            im.freq = np.array([np.mean(im.freq)])
-            im.nwav = 1
-            im.wav = np.array([np.mean(im.freq)])
-            res_H2Oo7: np.float64 = im.imageJyppix.sum()
-            os.system('rm image.out')
-            os.chdir(cwd)
-            self.flux_radmc.append(np.array([i, res_H2Op5, res_H2Op7, res_H2Oo7]))
-            return res_H2Op5, res_H2Op7, res_H2Oo7
-        else:
-            return self.flux_radmc[np.argwhere(np.array(self.flux_radmc) == i)[0, 0]][1:]
-
-    def calc_flux_radmc(self, temporal_size: int = 50, size_grid: int = 20,
-                        incl: np.float64 = 13, phi: np.float64 = 59.) -> None:
-        indexs: np.ndarray[int] = np.arange(0, len(self.tps_mf), max(1, len(self.tps_mf) // temporal_size))
-        for i in indexs:
-            self.calc_single_flux_radmc(i=i, size_grid=size_grid, incl=incl, phi=phi)
-
-
-def mass_steady_state(sol: Sol, mdot: np.float64=None, a0: np.float64 = None, mu: np.float64 = None
+def mass_steady_state(sol: Sol, mdot: np.float64 = None, a0: np.float64 = None, mu: np.float64 = None
                       ) -> np.float64:
     """
 
@@ -2708,11 +6647,11 @@ def mass_steady_state(sol: Sol, mdot: np.float64=None, a0: np.float64 = None, mu
                        / (mu * np.sqrt(G * sol.Ms)))
     return ((mdot / (3. * Pi * nu0))
             * (2. * Pi * (
-                ((a0 ** (-pls_temp + 1 / 2)) - (sol.a_in ** (-pls_temp + 1 / 2)))
-                / (a0 ** (-pls_temp - 3 / 2) * (-pls_temp + 1 / 2))
-                +
-                ((sol.a_out ** (-pls_temp)) - (a0 ** (-pls_temp)))
-                / (a0 ** (-pls_temp - 2) * (-pls_temp)))))
+                    ((a0 ** (-pls_temp + 1 / 2)) - (sol.a_in ** (-pls_temp + 1 / 2)))
+                    / (a0 ** (-pls_temp - 3 / 2) * (-pls_temp + 1 / 2))
+                    +
+                    ((sol.a_out ** (-pls_temp)) - (a0 ** (-pls_temp)))
+                    / (a0 ** (-pls_temp - 2) * (-pls_temp)))))
 
 
 def mdot_steady_state(sol: Sol, m: np.float, a0: np.float64 = None, mu: np.float64 = None
@@ -2746,14 +6685,15 @@ def mdot_steady_state(sol: Sol, m: np.float, a0: np.float64 = None, mu: np.float
                        / (mu * np.sqrt(G * sol.Ms)))
     return ((m * (3. * Pi * nu0))
             / (2. * Pi * (
-                ((a0 ** (-pls_temp + 1 / 2)) - (sol.a_in ** (-pls_temp + 1 / 2)))
-                / (a0 ** (-pls_temp - 3 / 2) * (-pls_temp + 1 / 2))
-                +
-                ((sol.a_out ** (-pls_temp)) - (a0 ** (-pls_temp)))
-                / (a0 ** (-pls_temp - 2) * (-pls_temp)))))
+                    ((a0 ** (-pls_temp + 1 / 2)) - (sol.a_in ** (-pls_temp + 1 / 2)))
+                    / (a0 ** (-pls_temp - 3 / 2) * (-pls_temp + 1 / 2))
+                    +
+                    ((sol.a_out ** (-pls_temp)) - (a0 ** (-pls_temp)))
+                    / (a0 ** (-pls_temp - 2) * (-pls_temp)))))
 
 
-def steady_state(sol: Sol, mdot: np.float64=None, mtot: np.float64 = None, a0: np.float64 = None, mu: np.float64 = None ):
+def steady_state(sol: Sol, mdot: np.float64 = None, mtot: np.float64 = None, a0: np.float64 = None,
+                 mu: np.float64 = None):
     """
 
     Return the log of steady state for a given mdot
@@ -2845,7 +6785,7 @@ def mass_flux(sol: Sol, ys: np.ndarray, t: np.float64) -> np.ndarray:
     np.ndarray
         the radial speed
     """
-    nu0: np.float64 = (Rgp * T0(t, sol.a0, sol.Ms) * sol.alpha * (sol.a0 ** (3 / 2))
+    nu0: np.float64 = (Rgp * T0(t + sol.t0, sol.a0, sol.Ms) * sol.alpha * (sol.a0 ** (3 / 2))
                        / (sol.mu.mean() * np.sqrt(G * sol.Ms)))
     D: np.float64 = (3 * nu0 / (4. * (sol.a0 ** (3 / 2 + sol.pls_temp))))
     return - 4. * Pi * D * np.gradient(ys, sol.x)
@@ -2872,7 +6812,7 @@ def turbulent_speed(y: np.ndarray, sol: Sol, t: np.float64) -> np.ndarray:
     """
     nu0: np.float64 = (Rgp * T0(t, sol.a0, sol.Ms) * sol.alpha * (sol.a0 ** (3 / 2))
                        / (sol.mu.mean() * np.sqrt(G * sol.Ms)))
-    return - (nu0 / (sol.a0 ** (3/2 + sol.pls_temp))) * (sol.x ** (4 + 2 * sol.pls_temp)) * np.gradient(y, sol.x)
+    return - (nu0 / (sol.a0 ** (3 / 2 + sol.pls_temp))) * (sol.x ** (4 + 2 * sol.pls_temp)) * np.gradient(y, sol.x)
 
 
 def T0(t: np.float64 = -1, a0: np.float64 = a0, Ms: np.float64 = Ms
@@ -2943,25 +6883,25 @@ sigma_crit_h2o: np.float64 = np.double(1. / ((Na / (18 * 1e-2 * C_M)) * cross_se
 
 def sigma_rad(t: np.float64, surf_dens: np.ndarray, sol: Sol) -> np.ndarray:
     H: np.ndarray = np.sqrt(
-    (Rgp * T(sol.x * sol.x, t + sol.t0)
-     / sol.mu.mean()) / (G * Ms / (sol.x ** 6)))
+        (Rgp * T(sol.x * sol.x, t + sol.t0)
+         / sol.mu.mean()) / (G * Ms / (sol.x ** 6)))
 
     return (cumulative_trapezoid(surf_dens,
-                                sol.x * sol.x, initial=zero)
-           / (2. * Pi * sol.x * sol.x * H))
+                                 sol.x * sol.x, initial=zero)
+            / (2. * Pi * sol.x * sol.x * H))
 
 
 def sigma_rad_w(t: np.float64, ys: np.ndarray, sol: Sol) -> np.ndarray:
     surf_dens: np.ndarray = sol.interp_f(t) * (sol.x ** (-4 - 2 * sol.pls_temp))
     if "H2O" in sol.nom_mu:
         H: np.ndarray = np.sqrt(
-        (Rgp * T(sol.x * sol.x, t + sol.t0)
-         / sol.mu[0]) / (G * Ms / (sol.x ** 6)))
+            (Rgp * T(sol.x * sol.x, t + sol.t0)
+             / sol.mu[0]) / (G * Ms / (sol.x ** 6)))
 
         ys0 = ys[..., sol.idx_mu_ast[0], :]
         return (cumulative_trapezoid(surf_dens * ys0,
-                                    sol.x * sol.x, initial=zero)
-               / (2. * Pi * sol.x * sol.x * H))
+                                     sol.x * sol.x, initial=zero)
+                / (2. * Pi * sol.x * sol.x * H))
     else:
         return np.zeros_like(surf_dens)
 
@@ -3002,34 +6942,37 @@ def sigma_dot(t: np.float64, ys: np.ndarray, phi: np.ndarray, sol: Sol) \
         ip = np.argwhere(sol.r >= r_planet)[0, 0]  # the index of the planet's position (self.r[ip]=a_planet)
 
         cd: np.float64 = np.double(np.sqrt(Rgp * T(r_planet, t + sol.t0) / np.mean(sol.mu)))  # sound speed in the disc
-        H: np.float64 = np.sqrt(r_planet * r_planet * r_planet * Rgp * T(r_planet + sol.t0) / (G * Ms * sol.mu.mean()))
+        H: np.float64 = np.sqrt(
+            r_planet * r_planet * r_planet * Rgp * T(r_planet, t + sol.t0, sol.Ms) / (G * sol.Ms * sol.mu.mean()))
         # Vertical scale high
         RH: np.float64 = r_planet * ((m_planet / (3. * sol.Ms)) ** (1 / 3.))  # Hill radius
-        alpha_accr: np.float64 = sol.f_accr * min(np.double(1.), RH / H)  # Final accretion efficiency
-        # alpha_accr: np.float64 = sol.f_accr
-
-        idx: np.ndarray = ip + np.arange(-sol.dip, sol.dip)
-        mdot_in: np.float64 = phi[ip + sol.dip]
-        mdot_out: np.float64 = (phi[ip - sol.dip - 1] + phi[ip - sol.dip - 2]) / 2.
-        idx_b: int = idx.max()
-        idx_b2: int = idx.min()
-        delta_r: np.float64 = sol.r[idx_b] - sol.r[idx_b2]
-        sigmar: np.float64 = np.double(delta_r / 2.)
-        fmod = np.exp(- (sol.r[idx] - r_planet) * (sol.r[idx] - r_planet) / (
-                2. * sigmar * sigmar))
-        norm_fmod = trapezoid(2. * Pi * sol.r[idx] * fmod, sol.r[idx])
-        if mdot_out * mdot_in > 0:
-            # ydot[idx] -= ((fmod / norm_fmod) * alpha_accr * (min(max((1. / (1 - alpha_accr)) * abs(mdot_out),
-            #                                                          abs(mdot_in)), zero))
-            #               * np.exp(-ys[idx]))
-            # ydot[idx] -= ((fmod / norm_fmod) * alpha_accr * abs(mdot_in)
-            #               * np.exp(-ys[idx]))
-            ydot[idx] -= (fmod / norm_fmod) * (alpha_accr / (1 - alpha_accr)) * abs(mdot_out)
+        # alpha_accr: np.float64 = sol.f_accr * min(np.double(1.), RH / H)  # Final accretion efficiency
+        alpha_accr: np.float64 = sol.f_accr
+        if sol.dip == 1:
+            mdot_in: np.float64 = phi[ip + 1]
+            ydot[ip] -= alpha_accr * abs(mdot_in) / (Pi * (sol.r[ip + 1] * sol.r[ip + 1] - sol.r[ip] * sol.r[ip]))
+        #
+        # idx: np.ndarray = ip + np.arange(-sol.dip, sol.dip)
+        # mdot_in: np.float64 = phi[ip + sol.dip]
+        # mdot_out: np.float64 = (phi[ip - sol.dip - 1] + phi[ip - sol.dip - 2]) / 2.
+        # idx_b: int = idx.max()
+        # idx_b2: int = idx.min()
+        # delta_r: np.float64 = sol.r[idx_b] - sol.r[idx_b2]
+        # sigmar: np.float64 = np.double(delta_r / 2.)
+        # fmod = np.exp(- (sol.r[idx] - r_planet) * (sol.r[idx] - r_planet) / (
+        #         2. * sigmar * sigmar))
+        # norm_fmod = trapezoid(2. * Pi * sol.r[idx] * fmod, sol.r[idx])
+        # if mdot_out * mdot_in > 0:
+        #     # ydot[idx] -= ((fmod / norm_fmod) * alpha_accr * (min(max((1. / (1 - alpha_accr)) * abs(mdot_out),
+        #     #                                                          abs(mdot_in)), zero))
+        #     #               * np.exp(-ys[idx]))
+        #     ydot[idx] -= (fmod / norm_fmod) * alpha_accr * abs(mdot_in)
+        #     # ydot[idx] -= (fmod / norm_fmod) * (alpha_accr / (1 - alpha_accr)) * abs(mdot_out)
 
     return ydot
 
 
-def mass_frac_dot(t: np.float64, ys: np.ndarray, sol: Sol) \
+def mass_frac_dot(t: np.float64, ys: np.ndarray, f: np.ndarray, sol: Sol) \
         -> np.ndarray:
     """
 
@@ -3054,28 +6997,20 @@ def mass_frac_dot(t: np.float64, ys: np.ndarray, sol: Sol) \
     ydot = np.zeros_like(ys)
 
     # Belt
-    surf_dens: np.ndarray = sol.interp_f(t) * (sol.x ** (-4 - 2 * sol.pls_temp))
+    surf_dens: np.ndarray = f * (sol.x ** (-4 - 2 * sol.pls_temp))
     if "H2O" in sol.nom_mu:
         sigmap: np.ndarray = np.maximum(sol.sol_ast.interp_sig_dot(t + sol.t0), zero)
-        idxa = np.intersect1d(np.argwhere(sol.x > np.sqrt(sol.sol_ast_params["a0"]
-                                                                  - sol.sol_ast_params["delta_a"]))[:, 0],
-                              np.argwhere(sol.x < np.sqrt(sol.sol_ast_params["a0"]
-                                                                  + sol.sol_ast_params["delta_a"]))[:, 0])
-        ydot[:, idxa] = -sigmap * ys[:, idxa] / surf_dens[idxa]
-        ydot[sol.idx_mu_ast[0], idxa] = sigmap * (1 - ys[sol.idx_mu_ast[0], idxa]) / surf_dens[idxa]
+        ydot[:, sol.idxa] = -sigmap * ys[:, sol.idxa] / surf_dens[sol.idxa]
+        ydot[sol.idx_mu_ast[0], sol.idxa] = sigmap * (1 - ys[sol.idx_mu_ast[0], sol.idxa]) / surf_dens[sol.idxa]
     if "CO" in sol.nom_mu:
-        idxk = np.intersect1d(np.argwhere(sol.x > np.sqrt(sol.sol_kuip_params["a0"]
-                                          - sol.sol_kuip_params["delta_a"]))[:, 0],
-                              np.argwhere(sol.x < np.sqrt(sol.sol_kuip_params["a0"]
-                                          + sol.sol_kuip_params["delta_a"]))[:, 0])
         sigmap: np.ndarray = np.maximum(sol.sol_kuip.interp_sig_dot(t + sol.t0), zero)
-        ydot[:, idxk] -= sigmap * ys[:, idxk] / surf_dens[idxk]
-        ydot[sol.idx_mu_kuip[0], idxk] = sigmap * (1 - ys[sol.idx_mu_kuip[0], idxk]) / surf_dens[idxk]
-
+        ydot[:, sol.idxk] -= sigmap * ys[:, sol.idxk] / surf_dens[sol.idxk]
+        ydot[sol.idx_mu_kuip[0], sol.idxk] = sigmap * (1 - ys[sol.idx_mu_kuip[0], sol.idxk]) / surf_dens[sol.idxk]
 
     # Photo-dissociation
     if interpLbol is not None:
-        Luv: np.float64 = interpLbol(t + sol.t0, Ms) * (interpReuv_3692(t + sol.t0, Ms) + interpReuv_lya(t + sol.t0, Ms)) / 2.
+        Luv: np.float64 = interpLbol(t + sol.t0, sol.Ms) * (
+                interpReuv_3692(t + sol.t0, sol.Ms) + interpReuv_lya(t + sol.t0, sol.Ms)) / 2.
     else:
         Luv: np.float64 = zero
 
@@ -3090,26 +7025,26 @@ def mass_frac_dot(t: np.float64, ys: np.ndarray, sol: Sol) \
         if len(idx) > 2:
             ys0_mean = ys[sol.idx_mu_ast[0], idx]
             if sol.interstellar_radiations:
-                sig_dot = (ys0_mean * np.exp(- surf_dens[idx] * ys0_mean / sigma_crit_h2o) / tph_h2o)
+                mf_dot = (ys0_mean * np.exp(- surf_dens[idx] * ys0_mean / sigma_crit_h2o) / tph_h2o)
             else:
-                sig_dot = np.zeros_like(ys0_mean)
+                mf_dot = np.zeros_like(ys0_mean)
             if sol.stellar_radiations:
-                sig_dot += (ys0_mean
-                            * (cross_section_h2o * (200 - 91.2) * 1e-9 * C_L*Luv
-                               * (sol.Rs**2 / (sol.x[idx] * sol.x[idx] * sol.x[idx] * sol.x[idx]))
-                               / (h * c))
-                            * np.exp(-((cumulative_trapezoid(2. * Pi * sol.x[idx] * sol.x[idx]
-                                                             * surf_dens[idx] * ys0_mean,
-                                                             sol.x[idx] * sol.x[idx], initial=zero)
-                                        / (2. * Pi * sol.x[idx] * sol.x[idx] * H)) / sigma_crit_h2o)))
+                mf_dot += (ys0_mean
+                           * (cross_section_h2o * (200 - 91.2) * 1e-9 * C_L * Luv
+                              * (sol.Rs ** 2 / (sol.x[idx] * sol.x[idx] * sol.x[idx] * sol.x[idx]))
+                              / (h * c))
+                           * np.exp(-((cumulative_trapezoid(2. * Pi * sol.x[idx] * sol.x[idx]
+                                                            * surf_dens[idx] * ys0_mean,
+                                                            sol.x[idx] * sol.x[idx], initial=zero)
+                                       / (2. * Pi * sol.x[idx] * sol.x[idx] * H)) / sigma_crit_h2o)))
 
-            sig_dot = np.maximum(np.minimum(sig_dot, ys[sol.idx_mu_ast[0], idx] / (6. * yr)),
-                                 ys[sol.idx_mu_ast[0], idx] / (1e3 * Myr))
+            mf_dot = np.maximum(np.minimum(mf_dot, ys[sol.idx_mu_ast[0], idx] / (6. * yr)),
+                                ys[sol.idx_mu_ast[0], idx] / (1e3 * Myr))
             # sig_dot = ys[0, idx] / (100 * kyr)
-            ydot[sol.idx_mu_ast[0], idx] -= sig_dot
-            ydot[sol.idx_mu_ast[1], idx] += sig_dot * 2 * sol.mu[sol.idx_mu_ast[1]] / sol.mu[sol.idx_mu_ast[0]]
+            ydot[sol.idx_mu_ast[0], idx] -= mf_dot
+            ydot[sol.idx_mu_ast[1], idx] += mf_dot * 2 * sol.mu[sol.idx_mu_ast[1]] / sol.mu[sol.idx_mu_ast[0]]
             # H2O -> 2H + O
-            ydot[sol.idx_mu_ast[2], idx] += sig_dot * sol.mu[sol.idx_mu_ast[2]] / sol.mu[sol.idx_mu_ast[0]]
+            ydot[sol.idx_mu_ast[2], idx] += mf_dot * sol.mu[sol.idx_mu_ast[2]] / sol.mu[sol.idx_mu_ast[0]]
     if "CO" in sol.nom_mu:
         idx = np.argwhere(ys[sol.idx_mu_kuip[0]] > -80)[:, 0]
 
@@ -3120,10 +7055,10 @@ def mass_frac_dot(t: np.float64, ys: np.ndarray, sol: Sol) \
         # sigma_crit_CO: np.float64 = 1 / ((Na / sol.mu[sol.idx_mu_kuip[0]]) * cross_section_co)
         # sigma_crit_CO: np.float64 = Mearth / (au * au)
         if len(idx) > 2:
-            sig_dot = (ys[sol.idx_mu_kuip[0], idx] * np.exp(- surf_dens[idx] * ys[sol.idx_mu_kuip[1], idx]
-                                                            / sigma_crit_CO)
-                       * extrapol_Theta(np.log10(surf_dens[idx] * ys[sol.idx_mu_kuip[0], idx] * Na / sol.mu[0]))
-                       / tph_co)
+            mf_dot = (ys[sol.idx_mu_kuip[0], idx] * np.exp(- surf_dens[idx] * ys[sol.idx_mu_kuip[1], idx]
+                                                           / sigma_crit_CO)
+                      * extrapol_Theta(np.log10(surf_dens[idx] * ys[sol.idx_mu_kuip[0], idx] * Na / sol.mu[0]))
+                      / tph_co)
 
             # sig_dot += (ys[sol.idx_mu_kuip[0], idx]
             #             * (1 / (Luv / (h * c / (100 * 1e-9 * C_L)) * cross_section_co))
@@ -3132,13 +7067,13 @@ def mass_frac_dot(t: np.float64, ys: np.ndarray, sol: Sol) \
             #                                              sol.r[idx], initial=zero)
             #                         / (2. * Pi * sol.r[idx] * H)) / sigma_crit_CO)))
 
-            sig_dot = np.maximum(np.minimum(sig_dot, ys[sol.idx_mu_kuip[0], idx] / (6000. * yr)),
-                                 ys[sol.idx_mu_kuip[0], idx] / (1e3 * Myr))
+            mf_dot = np.maximum(np.minimum(mf_dot, ys[sol.idx_mu_kuip[0], idx] / (6000. * yr)),
+                                ys[sol.idx_mu_kuip[0], idx] / (1e3 * Myr))
             # sig_dot = savgol_filter(sig_dot, 10,4)
             # sig_dot = ys[0, idx] / (100 * kyr)
-            ydot[sol.idx_mu_kuip[0], idx] -= sig_dot
-            ydot[sol.idx_mu_kuip[1], idx] += sig_dot * sol.mu[sol.idx_mu_kuip[1]] / sol.mu[sol.idx_mu_kuip[0]]
-            ydot[sol.idx_mu_kuip[2], idx] += sig_dot * sol.mu[sol.idx_mu_kuip[2]] / sol.mu[sol.idx_mu_kuip[0]]
+            ydot[sol.idx_mu_kuip[0], idx] -= mf_dot
+            ydot[sol.idx_mu_kuip[1], idx] += mf_dot * sol.mu[sol.idx_mu_kuip[1]] / sol.mu[sol.idx_mu_kuip[0]]
+            ydot[sol.idx_mu_kuip[2], idx] += mf_dot * sol.mu[sol.idx_mu_kuip[2]] / sol.mu[sol.idx_mu_kuip[0]]
 
     return ydot
 
@@ -3214,7 +7149,6 @@ def boundary_conditions_mf(ys: np.ndarray, sol: Sol) -> np.ndarray:
     #     ys[-1, sol.idx_mu_kuip[1]] = - (2. * sol.mu[sol.idx_mu_kuip[1]] / sol.idx_mu_kuip[0]) * ys[-1, sol.idx_mu_kuip[0]]
     #     ys[-1, sol.idx_mu_kuip[2]] = - (sol.mu[sol.idx_mu_kuip[2]] / sol.idx_mu_kuip[0]) * ys[-1, sol.idx_mu_kuip[0]]
 
-
     # ys[:, 0] = np.minimum(np.maximum(
     #     np.minimum(ys[:, 1] * (sol.x[0] / sol.x[1]) ** (
     #         np.log(ys[:, 1] / ys[:, 3]) / np.log(sol.x[1] / sol.x[3])),
@@ -3250,7 +7184,7 @@ def system_sigma_tot(t: np.float64, y: np.array, sol: Sol, verbose: bool = True)
         d(log(sigma)/dt
 
     """
-    nu0: np.float64 = (Rgp * T0(t, sol.a0, sol.Ms) * sol.alpha * (sol.a0 ** (3 / 2))
+    nu0: np.float64 = (Rgp * T0(t + sol.t0, sol.a0, sol.Ms) * sol.alpha * (sol.a0 ** (3 / 2))
                        / (sol.mu.mean() * np.sqrt(G * sol.Ms)))
     ys = boundary_conditions(y, sol)
     D: np.float64 = (3 * nu0 / (4. * (sol.a0 ** (3 / 2 + sol.pls_temp))))
@@ -3258,14 +7192,14 @@ def system_sigma_tot(t: np.float64, y: np.array, sol: Sol, verbose: bool = True)
     if sol.pls_temp == -0.5:
         # yp: np.ndarray = (D * gradient(gradient(ys, sol.x[1]-sol.x[0]), sol.x[1]-sol.x[0])
         #                   + (sol.x ** (4. + 2. * sol.pls_temp)) * sigma_dot(t=t, ys=ys, phi=phi, sol=sol))
-        yp: np.ndarray = (D * gradient2(ys, sol.x[1]-sol.x[0])
+        yp: np.ndarray = (D * gradient2(ys, sol.x[1] - sol.x[0])
                           + (sol.x ** (4. + 2. * sol.pls_temp)) * sigma_dot(t=t, ys=ys, phi=phi, sol=sol))
     else:
         # yp: np.ndarray = (D * (sol.r ** (-2 - sol.pls_temp))
         #                   * gradient(gradient(ys, sol.x[1]-sol.x[0]), sol.x[1]-sol.x[0])
         #                   + (sol.x ** (4. + 2. * sol.pls_temp)) * sigma_dot(t=t, ys=ys, phi=phi, sol=sol))
         yp: np.ndarray = (D * (sol.r ** (-2 - sol.pls_temp))
-                          * gradient2(ys, sol.x[1]-sol.x[0])
+                          * gradient2(ys, sol.x[1] - sol.x[0])
                           + (sol.x ** (4. + 2. * sol.pls_temp)) * sigma_dot(t=t, ys=ys, phi=phi, sol=sol))
     # if sol.pls_temp == -0.5:
     #     yp: np.ndarray = (D * np.gradient(np.gradient(ys, sol.x), sol.x)
@@ -3296,7 +7230,7 @@ def system_sigma_tot(t: np.float64, y: np.array, sol: Sol, verbose: bool = True)
               trapezoid(2. * Pi * sol.r[2:-2] * sigma_dot(t=t, ys=ys, phi=phi, sol=sol)[2:-2],
                         sol.r[2:-2]) * Myr / Mearth, "Mearth / Myr")
         print("flux int : ", phi[0] * Myr / Mearth, "Mearth / Myr")
-        print("flux ext : ", phi[-1] * Myr / Mearth,"Mearth / Myr")
+        print("flux ext : ", phi[-1] * Myr / Mearth, "Mearth / Myr")
     if verbose:
         sol.compteur += 1
     return yp
@@ -3327,32 +7261,38 @@ def system_mass_fraction(t: np.float64, y: np.array, sol: Sol, verbose: bool = T
 
     # ys = boundary_conditions_mf(sol.split_y(y), sol)
     ys = boundary_conditions_mf(split_y(y, len(sol.x), len(sol.mu)), sol)
-    nu0: np.float64 = (Rgp * T0(t, sol.a0, sol.Ms) * sol.alpha * (sol.a0 ** (3 / 2))
+    nu0: np.float64 = (Rgp * T0(t + sol.t0, sol.a0, sol.Ms) * sol.alpha * (sol.a0 ** (3 / 2))
                        / (sol.mu.mean() * np.sqrt(G * sol.Ms)))
     D: np.float64 = (3 * nu0 / (4. * (sol.a0 ** (3 / 2 + sol.pls_temp))))
-    f = savgol_filter(sol.interp_f(t), 10, 3)
+    # f = savgol_filter(sol.interp_f(t), 10, 3)
+    f = sol.interp_f(t)
 
     # d2: np.ndarray = np.gradient(np.gradient(ys, sol.x, axis=1), sol.x, axis=1)
     # d2: np.ndarray = gradient(gradient(ys, sol.x[1]-sol.x[0], axis=1), sol.x[1]-sol.x[0], axis=1)
-    d2: np.ndarray = gradient2(ys, sol.x[1]-sol.x[0], axis=1)
+    # d2: np.ndarray = gradient2(ys, sol.x[1]-sol.x[0], axis=1)
     # d2[:5] = np.minimum(d2[:5], zero)
     # d2[-5:] = np.maximum(d2[-5:], zero)
     # d2[:5] = np.maximum(d2[:5], zero)
     # d2[-5:] = np.minimum(d2[-5:], zero)
-    d2[:5] = zero
-    d2[-5:] = zero
-    yp: np.ndarray[np.float64] = ((D / 3.) * (sol.x ** (1 + 2 * sol.pls_temp))
-                                  * (d2
-                                     + 4. * (gradient(f, sol.x[1]-sol.x[0]) / f)
-                                     * gradient(ys, sol.x[1]-sol.x[0], axis=1, radial_speed=gradient(f, sol.x[1]-sol.x[0])))
-                                  + mass_frac_dot(t=t, ys=ys, sol=sol))
-    # yp: np.ndarray[np.float64] = ((D / 3.) * (sol.x ** (1 + 2 * sol.pls_temp))
-    #                               * (d2
-    #                                  + 4. * (np.gradient(f, sol.x) / f)
-    #                                  * np.gradient(ys, sol.x, axis=1))
-    #                               + mass_frac_dot(t=t, ys=ys, sol=sol))
+    # d2[:5] = zero
+    # d2[-5:] = zero
+    if sol.pls_temp != -0.5:
+        yp: np.ndarray[np.float64] = ((D / 3.) * (sol.x ** (1 + 2 * sol.pls_temp))
+                                      * (gradient2(ys, sol.x[1] - sol.x[0], axis=1)
+                                         + 4. * (gradient(f, sol.x[1] - sol.x[0]) / f)
+                                         * gradient(ys, sol.x[1] - sol.x[0], axis=1,
+                                                    radial_speed=gradient(f, sol.x[1] - sol.x[0])))
+                                      + mass_frac_dot(t=t, ys=ys, f=f, sol=sol))
+    else:
+        yp: np.ndarray[np.float64] = ((D / 3.)
+                                      * (gradient2(ys, sol.x[1] - sol.x[0], axis=1)
+                                         + 4. * np.gradient(np.log(f), sol.x)
+                                         * gradient(ys, sol.x[1] - sol.x[0], axis=1,
+                                                    radial_speed=gradient(f, sol.x[1] - sol.x[0])))
+                                      + mass_frac_dot(t=t, ys=ys, f=f, sol=sol))
     yp[:, 0] = zero
     yp[:, -1] = zero
+    yp[:, f == zero] = zero
     if verbose and sol.compteur % 1000 == 0:
         print("yp=", trapezoid(2. * Pi * (sol.x ** 2) * yp, sol.x ** 2, axis=1))
         if t < Myr:

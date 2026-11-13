@@ -32,7 +32,7 @@ def load_from_files(path_to_file: str = "paths.txt") -> None:
     global racine, results, data_leiden, data_stars, data_radmc
 
     paths = dict(np.loadtxt("paths.txt", dtype=str, delimiter=","))
-    # print("Paths : ", paths)
+    print("Paths : ", paths)
     if "racine" in paths.keys():
         if not os.path.exists(paths["racine"]):
             raise UserWarning("Constante.load_from_files : ", paths["racine"], "does not exist")
@@ -72,8 +72,8 @@ def load_from_files(path_to_file: str = "paths.txt") -> None:
             data_stars = racine + paths["data_stars"]
 
     if "data_radmc" in paths.keys():
-        if not os.path.exists(paths["data_radmc"]) and not os.path.exists(racine + paths["data_radmc"]):
-            raise UserWarning("Constante.load_from_files : ", paths["data_radmc"], "does not exist")
+        # if not os.path.exists(paths["data_radmc"]) and not os.path.exists(racine + paths["data_radmc"]):
+        #     raise UserWarning("Constante.load_from_files : ", paths["data_radmc"], "does not exist")
 
         if os.path.exists(paths["data_radmc"]):
             data_radmc = paths["data_radmc"]
@@ -81,8 +81,8 @@ def load_from_files(path_to_file: str = "paths.txt") -> None:
             data_radmc = racine + paths["data_radmc"]
 
 
-if os.path.exists("paths.txt"):
-    load_from_files("paths.txt")
+if os.path.exists("./paths.txt"):
+    load_from_files("./paths.txt")
     if not os.path.exists(racine):
         raise UserWarning("Constante.load_from_files : ", racine, "does not exist")
     if not os.path.isdir(racine):
@@ -102,8 +102,9 @@ if os.path.exists("paths.txt"):
     if not os.path.isdir(data_leiden):
         raise UserWarning("Constante.load_from_files : ", data_leiden, "is not a directory")
 
-    if not os.path.exists(data_radmc):
-        raise UserWarning("Constante.load_from_files : ", data_radmc, "does not exist")
-    if not os.path.isdir(data_radmc):
-        raise UserWarning("Constante.load_from_files : ", data_radmc, "is not a directory")
-
+    # if not os.path.exists(data_radmc):
+    #     raise UserWarning("Constante.load_from_files : ", data_radmc, "does not exist")
+    # if not os.path.isdir(data_radmc):
+    #     raise UserWarning("Constante.load_from_files : ", data_radmc, "is not a directory")
+else:
+    print("No path.txt file has been found. Working directory : ", os.getcwd())

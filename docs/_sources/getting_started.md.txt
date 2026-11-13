@@ -118,7 +118,7 @@ sys_sol_ppd: dict = {
 ### Time Integration
 Let’s start our first simulation:
 ```python
-sol: ti.Sol = ti.time_integration(tf=ti.Myr, save_time_step=0.1*ti.Myr, consts_params=configs)
+sol: ti.Sol = ti.time_integration(tf=ti.Myr, save_time_step=0.1*ti.Myr, consts_params=conf_dic)
 ```
 The evolution of the disc is modelled from an initial time of zero to a final time of one million years (`tf`).
 The initial time is defined as the point at which the protoplanetary disc dissipates.

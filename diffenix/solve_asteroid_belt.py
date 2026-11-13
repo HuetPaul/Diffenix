@@ -757,7 +757,7 @@ class SolrhoBelt:
         self.bg: np.float64 = bg
         self.m_init: np.float64 = m_init
         if radius is None:
-            self.r = np.linspace(a0 - delta_a, a0 + delta_a, Its)
+            self.r = np.linspace(a0 - delta_a / 2., a0 + delta_a /2., Its)
         else:
             self.r = np.copy(radius)
             self.Its = len(self.r)
@@ -851,13 +851,21 @@ class SolrhoBelt:
                                               kwargsN=self.kwargs_N, It_d=200)
 
             minit = 1e-1 * self.Mbelt * self.f_ice
-            iinit = np.argwhere(cumulative_trapezoid(trapezoid(2. * Pi * self.r * self.sig_dots, self.r),
+            if np.any(cumulative_trapezoid(trapezoid(2. * Pi * self.r * self.sig_dots, self.r),
+                                                     self.tps, initial=0.) >= minit):
+                iinit = np.argwhere(cumulative_trapezoid(trapezoid(2. * Pi * self.r * self.sig_dots, self.r),
                                                      self.tps, initial=0.) >= minit)[0, 0]
-            if self.tps[iinit] - self.t0 < 0.1 * Myr:
-                self.m_init = trapezoid(trapezoid(2. * Pi * self.r * self.sig_dots[:iinit], self.r), self.tps[:iinit])
-                self.tps -= self.tps[iinit]
+                if self.tps[iinit] - self.t0 < 0.1 * Myr:
+                    self.m_init = trapezoid(trapezoid(2. * Pi * self.r * self.sig_dots[:iinit], self.r),
+                                            self.tps[:iinit])
+                    self.tps -= self.tps[iinit] - tinit
+                else:
+                    self.m_init = 0.
             else:
-                self.m_init = 0.
+                iinit= 0
+                minit = zero
+
+
 
             def linear_interp(t_new):
                 if isinstance(t_new, list | np.ndarray):
